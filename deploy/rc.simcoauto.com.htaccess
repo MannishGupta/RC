@@ -1,0 +1,105 @@
+# =============================================================================
+# Resource Centre — production Apache configuration (Linux)
+# Version: 260926.25
+#
+# Deploy this file as /.htaccess in the RC document root for every host that
+# shares this codebase, including:
+#   rc.simcoauto.com · rc.arthsathi.com · rc.fusionlimited.in · rc.digisofts.com
+#
+# Tenant selection is done in PHP (HTTP_HOST → tenants/map.json).
+# DO NOT add Redirect / RewriteRule that sends traffic to another RC host
+# (e.g. never force rc.simcoauto.com → rc.arthsathi.com). The browser address
+# bar must keep the visitor’s original host.
+# =============================================================================
+
+# --- Core ---
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # If RC is in a subdirectory, set e.g. RewriteBase /rc/
+    RewriteBase /
+</IfModule>
+
+Options -Indexes +FollowSymLinks -MultiViews
+DirectoryIndex index.php index.html
+
+# --- UTF-8 (when AllowOverride permits) ---
+<IfModule mod_mime.c>
+    AddDefaultCharset UTF-8
+    AddCharset UTF-8 .html .css .js .json .xml .svg
+</IfModule>
+
+# --- Compression ---
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE application/xml image/svg+xml
+</IfModule>
+
+# --- Security headers (non-CSP; CSP is sent by PHP AppSecurity) ---
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(self), microphone=(), camera=()"
+    # Do not force HSTS here — enable at the panel/CDN once HTTPS is confirmed.
+</IfModule>
+
+# --- Protect sensitive trees (defence in depth; also tenants/.htaccess) ---
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Explicitly refuse any legacy external hop to another RC domain.
+    # (No-op safeguard: we never rewrite Host — PHP keeps the request host.)
+    # If a host-level panel redirect exists, remove it in Plesk/cPanel/GoDaddy.
+
+    # Block path traversal style probes and private trees
+    RewriteRule (?:^|/)\.(?:git|env|svn|htaccess|user\.ini)(?:/|$) - [F,L]
+    RewriteRule (?:^|/)(?:\.git|\.env|\.svn|composer\.(?:json|lock)|package(?:-lock)?\.json)(?:/|$) - [F,L]
+    RewriteRule ^(?:tenants|data|storage|app|vendor)(?:/|$) - [F,L]
+    RewriteRule (?:^|/)(?:VERSION|\.htaccess|\.user\.ini)(?:/|$) - [F,L]
+
+    # Optional: force HTTPS only when the server already terminates TLS
+    # (uncomment when certificate is live on THIS host — do not redirect host name)
+    # RewriteCond %{HTTPS} !=on
+    # RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Serve real files and directories as-is (assets, media gateway scripts, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Front controller
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# --- PHP handler hints (only if your host allows php_flag in .htaccess) ---
+# Many shared hosts ignore or 500 on these — left inside IfModule and commented.
+# Prefer Plesk/cPanel "PHP Settings" or a user.ini instead.
+# <IfModule mod_php.c>
+#     php_flag display_errors Off
+#     php_flag log_errors On
+#     php_value date.timezone Asia/Kolkata
+# </IfModule>
+
+# --- user.ini companion (CGI/FastCGI shared hosting) ---
+# Upload .user.ini beside this file if the host uses PHP-FPM/CGI:
+#   display_errors=0
+#   log_errors=1
+#   date.timezone=Asia/Kolkata
+#   (optional) extension=intl
+
+# --- Error documents (relative — stay on same host) ---
+ErrorDocument 403 /index.php
+ErrorDocument 404 /index.php
+# Do not set ErrorDocument 500 to a remote URL.
+
+# --- Deny listing of backup / editor residue ---
+<FilesMatch "(?i)\.(bak|old|orig|save|swp|sql|sqlite)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>

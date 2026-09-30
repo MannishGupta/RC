@@ -1,0 +1,48 @@
+Resource Centre — rc.simcoauto.com on Linux (GoDaddy / cPanel / Apache)
+=======================================================================
+Version 260926.25
+
+GOAL
+  Visitors open https://rc.simcoauto.com/ and stay on that host.
+  PHP maps the host to tenant id "simcoauto" and reads/writes:
+    /tenants/simcoauto/data/
+  There must be NO redirect to rc.arthsathi.com.
+
+DNS
+  A record:  rc  →  <IP of the server that holds this RC document root>
+  Do not use a URL redirect / forwarding frame at the DNS or domain panel.
+
+DOCUMENT ROOT
+  Point the subdomain (or addon domain) document root at the SAME folder
+  that contains index.php, .htaccess, app/, tenants/, assets/.
+  Example (shared multi-tenant install):
+    /home/user/rc/   or   D:\INETPUB\VHOSTS\...\rc
+
+FTP / FILES
+  1. Upload the full RC package (or confirm code is already shared).
+  2. Upload /.htaccess (this package root) — or copy
+     deploy/rc.simcoauto.com.htaccess → /.htaccess
+  3. Optional: /.user.ini for timezone / display_errors.
+  4. Ensure tenants/map.json contains:
+       "rc.simcoauto.com": "simcoauto"
+       "www.rc.simcoauto.com": "simcoauto"
+  5. Ensure folder tenants/simcoauto/data/ exists and is writable (0775).
+
+PERMISSIONS (SSH or File Manager)
+  find tenants/simcoauto/data -type d -exec chmod 775 {} \;
+  find tenants/simcoauto/data -type f -exec chmod 664 {} \;
+
+VERIFY
+  https://rc.simcoauto.com/rc_diag.php   (delete after use)
+  Expect: HTTP_HOST=rc.simcoauto.com, TENANT_ID=simcoauto,
+          DATA_PATH=.../tenants/simcoauto/data
+
+IF YOU STILL LAND ON ARTHSATHI
+  - Remove domain "Forwarding" / "Masking" in GoDaddy domain settings.
+  - Remove any panel redirect (Plesk hosting settings → redirect).
+  - Remove any old .htaccess Redirect 301 lines pointing at arthsathi.
+  - Purge CDN / browser cache.
+
+NOTE ON PATH NAMES
+  Data lives under tenants/simcoauto/ (tenant id), not tenants/rc.simcoauto.com/.
+  The public hostname stays rc.simcoauto.com in the address bar.

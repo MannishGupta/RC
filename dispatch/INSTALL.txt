@@ -1,0 +1,36 @@
+DISPATCH MODULE — FTP install (Resource Center)
+================================================
+
+1. Upload the entire "dispatch" folder to your site root
+   (next to index.php), OR place contents at site root if preferred.
+
+   Recommended:
+     /dispatch/dispatch.php
+     /dispatch/views/...
+     /dispatch/data/...
+
+2. Permissions: data/ must be writable by PHP
+     chmod 775 dispatch/data
+     (or IIS write ACL for the app pool identity)
+
+3. Open:
+     https://YOUR-DOMAIN/dispatch/dispatch.php
+     https://YOUR-DOMAIN/dispatch/dispatch.php?view=mobile
+
+4. Paste Google Maps JavaScript API key in the console Settings
+   (or set company.google_maps_api_key in RC company.json — auto-detected).
+
+5. Team & vehicles:
+   - Reads ../data/team.json and ../data/cartags.json when present.
+   - Otherwise demo staff/vehicles are used so the UI works standalone.
+
+6. Flow for ops:
+   a) Map vehicle → staff (assign tag/registration to runner)
+   b) Create delivery route (address + lat/lng + who carries what)
+   c) Click "Dispatch (Hindi)" → copy or WhatsApp the Roman Hindi message
+   d) Staff open mobile view, open map, mark complete when done
+
+Roman Hindi sample tone:
+  "Namaste Rajesh ji — Aapka naya delivery task ready hai.
+   Pahunchana kahan: Connaught Place Gate 2
+   Map link neeche hai — open karke seedha chale jao."
