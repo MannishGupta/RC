@@ -1,0 +1,58 @@
+# RC production .htaccess — Linux Apache (cPanel / shared hosting safe)
+# Version: 260921.52
+#
+# DO NOT replace this file with the short images/ stub (Options -Indexes only).
+# That stub belongs only in the images/ subdirectory.
+
+Options -Indexes
+ServerSignature Off
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Optional HTTPS redirect — DISABLED by default to avoid 500 redirect loops
+    # on hosts where SSL is terminated at a proxy or cert is not yet active.
+    # Uncomment the next 3 lines only after HTTPS works in the browser:
+    # RewriteCond %{HTTPS} !=on
+    # RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Public media gateway (files live in data/media/images/)
+    RewriteRule ^images/(.+)$ media_serve.php?f=$1 [L,QSA]
+
+    # Block sensitive paths (do not use <DirectoryMatch> — it 500s on many shared hosts)
+    RewriteRule (^|/)\.git - [F,L]
+    RewriteRule ^data/ - [F,L]
+    RewriteRule ^app/ - [F,L]
+    RewriteRule \.(env|ini|log|sql|bak)$ - [F,L]
+
+    # Existing files/dirs pass through
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Front controller
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType image/webp .webp
+    AddType image/avif .avif
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/webp "access plus 7 days"
+    ExpiresByType image/jpeg "access plus 7 days"
+    ExpiresByType image/png "access plus 7 days"
+</IfModule>

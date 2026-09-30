@@ -1,0 +1,29 @@
+# Fusion Resource Centre — robots
+User-agent: *
+Allow: /
+Allow: /?tab=team
+Allow: /?tab=bank
+Allow: /?tab=docs
+Allow: /?tab=locations
+Allow: /?tab=events
+Allow: /?tab=statutory
+Allow: /?tab=terms
+Allow: /cards/
+Allow: /images/
+Allow: /assets/
+
+Disallow: /?tab=monitor
+Disallow: /?tab=opt
+Disallow: /?tab=settings
+Disallow: /?tab=company
+Disallow: /?tab=tenants
+Disallow: /?tab=cctv
+Disallow: /?tab=leads
+Disallow: /data/
+Disallow: /tenants/
+Disallow: /app/
+Disallow: /tools/
+Disallow: /rc_diag.php
+Disallow: /flush_cache.php
+
+Sitemap: /sitemap.php
