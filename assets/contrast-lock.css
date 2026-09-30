@@ -1,0 +1,430 @@
+/**
+ * RC CONTRAST LOCK — load LAST after app.css + a11y.css
+ * Version: 20260928.07
+ * Purpose: permanent high-contrast text vs backgrounds (light + dark).
+ * Do not dilute these rules in feature CSS; extend this file only.
+ */
+
+/* ── Tokens (locked) ─────────────────────────────────────────── */
+:root,
+html[data-theme="light"],
+html:not([data-theme="dark"]):not(.dark) {
+  --rc-ink: #0f172a;
+  --rc-ink-soft: #1e293b;
+  --rc-ink-muted: #334155;
+  --rc-ink-faint: #475569;
+  --rc-paper: #f8fafc;
+  --rc-card: #ffffff;
+  --rc-border: #e2e8f0;
+  color-scheme: light;
+}
+
+html[data-theme="dark"],
+html.dark {
+  --rc-ink: #f8fafc;
+  --rc-ink-soft: #e2e8f0;
+  --rc-ink-muted: #cbd5e1;
+  --rc-ink-faint: #94a3b8;
+  --rc-paper: #0b1220;
+  --rc-card: #111827;
+  --rc-border: #334155;
+  color-scheme: dark;
+}
+
+/* ── Base canvas ─────────────────────────────────────────────── */
+html[data-theme="light"] body,
+html:not([data-theme="dark"]):not(.dark) body {
+  color: var(--rc-ink) !important;
+  background-color: var(--rc-paper) !important;
+  background-image: none !important;
+}
+
+html[data-theme="dark"] body,
+html.dark body {
+  color: var(--rc-ink) !important;
+  background-color: var(--rc-paper) !important;
+}
+
+/* Main content surfaces */
+html[data-theme="light"] main,
+html[data-theme="light"] .main-scroll,
+html[data-theme="light"] #content-area,
+html[data-theme="light"] .rc-main,
+html[data-theme="light"] #rc-main-content {
+  color: var(--rc-ink) !important;
+  background-color: transparent;
+}
+
+html[data-theme="dark"] main,
+html[data-theme="dark"] .main-scroll,
+html[data-theme="dark"] #content-area,
+html[data-theme="dark"] .rc-main {
+  color: var(--rc-ink) !important;
+}
+
+/* Cards / panels on light */
+html[data-theme="light"] .bg-white,
+html[data-theme="light"] .bg-slate-50,
+html[data-theme="light"] .bg-slate-100,
+html[data-theme="light"] .bg-gray-50,
+html[data-theme="light"] .bg-gray-100,
+html[data-theme="light"] [class*="rounded"][class*="bg-white"],
+html[data-theme="light"] .rc-card,
+html[data-theme="light"] article.bg-white {
+  color: var(--rc-ink) !important;
+  background-color: var(--rc-card) !important;
+}
+
+/* Kill translucent glass that washes out type on light */
+html[data-theme="light"] .bg-white\/50,
+html[data-theme="light"] .bg-white\/60,
+html[data-theme="light"] .bg-white\/70,
+html[data-theme="light"] .bg-white\/80,
+html[data-theme="light"] .bg-slate-50\/50,
+html[data-theme="light"] .bg-slate-50\/80,
+html[data-theme="light"] [class*="backdrop-blur"] {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: var(--rc-ink) !important;
+}
+
+/* Light: never pure white / near-white text on paper */
+html[data-theme="light"] main .text-white:not([class*="bg-slate-9"]):not([class*="bg-gray-9"]):not([class*="bg-blue-"]):not([class*="bg-indigo-"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-amber-"]):not([class*="bg-black"]):not([class*="from-"]):not(.sidebar *):not(#rc-role-switch *):not([class*="bg-gradient"]),
+html[data-theme="light"] main .text-slate-50,
+html[data-theme="light"] main .text-slate-100,
+html[data-theme="light"] main .text-slate-200,
+html[data-theme="light"] #content-area .text-white:not([class*="bg-"]) {
+  color: var(--rc-ink) !important;
+}
+
+html[data-theme="light"] main .text-slate-300,
+html[data-theme="light"] main .text-slate-400 {
+  color: var(--rc-ink-faint) !important;
+}
+
+html[data-theme="light"] .text-slate-500,
+html[data-theme="light"] .text-slate-600 {
+  color: var(--rc-ink-muted) !important;
+}
+
+html[data-theme="light"] .text-slate-700,
+html[data-theme="light"] .text-slate-800,
+html[data-theme="light"] .text-slate-900,
+html[data-theme="light"] .text-gray-900,
+html[data-theme="light"] .text-black {
+  color: var(--rc-ink) !important;
+}
+
+/* Forms on light */
+html[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode: bright ink on dark paper */
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-black {
+  color: #f1f5f9 !important;
+}
+
+html[data-theme="dark"] .text-slate-600,
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .text-slate-300,
+html[data-theme="dark"] .text-slate-200,
+html[data-theme="dark"] .text-slate-100,
+html[data-theme="dark"] .text-white {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-slate-50,
+html[data-theme="dark"] .bg-slate-100 {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color: #f8fafc !important;
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+}
+
+/* Sidebar always dark high-contrast (independent of page theme) */
+aside.sidebar,
+#rc-sidebar,
+.sidebar {
+  background: #0b0f19 !important;
+  color: #f8fafc !important;
+}
+aside.sidebar a,
+aside.sidebar .sidebar-link,
+#rc-sidebar a,
+#rc-sidebar .sidebar-link,
+.sidebar a {
+  color: #e2e8f0 !important;
+}
+aside.sidebar a:hover,
+aside.sidebar .sidebar-link:hover,
+aside.sidebar a.active,
+aside.sidebar .sidebar-link.active,
+#rc-sidebar a:hover {
+  color: #ffffff !important;
+}
+aside.sidebar .section-label,
+#rc-sidebar .section-label {
+  color: #cbd5e1 !important;
+  opacity: 1 !important;
+}
+
+/* Role rail */
+#rc-role-switch {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+#rc-role-switch .rc-role-btn {
+  color: #e2e8f0 !important;
+}
+
+/* Headers / sticky bars on light */
+html[data-theme="light"] header,
+html[data-theme="light"] .sticky.bg-white,
+html[data-theme="light"] .sticky.bg-slate-50 {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+/* Tables */
+html[data-theme="light"] table,
+html[data-theme="light"] th,
+html[data-theme="light"] td {
+  color: #0f172a !important;
+}
+html[data-theme="dark"] table,
+html[data-theme="dark"] th,
+html[data-theme="dark"] td {
+  color: #e2e8f0 !important;
+}
+
+/* Changelog / modals */
+html[data-theme="light"] [role="dialog"],
+html[data-theme="light"] .rc-ed-panel,
+html[data-theme="light"] #enterprise-editor-root .rc-ed-panel {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+html[data-theme="dark"] [role="dialog"],
+html[data-theme="dark"] .rc-ed-panel {
+  color: #f8fafc !important;
+  background: #0f172a !important;
+}
+
+/* Numerology report — force legible paper when not print-dedicated */
+html[data-theme="light"] #report-container,
+html[data-theme="light"] #report-container.nr-manuscript,
+html[data-theme="light"] body.nr-sacred {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+  background-image: none !important;
+}
+html[data-theme="light"] #report-container .nr-card,
+html[data-theme="light"] #report-container section.nr-card {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  backdrop-filter: none !important;
+}
+html[data-theme="light"] #report-container p,
+html[data-theme="light"] #report-container li,
+html[data-theme="light"] #report-container td,
+html[data-theme="light"] #report-container th,
+html[data-theme="light"] #report-container h1,
+html[data-theme="light"] #report-container h2,
+html[data-theme="light"] #report-container h3,
+html[data-theme="light"] #report-container span:not(.nr-pill) {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+html[data-theme="dark"] #report-container .nr-card {
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] #report-container p,
+html[data-theme="dark"] #report-container li,
+html[data-theme="dark"] #report-container h1,
+html[data-theme="dark"] #report-container h2,
+html[data-theme="dark"] #report-container h3 {
+  color: #f1f5f9 !important;
+}
+
+/* Buttons with solid dark fills keep white text */
+html[data-theme="light"] .bg-slate-900,
+html[data-theme="light"] .bg-slate-800,
+html[data-theme="light"] .bg-gray-900,
+html[data-theme="light"] .bg-black,
+html[data-theme="light"] .bg-blue-600,
+html[data-theme="light"] .bg-blue-700,
+html[data-theme="light"] .bg-indigo-600,
+html[data-theme="light"] .bg-emerald-600,
+html[data-theme="light"] .bg-rose-600 {
+  color: #ffffff !important;
+}
+
+/* Monitor / opt panels */
+html[data-theme="light"] .font-mono,
+html[data-theme="light"] pre,
+html[data-theme="light"] code {
+  color: #0f172a !important;
+}
+html[data-theme="dark"] .font-mono,
+html[data-theme="dark"] pre {
+  color: #e2e8f0 !important;
+}
+
+/* Print always black on white */
+@media print {
+  html, body, main, .nr-card, #report-container, #report-container * {
+    color: #000 !important;
+    background: #fff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+
+
+/* ── 20260928.10 Sidebar + light mode lock (permanent) ───────── */
+aside.sidebar,
+#rc-sidebar,
+.sidebar,
+nav.sidebar {
+  background: #0b0f19 !important;
+  color: #f8fafc !important;
+}
+aside.sidebar *,
+#rc-sidebar *,
+.sidebar a,
+.sidebar span,
+.sidebar .section-label,
+aside.sidebar .sidebar-link,
+#rc-sidebar .sidebar-link {
+  color: #e2e8f0 !important;
+}
+aside.sidebar a:hover,
+aside.sidebar .sidebar-link:hover,
+aside.sidebar a.active,
+aside.sidebar .sidebar-link.active {
+  color: #ffffff !important;
+}
+html[data-theme="light"] aside.sidebar,
+html[data-theme="light"] #rc-sidebar {
+  background: #0b0f19 !important;
+  color: #f8fafc !important;
+}
+/* Prefer OS theme when no manual override */
+
+
+/* ── 20260928.18 Sidebar text lock (all themes) ───────── */
+aside#rc-sidebar,
+aside.sidebar,
+#rc-sidebar {
+  background: #0b0f19 !important;
+  color: #f8fafc !important;
+  border-right: 1px solid #1e293b !important;
+}
+aside#rc-sidebar *,
+aside.sidebar *,
+#rc-sidebar * {
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+aside#rc-sidebar .text-slate-900,
+aside#rc-sidebar .text-slate-800,
+aside#rc-sidebar .text-slate-700,
+aside#rc-sidebar .text-slate-600,
+aside#rc-sidebar .text-slate-500,
+aside#rc-sidebar .text-slate-400,
+aside#rc-sidebar .text-slate-300,
+aside#rc-sidebar .text-black,
+aside#rc-sidebar .text-gray-900,
+aside#rc-sidebar .text-gray-700,
+aside.sidebar .text-slate-900,
+aside.sidebar .text-slate-800,
+aside.sidebar .text-slate-700,
+aside.sidebar .text-slate-600,
+aside.sidebar .text-slate-500,
+aside.sidebar .text-slate-400,
+html[data-theme="light"] aside#rc-sidebar .text-slate-900,
+html[data-theme="light"] aside#rc-sidebar .text-slate-600,
+html[data-theme="light"] aside#rc-sidebar a,
+html[data-theme="light"] aside#rc-sidebar span,
+html[data-theme="light"] aside#rc-sidebar button,
+html[data-theme="light"] aside#rc-sidebar i {
+  color: #f1f5f9 !important;
+}
+aside#rc-sidebar a:hover,
+aside#rc-sidebar a.active,
+aside#rc-sidebar .sidebar-link:hover,
+aside#rc-sidebar .sidebar-link.active,
+aside#rc-sidebar button:hover {
+  color: #ffffff !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+aside#rc-sidebar .count-badge {
+  background: #1e293b !important;
+  color: #93c5fd !important;
+}
+aside#rc-sidebar input,
+aside#rc-sidebar select {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+
+/* ── Header count badge + IST clock — locked readable in light & dark ── */
+.rc-count-badge {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+html[data-theme="dark"] .rc-count-badge,
+html.dark .rc-count-badge {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+.rc-header-clock {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .rc-header-clock,
+html.dark .rc-header-clock {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+/* Exempt badge from light-mode "force dark ink on slate-100" rule */
+html[data-theme="light"] main .rc-count-badge,
+html[data-theme="light"] main .rc-count-badge.text-slate-100 {
+  color: #f8fafc !important;
+}

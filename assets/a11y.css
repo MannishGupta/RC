@@ -1,0 +1,420 @@
+/**
+ * Fusion Resource Centre — WCAG 2.2 AA accessibility layer
+ * Version: 260921.27
+ * Load on all authenticated and public RC shells.
+ */
+
+/* ── Visually hidden (screen-reader only) ───────────────────────── */
+.sr-only,
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-visible {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  clip: auto !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* ── Skip link (2.4.1 Bypass Blocks) ────────────────────────────── */
+.rc-skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 10000;
+  padding: 0.65rem 1rem;
+  background: #0f172a;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform 0.15s ease;
+}
+.rc-skip-link:focus,
+.rc-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+/* ── Focus visibility (2.4.7, 2.4.11, 2.4.13) ──────────────────── */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.35) !important;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+/* Sticky header must not fully obscure focused controls */
+main header.sticky,
+main .sticky,
+.z-30.relative {
+  scroll-margin-top: 4.5rem;
+}
+[tabindex]:focus-visible,
+a:focus-visible,
+button:focus-visible {
+  scroll-margin-top: 5rem;
+  scroll-margin-bottom: 5rem;
+}
+
+/* ── Minimum target size (2.5.8 Target Size — Minimum 24×24) ───── */
+.rc-hit,
+.ctrl-btn,
+.bottom-nav a,
+.bottom-nav button,
+button.icon-only,
+a.icon-only {
+  min-width: 24px;
+  min-height: 24px;
+}
+/* Prefer 44×44 touch targets for primary icon actions */
+.rc-hit-lg,
+button[aria-label]:not(.rc-hit-sm),
+.bottom-nav a,
+.bottom-nav button {
+  min-width: 44px;
+  min-height: 44px;
+}
+/* Enlarge hit area without changing visual icon size */
+.rc-hit::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+.rc-hit {
+  position: relative;
+}
+
+/* ── Reduced motion (2.3.3 Animation from Interactions / 2.2.2) ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Form errors (3.3.1, 3.3.3) ─────────────────────────────────── */
+.rc-field-error {
+  color: #991b1b;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+}
+.rc-field-invalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px #dc2626;
+}
+[aria-invalid="true"] {
+  border-color: #dc2626 !important;
+}
+
+/* ── Live region utility ────────────────────────────────────────── */
+.rc-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+/* ── High-contrast text helpers (1.4.3) ─────────────────────────── */
+.rc-text-muted-safe {
+  color: #475569; /* ~4.6:1 on white */
+}
+.rc-text-on-dark {
+  color: #f8fafc;
+}
+
+/* ── Dialog backdrop: inert background when open ────────────────── */
+body.rc-modal-open {
+  overflow: hidden;
+}
+body.rc-modal-open #rc-main-content[aria-hidden="true"] {
+  /* pointer events handled by overlay */
+}
+
+/* ── Tables: keep headers sticky readable ───────────────────────── */
+table.rc-a11y-table th {
+  text-align: left;
+  font-weight: 700;
+}
+
+/* ── WAI-ARIA Tooltip (role=tooltip) ─────────────────────────────── */
+.rc-tooltip {
+  max-width: min(20rem, calc(100vw - 1.5rem));
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.4rem;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35);
+  pointer-events: none; /* tooltip never receives pointer/focus */
+  z-index: 10050;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rc-tooltip { transition: none !important; }
+}
+
+/* Dialog open body lock helper */
+body.rc-modal-open {
+  overflow: hidden !important;
+}
+
+/* ── Bilingual: Devanagari line-height (extracted from a reviewed a11y.css
+   v2.0 proposal, adapted to this file's real selectors — most of that
+   proposal targeted classes/elements that don't exist in this app's actual
+   Tailwind-driven markup and would have had no effect; this one rule was
+   genuinely useful and standards-based). Devanagari conjuncts and matras
+   (vowel marks above/below the base glyph) need more vertical room than
+   Latin text at the same line-height, or they visually clip against the
+   line above/below. Progressive enhancement: only applies where lang="hi"
+   is actually set, costs nothing where it isn't. Does not set font-family
+   here — that is already handled per-surface by each page's own font
+   stack (dashboard.php, business.php, cards/id.php, cards/visiting.php,
+   the numerology report), all of which already load Noto Sans Devanagari
+   correctly as of this session's earlier fix. */
+:lang(hi),
+[lang="hi"] {
+  line-height: 1.75;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   260926.13 color-vision & contrast (WCAG 1.4.1 / 1.4.3 / 1.4.11)
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --rc-a11y-text: #0f172a;
+  --rc-a11y-muted: #334155; /* ≥4.5:1 on white */
+  --rc-a11y-border: #64748b; /* ≥3:1 UI */
+  --rc-a11y-focus: #2563eb;
+  --rc-a11y-ok: #0f766e;
+  --rc-a11y-warn: #b45309;
+  --rc-a11y-err: #9f1239;
+  --rc-a11y-info: #1d4ed8;
+}
+
+/* Links in content: never color-only */
+main a:not(.sidebar-link):not(.nr-pill):not(.nr-seg-btn):not(.btn):not([class*="bg-"]),
+.prose a, .rc-body a, article a {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+main a:not(.sidebar-link):hover {
+  color: #1e3a8a;
+  text-decoration-thickness: 2px;
+}
+
+/* Form validation dual-coding */
+.rc-field-error,
+[aria-invalid="true"],
+input.rc-invalid,
+select.rc-invalid,
+textarea.rc-invalid {
+  border: 2px solid var(--rc-a11y-err) !important;
+  box-shadow: inset 3px 0 0 var(--rc-a11y-err) !important; /* left bar pattern */
+  background-image: none !important;
+}
+.rc-field-error-msg,
+.rc-error-text {
+  color: var(--rc-a11y-err);
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+.rc-field-error-msg::before,
+.rc-error-text::before {
+  content: "⚠ ";
+  speak: literal-punctuation;
+}
+
+.rc-field-success,
+[data-valid="true"] {
+  border: 2px solid var(--rc-a11y-ok) !important;
+  box-shadow: inset 3px 0 0 var(--rc-a11y-ok) !important;
+}
+.rc-field-success-msg::before {
+  content: "✓ ";
+}
+
+.rc-field-warn {
+  border: 2px dashed var(--rc-a11y-warn) !important;
+  box-shadow: inset 3px 0 0 var(--rc-a11y-warn) !important;
+}
+
+/* Status pills: require icon or prefix via data attribute */
+[data-status="ok"]::before,
+.status-ok::before,
+.badge-ok::before { content: "● "; font-weight: 900; }
+[data-status="warn"]::before,
+.status-warn::before { content: "▲ "; font-weight: 900; }
+[data-status="error"]::before,
+.status-error::before,
+.badge-danger::before { content: "■ "; font-weight: 900; }
+[data-status="info"]::before { content: "◆ "; font-weight: 900; }
+
+/* Progress bars: track always visible; fill not green-only */
+progress, .rc-progress {
+  accent-color: #0072B2;
+}
+.rc-progress-track {
+  background: #e2e8f0;
+  border: 1px solid #64748b;
+  border-radius: 999px;
+  overflow: hidden;
+  height: 0.65rem;
+}
+.rc-progress-fill {
+  background: repeating-linear-gradient(
+    -45deg,
+    #0072B2,
+    #0072B2 6px,
+    #56B4E9 6px,
+    #56B4E9 12px
+  );
+  height: 100%;
+  min-width: 2px;
+}
+
+/* Toggle / switch: border + position, not color alone */
+[role="switch"][aria-checked="true"],
+.rc-toggle.on {
+  background: #1d4ed8 !important;
+  border: 2px solid #0f172a !important;
+}
+[role="switch"][aria-checked="false"],
+.rc-toggle:not(.on) {
+  background: #cbd5e1 !important;
+  border: 2px solid #475569 !important;
+}
+
+/* Tabs active: underline + weight */
+[role="tab"][aria-selected="true"],
+.tab-active,
+.nr-pill-on {
+  font-weight: 800 !important;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* High-contrast mode preference */
+@media (prefers-contrast: more) {
+  body {
+    color: #000 !important;
+    background: #fff !important;
+  }
+  .sidebar, aside.sidebar {
+    border-right: 3px solid #000 !important;
+  }
+  button, .nr-pill, .ctrl-btn {
+    border: 2px solid currentColor !important;
+  }
+}
+
+/* Muted text floor: avoid slate-400 on white for essential UI */
+.text-slate-400 {
+  color: #475569 !important; /* ~4.6:1 on white */
+}
+html[data-theme="dark"] .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+/* Record editor / modal errors — never color-only */
+.rc-ed-err {
+  color: #9f1239 !important;
+  background: #fff1f2 !important;
+  border: 2px dashed #9f1239 !important;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+.rc-ed-err:not(:empty)::before { content: "⚠ "; }
+
+
+/* 260926.15 remaining checks */
+.rc-live-a11y:not(:empty) {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: min(92vw, 28rem);
+  padding: 0.65rem 1rem;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 2px solid #fbbf24;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+
+/* Map legend dual-coding helper */
+.rc-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.rc-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Ensure disabled controls are not color-only */
+button:disabled,
+[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  outline: 1px dashed #64748b;
+}
+
+/* Print: force black text */
+@media print {
+  body, main, .nr-card, .nr-body {
+    color: #000 !important;
+    background: #fff !important;
+  }
+  a { text-decoration: underline !important; }
+}
+
+
+/* Contrast permanent rules live in contrast-lock.css (load after this file). */
