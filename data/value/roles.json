@@ -1,0 +1,25 @@
+{
+    "crm_pack": "logistics",
+    "packs": [
+        {
+            "id": "admin",
+            "label": "Administrator",
+            "tabs": ["*"]
+        },
+        {
+            "id": "hr",
+            "label": "HR",
+            "tabs": ["team", "docs", "expiry", "org", "ops", "terms", "events", "bank", "locations"]
+        },
+        {
+            "id": "logistics",
+            "label": "Logistics",
+            "tabs": ["team", "tracking", "dispatch", "ops", "assets", "locations", "cartags", "expiry", "terms"]
+        },
+        {
+            "id": "readonly",
+            "label": "Read Only",
+            "tabs": ["team", "locations", "events", "terms"]
+        }
+    ]
+}

@@ -1,0 +1,24 @@
+[
+    {
+        "id": "AST-001",
+        "name": "Spare smartphone",
+        "category": "Device",
+        "serial": "",
+        "status": "available",
+        "assigned_to": "",
+        "assigned_name": "",
+        "due_date": "",
+        "notes": ""
+    },
+    {
+        "id": "AST-002",
+        "name": "Office keys set A",
+        "category": "Keys",
+        "serial": "",
+        "status": "available",
+        "assigned_to": "",
+        "assigned_name": "",
+        "due_date": "",
+        "notes": ""
+    }
+]

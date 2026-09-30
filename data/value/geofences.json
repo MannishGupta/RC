@@ -1,0 +1,10 @@
+[
+    {
+        "id": "GF-HQ",
+        "name": "Head Office",
+        "lat": 28.6139,
+        "lng": 77.209,
+        "radius_m": 300,
+        "active": true
+    }
+]

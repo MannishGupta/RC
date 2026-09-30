@@ -1,0 +1,3235 @@
+{
+  "planets": {
+    "1": {
+      "name": "Sun (Surya)",
+      "icon": "☉",
+      "color": "text-orange-600",
+      "gem": "Ruby",
+      "day": "Sunday",
+      "lucky_col": "Orange, Gold",
+      "friends": [
+        1,
+        2,
+        3,
+        5,
+        9
+      ],
+      "enemies": [
+        8
+      ],
+      "neutral": [
+        4,
+        6,
+        7
+      ],
+      "keywords": "Leadership, Independence, Ego",
+      "blind_spot": "Success depends on your ability to listen. You have the power to start, but often lack the patience to finish. Your independence can look like arrogance.",
+      "attributes": {
+        "career": "You excel in management, politics, entrepreneurship, and any domain where you lead without supervision. CEOs, founders, and directors.",
+        "wealth": "Wealth comes through risk-taking and self-initiated projects. Your greatest financial asset is your willingness to act when others wait.",
+        "relationships": "You need a partner who respects your independence; you may dominate unconsciously. Best matched with 2, 3, and 9 drivers."
+      },
+      "remedies": {
+        "priority": "Wake up before sunrise and offer water to the Sun (Surya Namaskar). Chant Aditya Hridayam on Sundays.",
+        "avoid": "Dark blue clothes, iron, and acting out of ego. Do not sign important deals on Saturdays.",
+        "item": "Ruby or Copper objects on your desk. A Surya Yantra in the East direction."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Sunday"
+          ],
+          "neutral": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday"
+          ],
+          "avoid": [
+            "Friday",
+            "Saturday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Gold",
+            "Rust",
+            "Orange"
+          ],
+          "daily": [
+            "Yellow",
+            "Warm hues"
+          ],
+          "avoid": [
+            "Black",
+            "Dark Blue"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            1
+          ],
+          "secondary": [
+            2,
+            3,
+            5,
+            9
+          ],
+          "avoid": [
+            8
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Ruby",
+        "metal": "Gold or Copper",
+        "finger": "Ring Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Sunday morning (at sunrise)",
+        "safety_check": "Safe for most. Avoid only if suffering from severe high blood pressure or extreme temper issues. Substitute with Sunstone if needed."
+      },
+      "hi_name": "सूर्य",
+      "hi_keywords": "नेतृत्व, आत्मविश्वास, अधिकार",
+      "hi_blind_spot": "अहंकार — सहयोग में आपकी शक्ति है।"
+    },
+    "2": {
+      "name": "Moon (Chandra)",
+      "icon": "☽",
+      "color": "text-slate-500",
+      "gem": "Pearl",
+      "day": "Monday",
+      "lucky_col": "White, Silver",
+      "friends": [
+        1,
+        3,
+        5
+      ],
+      "enemies": [
+        4,
+        8,
+        9
+      ],
+      "neutral": [
+        2,
+        6,
+        7
+      ],
+      "keywords": "Diplomacy, Intuition, Sensitivity",
+      "blind_spot": "Your strength is your sensitivity, but do not let others harden you. You struggle to set boundaries and may become overly dependent.",
+      "attributes": {
+        "career": "Best suited for creative arts, psychology, counseling, nursing, or diplomacy. You operate best in collaborative or supportive roles.",
+        "wealth": "Financial stability fluctuates with your moods; avoid emotional spending. Best income comes from service-based or creative fields.",
+        "relationships": "You crave deep emotional connection and harmony; conflict drains you physically. Best matched with 1, 3, and 5 drivers."
+      },
+      "remedies": {
+        "priority": "Drink water from a silver glass and respect mother figures. Chant Chandra Mantra on Mondays.",
+        "avoid": "Making major decisions when emotional or during full/new moon phases.",
+        "item": "Silver objects, a small water fountain in the North, or Moonstone crystal."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Monday"
+          ],
+          "neutral": [
+            "Sunday",
+            "Wednesday",
+            "Friday"
+          ],
+          "avoid": [
+            "Tuesday",
+            "Saturday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "White",
+            "Cream",
+            "Silver"
+          ],
+          "daily": [
+            "Light Green",
+            "Pale Blue"
+          ],
+          "avoid": [
+            "Red",
+            "Black"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            2
+          ],
+          "secondary": [
+            1,
+            3,
+            5
+          ],
+          "avoid": [
+            4,
+            8,
+            9
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Natural Pearl",
+        "metal": "Silver",
+        "finger": "Little Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Monday evening (after sunset)",
+        "safety_check": "Highly safe and universally beneficial for calming anxiety and reducing mental overthinking. Substitute with Moonstone if needed."
+      },
+      "hi_name": "चंद्रमा",
+      "hi_keywords": "संवेदनशीलता, अंतर्ज्ञान, सहयोग",
+      "hi_blind_spot": "अत्यधिक भावुकता — आपका अंतर्ज्ञान मार्ग दिखाता है।"
+    },
+    "3": {
+      "name": "Jupiter (Guru)",
+      "icon": "♃",
+      "color": "text-yellow-600",
+      "gem": "Yellow Sapphire",
+      "day": "Thursday",
+      "lucky_col": "Yellow, Golden",
+      "friends": [
+        1,
+        2,
+        3,
+        9
+      ],
+      "enemies": [
+        6
+      ],
+      "neutral": [
+        4,
+        5,
+        7,
+        8
+      ],
+      "keywords": "Wisdom, Optimism, Expansion",
+      "blind_spot": "Focus is your key to mastery. You have many talents but often scatter your energy. Avoid preaching to others.",
+      "attributes": {
+        "career": "Teaching, writing, advisory roles, law, finance, and entertainment suit you best. You are the advisor, not the executor.",
+        "wealth": "Money comes easily but goes easily; generosity can be a financial leak. Invest in education and knowledge-based assets.",
+        "relationships": "You are charming and social, but may struggle with deep emotional vulnerability. Best matched with 1, 2, and 9 drivers."
+      },
+      "remedies": {
+        "priority": "Apply saffron tilak on forehead and respect teachers/gurus. Visit a temple on Thursdays.",
+        "avoid": "Overconfidence, irreverence to teachers, and eating non-veg on Thursdays.",
+        "item": "Yellow flowers, Citrine crystals, or a Guru Yantra in the North-East."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Thursday"
+          ],
+          "neutral": [
+            "Sunday",
+            "Monday",
+            "Tuesday"
+          ],
+          "avoid": [
+            "Friday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Mustard",
+            "Yellow",
+            "Gold"
+          ],
+          "daily": [
+            "Light Purple",
+            "Pink"
+          ],
+          "avoid": [
+            "Dark Green",
+            "Black"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            3
+          ],
+          "secondary": [
+            1,
+            2,
+            9
+          ],
+          "avoid": [
+            6
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Yellow Sapphire (Pukhraj)",
+        "metal": "Gold",
+        "finger": "Index Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Thursday morning",
+        "safety_check": "Highly safe and universally beneficial for wealth and focus. Substitute with Citrine or Yellow Topaz."
+      },
+      "hi_name": "गुरु",
+      "hi_keywords": "ज्ञान, रचनात्मकता, विस्तार",
+      "hi_blind_spot": "बिखराव — केंद्रित रहें, असाधारण फल मिलेंगे।"
+    },
+    "4": {
+      "name": "Rahu (Uranus)",
+      "icon": "☊",
+      "color": "text-blue-600",
+      "gem": "Gomed",
+      "day": "Saturday",
+      "lucky_col": "Blue, Grey",
+      "friends": [
+        5,
+        6,
+        7
+      ],
+      "enemies": [
+        1,
+        2,
+        9
+      ],
+      "neutral": [
+        3,
+        4,
+        8
+      ],
+      "keywords": "Order, Discipline, Rebellion",
+      "blind_spot": "Do not resist change. Your discipline is a gift, but rigidity will cause you pain. You often feel misunderstood.",
+      "attributes": {
+        "career": "Engineering, technical fields, construction, IT systems, and detailed planning. You build empires, brick by brick.",
+        "wealth": "Wealth builds slowly through savings and hard work; strictly avoid gambling and speculation.",
+        "relationships": "Loyal and dependable, but you may lack romance or emotional flexibility. Best matched with 5, 6, and 7 drivers."
+      },
+      "remedies": {
+        "priority": "Feed stray dogs and maintain a strict daily routine. Respect elders and ancestors.",
+        "avoid": "Clutter in the South-West, eating late at night, and making decisions based on anger.",
+        "item": "Wooden elements, a Ganesha idol, or Gomed stone in the South-West."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Saturday",
+            "Wednesday"
+          ],
+          "neutral": [
+            "Friday"
+          ],
+          "avoid": [
+            "Sunday",
+            "Monday",
+            "Tuesday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Grey",
+            "Navy Blue"
+          ],
+          "daily": [
+            "Earthy Browns",
+            "Khaki"
+          ],
+          "avoid": [
+            "Red",
+            "Bright Yellow"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            4
+          ],
+          "secondary": [
+            5,
+            6,
+            7
+          ],
+          "avoid": [
+            1,
+            2,
+            9
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Hessonite (Gomed)",
+        "metal": "Silver or Ashtadhatu",
+        "finger": "Middle Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Saturday night (after sunset)",
+        "safety_check": "Caution required. Can increase mental restlessness if incompatible. Must be tested by placing under the pillow for 3 nights before wearing."
+      },
+      "hi_name": "राहु",
+      "hi_keywords": "अनुशासन, व्यावहारिकता, स्थिरता",
+      "hi_blind_spot": "अनम्यता — लचीलापन आपको और मजबूत बनाता है।"
+    },
+    "5": {
+      "name": "Mercury (Budh)",
+      "icon": "☿",
+      "color": "text-emerald-600",
+      "gem": "Emerald",
+      "day": "Wednesday",
+      "lucky_col": "Green",
+      "friends": [
+        1,
+        4,
+        6
+      ],
+      "enemies": [],
+      "neutral": [
+        2,
+        3,
+        5,
+        7,
+        8,
+        9
+      ],
+      "keywords": "Freedom, Communication, Adaptability",
+      "blind_spot": "Consistency is your challenge. If you stick to one path for 2 years, you will succeed. Avoid impulsive changes.",
+      "attributes": {
+        "career": "Business, sales, media, travel, public speaking, trading, and the digital economy. You are a natural dealmaker.",
+        "wealth": "Great potential for business wealth, but high risk of impulsive losses. Diversify rather than concentrate.",
+        "relationships": "You need a partner who offers freedom and mental stimulation, not routine. Best matched with 1, 4, and 6 drivers."
+      },
+      "remedies": {
+        "priority": "Practice deep breathing and keep every promise you make. Chant Budh Mantra on Wednesdays.",
+        "avoid": "Inconsistency, breaking commitments, and heavy mental stress.",
+        "item": "Green plants in the North or Emerald/Peridot on the working desk."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Wednesday"
+          ],
+          "neutral": [
+            "Sunday",
+            "Friday",
+            "Saturday"
+          ],
+          "avoid": [
+            "Tuesday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Emerald Green",
+            "Teal"
+          ],
+          "daily": [
+            "Light Grey",
+            "White"
+          ],
+          "avoid": [
+            "Dark Red",
+            "Black"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            5
+          ],
+          "secondary": [
+            1,
+            4,
+            6
+          ],
+          "avoid": []
+        }
+      },
+      "gem_prescription": {
+        "stone": "Emerald (Panna)",
+        "metal": "Gold or Silver",
+        "finger": "Little Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Wednesday morning",
+        "safety_check": "Highly safe. Enhances speech, intellect, and business acumen. Substitute with Peridot or Green Onyx."
+      },
+      "hi_name": "बुध",
+      "hi_keywords": "बुद्धि, संचार, व्यापार",
+      "hi_blind_spot": "अस्थिरता — आपकी अनुकूलनशीलता ही महाशक्ति है।"
+    },
+    "6": {
+      "name": "Venus (Shukra)",
+      "icon": "♀",
+      "color": "text-pink-600",
+      "gem": "Diamond/Zircon",
+      "day": "Friday",
+      "lucky_col": "White, Pink",
+      "friends": [
+        4,
+        5,
+        8
+      ],
+      "enemies": [
+        1,
+        2
+      ],
+      "neutral": [
+        3,
+        6,
+        7,
+        9
+      ],
+      "keywords": "Luxury, Responsibility, Care",
+      "blind_spot": "Learn to say no. Your desire to help everyone can drain your own energy. You may be prone to perfectionism.",
+      "attributes": {
+        "career": "Design, fashion, healing, hospitality, beauty industry, interior design, and luxury goods. You have an eye for excellence.",
+        "wealth": "You attract luxury and comfort; money usually flows well. Real estate and creative ventures are profitable.",
+        "relationships": "Family is your priority; you may smother others with excessive care. Best matched with 4, 5, and 8 drivers."
+      },
+      "remedies": {
+        "priority": "Keep your clothes tidy, use quality perfume daily, and donate white items on Fridays.",
+        "avoid": "Sloppiness, unwashed clothes, and negativity in the home environment.",
+        "item": "Fresh flowers, Crystal/Diamond elements, or a Shukra Yantra in the South-East."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Friday"
+          ],
+          "neutral": [
+            "Wednesday",
+            "Saturday"
+          ],
+          "avoid": [
+            "Sunday",
+            "Monday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "White",
+            "Silver",
+            "Pastel Blue"
+          ],
+          "daily": [
+            "Pink",
+            "Light Purple"
+          ],
+          "avoid": [
+            "Dark Red",
+            "Yellow"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            6
+          ],
+          "secondary": [
+            4,
+            5,
+            8
+          ],
+          "avoid": [
+            1,
+            2
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Diamond or White Zircon",
+        "metal": "Silver or Platinum",
+        "finger": "Middle or Ring Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Friday morning",
+        "safety_check": "Safe for most. Amplifies luxury, media success, and romantic appeal. Substitute with Clear Quartz or Opal."
+      },
+      "hi_name": "शुक्र",
+      "hi_keywords": "प्रेम, सौंदर्य, समृद्धि",
+      "hi_blind_spot": "अत्यधिक बलिदान — स्वयं की देखभाल करें।"
+    },
+    "7": {
+      "name": "Ketu (Neptune)",
+      "icon": "☋",
+      "color": "text-stone-600",
+      "gem": "Cat's Eye",
+      "day": "Tuesday",
+      "lucky_col": "Multi-color",
+      "friends": [
+        4,
+        6
+      ],
+      "enemies": [
+        1,
+        2
+      ],
+      "neutral": [
+        3,
+        5,
+        7,
+        8,
+        9
+      ],
+      "keywords": "Analysis, Truth, Mysticism",
+      "blind_spot": "Trust your gut. You know things without knowing how. Do not over-analyze your intuition or isolate yourself too much.",
+      "attributes": {
+        "career": "Research, science, occult sciences, medicine, investigative journalism, and highly specialized skills. You are the expert's expert.",
+        "wealth": "Money comes unexpectedly and through unconventional channels; standard business logic may not apply to you.",
+        "relationships": "You need significant solitude; partners may find you distant. Best matched with 4 and 6 drivers."
+      },
+      "remedies": {
+        "priority": "Meditate daily for at least 20 minutes and spend dedicated time in nature each week.",
+        "avoid": "Overthinking, grey/dull environments, and suppressing your intuitive hunches.",
+        "item": "A dog (or dog statue), multi-colored checks, or a Cat's Eye in silver."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Tuesday",
+            "Wednesday"
+          ],
+          "neutral": [
+            "Friday"
+          ],
+          "avoid": [
+            "Sunday",
+            "Monday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Smoky Grey",
+            "Earthy tones"
+          ],
+          "daily": [
+            "Multi-colored patterns",
+            "Pastels"
+          ],
+          "avoid": [
+            "Pure Black",
+            "Pure Red"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            7
+          ],
+          "secondary": [
+            4,
+            6
+          ],
+          "avoid": [
+            1,
+            2
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Cat's Eye (Lehsuniya)",
+        "metal": "Silver or Panchdhatu",
+        "finger": "Middle or Ring Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Tuesday night or Wednesday morning",
+        "safety_check": "Extreme caution required. A highly mystical stone that acts fast. Must be tested under the pillow for 3 days before wearing."
+      },
+      "hi_name": "केतु",
+      "hi_keywords": "आध्यात्मिकता, शोध, एकांत",
+      "hi_blind_spot": "भावनात्मक दूरी — आपकी गहराई दूसरों को उपचार देती है।"
+    },
+    "8": {
+      "name": "Saturn (Shani)",
+      "icon": "♄",
+      "color": "text-indigo-800",
+      "gem": "Blue Sapphire",
+      "day": "Saturday",
+      "lucky_col": "Black, Dark Blue",
+      "friends": [
+        5,
+        6
+      ],
+      "enemies": [
+        1,
+        2,
+        9
+      ],
+      "neutral": [
+        3,
+        4,
+        7,
+        8
+      ],
+      "keywords": "Power, Authority, Justice",
+      "blind_spot": "You fear poverty so much you forget to enjoy wealth. Success is guaranteed if you are patient; shortcuts lead to failure.",
+      "attributes": {
+        "career": "Corporate leadership, law, finance, real estate, administration, and systems at scale. You are a builder of structures.",
+        "wealth": "Great wealth potential, but often delayed or requiring hard labor and patience. Avoid debt and shortcuts.",
+        "relationships": "You take commitment very seriously but may neglect emotional needs of your partner. Best matched with 5 and 6 drivers."
+      },
+      "remedies": {
+        "priority": "Help manual laborers, the disabled, and be strictly honest in all dealings. Fast on Saturdays.",
+        "avoid": "Non-veg food and alcohol on Saturdays. Litigation and ego clashes with authority.",
+        "item": "Blue Sapphire, Amethyst, or a black iron ring on the middle finger."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Saturday"
+          ],
+          "neutral": [
+            "Wednesday",
+            "Friday"
+          ],
+          "avoid": [
+            "Sunday",
+            "Monday",
+            "Tuesday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Dark Navy",
+            "Charcoal Grey",
+            "Black"
+          ],
+          "daily": [
+            "Indigo",
+            "Violet"
+          ],
+          "avoid": [
+            "Red",
+            "Bright Yellow",
+            "White"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            8
+          ],
+          "secondary": [
+            5,
+            6
+          ],
+          "avoid": [
+            1,
+            2,
+            9
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Blue Sapphire (Neelam)",
+        "metal": "Silver, Iron, or White Gold",
+        "finger": "Middle Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Saturday evening (during sunset)",
+        "safety_check": "CRITICAL CAUTION. The most volatile stone. Can bring immense sudden wealth or sudden disaster. Mandatory 3-day pillow test required before wearing. Substitute with Amethyst."
+      },
+      "hi_name": "शनि",
+      "hi_keywords": "शक्ति, धन, कर्म",
+      "hi_blind_spot": "नियंत्रण — शक्ति सेवा से बहुगुणित होती है।"
+    },
+    "9": {
+      "name": "Mars (Mangal)",
+      "icon": "♂",
+      "color": "text-red-600",
+      "gem": "Red Coral",
+      "day": "Tuesday",
+      "lucky_col": "Red",
+      "friends": [
+        1,
+        3
+      ],
+      "enemies": [
+        4,
+        5
+      ],
+      "neutral": [
+        2,
+        6,
+        7,
+        8,
+        9
+      ],
+      "keywords": "Courage, Compassion, Energy",
+      "blind_spot": "Your anger is just unused passion. Channel it into a cause, not a person. Avoid playing the martyr.",
+      "attributes": {
+        "career": "NGOs, medical, military, police, athletics, fire service, and social movements. You fight for what is right.",
+        "wealth": "Money flows when shared; holding on to it too tight stops the flow. Charitable giving triggers your abundance.",
+        "relationships": "Passionate but fiery; avoid trying to save or fix your partner. Best matched with 1, 2, and 3 drivers."
+      },
+      "remedies": {
+        "priority": "Exercise daily to release energy and worship Hanuman on Tuesdays.",
+        "avoid": "Anger outbursts, red clothes when already agitated, and violent environments.",
+        "item": "Red flowers in the South, Red Coral in copper setting, or a Mars Yantra."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Tuesday"
+          ],
+          "neutral": [
+            "Sunday",
+            "Monday",
+            "Thursday"
+          ],
+          "avoid": [
+            "Wednesday",
+            "Saturday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Maroon",
+            "Brick Red"
+          ],
+          "daily": [
+            "Pink",
+            "Coral"
+          ],
+          "avoid": [
+            "Green",
+            "Black"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            9
+          ],
+          "secondary": [
+            1,
+            2,
+            3
+          ],
+          "avoid": [
+            4,
+            5
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Red Coral (Moonga)",
+        "metal": "Gold or Copper",
+        "finger": "Ring Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Tuesday morning",
+        "safety_check": "Generally safe, but avoid if you suffer from chronic high blood pressure, extreme anger, or hypertension. Substitute with Red Jasper."
+      },
+      "hi_name": "मंगल",
+      "hi_keywords": "साहस, ऊर्जा, करुणा",
+      "hi_blind_spot": "अपूर्ण परियोजनाएं — आपकी करुणा विश्व बदल सकती है।"
+    },
+    "11": {
+      "name": "Master Intuition (11)",
+      "icon": "✧",
+      "color": "text-indigo-500",
+      "gem": "Pearl",
+      "day": "Monday",
+      "lucky_col": "Silver, White",
+      "friends": [
+        1,
+        3,
+        5
+      ],
+      "enemies": [
+        4,
+        8,
+        9
+      ],
+      "neutral": [
+        2,
+        6,
+        7
+      ],
+      "keywords": "Illumination, Empathy, Spiritual Insight",
+      "blind_spot": "You are a lightning rod for energy. Your immense intuition often leads to nervous tension and anxiety. You must learn to ground yourself or you will burn out.",
+      "attributes": {
+        "career": "Inspirational leadership, counseling, healing, spiritual teaching, and the creative arts. You inspire through being, not just doing.",
+        "wealth": "Money manifests when you follow your intuition, not standard business logic. Trust your gut on investments.",
+        "relationships": "You absorb your partner's emotions. You require a deeply peaceful domestic environment and a grounded partner."
+      },
+      "remedies": {
+        "priority": "Ground yourself daily through barefoot walking on grass. Limit screen time after sunset.",
+        "avoid": "Taking on other people's emotional burdens and chaotic social environments.",
+        "item": "Moonstone, clear quartz, or a silver amulet on the dominant wrist."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Monday"
+          ],
+          "neutral": [
+            "Sunday",
+            "Wednesday",
+            "Friday"
+          ],
+          "avoid": [
+            "Tuesday",
+            "Saturday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "White",
+            "Cream",
+            "Silver"
+          ],
+          "daily": [
+            "Light Green",
+            "Pale Blue"
+          ],
+          "avoid": [
+            "Red",
+            "Black"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            2
+          ],
+          "secondary": [
+            1,
+            3,
+            5
+          ],
+          "avoid": [
+            4,
+            8,
+            9
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Natural Pearl or Moonstone",
+        "metal": "Silver",
+        "finger": "Little Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Monday evening (after sunset)",
+        "safety_check": "Highly safe and universally beneficial for calming anxiety. Substitute with Moonstone."
+      },
+      "hi_name": "मास्टर 11 — आध्यात्मिक शिक्षक",
+      "hi_keywords": "",
+      "hi_blind_spot": ""
+    },
+    "22": {
+      "name": "Master Builder (22)",
+      "icon": "△",
+      "color": "text-violet-700",
+      "gem": "Gomed",
+      "day": "Saturday",
+      "lucky_col": "Blue, Grey",
+      "friends": [
+        5,
+        6,
+        7
+      ],
+      "enemies": [
+        1,
+        2,
+        9
+      ],
+      "neutral": [
+        3,
+        4,
+        8
+      ],
+      "keywords": "Large-Scale Vision, Legacy, Manifestation",
+      "blind_spot": "You see empires in your mind that others cannot. Your greatest risk is either underplaying your potential out of fear, or becoming a rigid perfectionist who alienates the team.",
+      "attributes": {
+        "career": "Architecture, large-scale infrastructure, multinational corporations, and legacy institutions. You are meant to build for the world.",
+        "wealth": "Wealth accumulates at scale. Small opportunities bore you and often slow you down. Think globally.",
+        "relationships": "Deeply loyal but your life's mission can overshadow your personal relationships. Choose a partner who is your partner in vision."
+      },
+      "remedies": {
+        "priority": "Feed stray dogs and maintain a strict daily routine. Respect elders and ancestors.",
+        "avoid": "Clutter, short-sightedness in planning, and delegating without systems.",
+        "item": "Wooden elements or a grounding stone like Black Tourmaline."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Saturday",
+            "Wednesday"
+          ],
+          "neutral": [
+            "Friday"
+          ],
+          "avoid": [
+            "Sunday",
+            "Monday",
+            "Tuesday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "Grey",
+            "Navy Blue"
+          ],
+          "daily": [
+            "Earthy Browns",
+            "Khaki"
+          ],
+          "avoid": [
+            "Red",
+            "Bright Yellow"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            4
+          ],
+          "secondary": [
+            5,
+            6,
+            7
+          ],
+          "avoid": [
+            1,
+            2,
+            9
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Hessonite (Gomed)",
+        "metal": "Silver or Ashtadhatu",
+        "finger": "Middle Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Saturday night (after sunset)",
+        "safety_check": "Caution required. Can increase mental restlessness. Must be tested by placing under the pillow for 3 nights before wearing."
+      },
+      "hi_name": "मास्टर 22 — महा निर्माता",
+      "hi_keywords": "",
+      "hi_blind_spot": ""
+    },
+    "33": {
+      "name": "Master Teacher (33)",
+      "icon": "⚜",
+      "color": "text-pink-700",
+      "gem": "Diamond",
+      "day": "Friday",
+      "lucky_col": "White, Pink",
+      "friends": [
+        4,
+        5,
+        8
+      ],
+      "enemies": [
+        1,
+        2
+      ],
+      "neutral": [
+        3,
+        6,
+        7,
+        9
+      ],
+      "keywords": "Unconditional Love, Altruism, Guidance",
+      "blind_spot": "You suffer from the Savior Complex. You drain yourself entirely trying to heal others who do not want to be healed.",
+      "attributes": {
+        "career": "Global philanthropy, high-level teaching, spiritual leadership, and the healing arts. You are a channel for collective healing.",
+        "wealth": "Wealth is drawn to you naturally when you focus on elevating others. Do not chase money — attract it through service.",
+        "relationships": "Deeply devoted, but you must avoid treating your partner as a project to fix."
+      },
+      "remedies": {
+        "priority": "Establish strict emotional boundaries. Keep your environment luxurious and tidy. Donate to women's causes on Fridays.",
+        "avoid": "Taking on the karmic burdens of other people. Martyrdom and self-sacrifice beyond reason.",
+        "item": "Fresh flowers, Crystal elements, or a Shukra Yantra in the South-East."
+      },
+      "lucky_matrix": {
+        "days": {
+          "power": [
+            "Friday"
+          ],
+          "neutral": [
+            "Wednesday",
+            "Saturday"
+          ],
+          "avoid": [
+            "Sunday",
+            "Monday"
+          ]
+        },
+        "colors": {
+          "professional": [
+            "White",
+            "Silver",
+            "Pastel Blue"
+          ],
+          "daily": [
+            "Pink",
+            "Light Purple"
+          ],
+          "avoid": [
+            "Dark Red",
+            "Yellow"
+          ]
+        },
+        "numbers": {
+          "primary": [
+            6
+          ],
+          "secondary": [
+            4,
+            5,
+            8
+          ],
+          "avoid": [
+            1,
+            2
+          ]
+        }
+      },
+      "gem_prescription": {
+        "stone": "Diamond or White Zircon",
+        "metal": "Silver or Platinum",
+        "finger": "Middle or Ring Finger",
+        "hand": "Active / Working Hand",
+        "wearing_day": "Friday morning",
+        "safety_check": "Safe for most. Amplifies healing energy and personal magnetism. Substitute with Clear Quartz."
+      },
+      "hi_name": "मास्टर 33 — महा शिक्षक",
+      "hi_keywords": "",
+      "hi_blind_spot": ""
+    }
+  },
+  "karmic_debt": {
+    "13": {
+      "name": "Karmic Debt 13 — The Transformer",
+      "lesson": "In a past life, laziness, misuse of creative talent, or avoidance of hard work. Now you must overcome inertia through persistent effort.",
+      "challenge": "You may attract repeated frustration, unfinished projects, and changing circumstances just when progress begins.",
+      "prescription": "Commit to one direction and follow through regardless of obstacles. Hard work is not a punishment — it is your spiritual practice. Avoid cutting corners."
+    },
+    "14": {
+      "name": "Karmic Debt 14 — The Freedom Seeker",
+      "lesson": "In a past life, misuse of personal freedom, overindulgence, or enslaving others. Now you must practice moderation and adaptability.",
+      "challenge": "Life brings constant disruption, temptation, and instability. Addiction, restlessness, and inconsistency are your karmic tests.",
+      "prescription": "Establish a strong daily routine. Practice delayed gratification. Avoid substance dependency and commitment-phobia."
+    },
+    "16": {
+      "name": "Karmic Debt 16 — The Tower",
+      "lesson": "In a past life, ego-driven destruction, love affairs built on deception, or abuse of power. Now you must surrender ego to receive spiritual guidance.",
+      "challenge": "Unexpected collapses of what you have built — relationships, career, or reputation — occur when you build on a false foundation.",
+      "prescription": "Build everything on honesty and integrity. The Universe will dismantle your ego repeatedly until you operate from humility and truth."
+    },
+    "19": {
+      "name": "Karmic Debt 19 — The Isolated King",
+      "lesson": "In a past life, selfishness, abuse of power, and refusal to use power for collective good. Now you must develop independence while serving others.",
+      "challenge": "You experience repeated situations where you are left alone to handle crises — no backup, no support, no shortcuts.",
+      "prescription": "Develop radical self-reliance. Learn to ask for help graciously. Use your authority to empower others, not just yourself."
+    }
+  },
+  "personal_years": {
+    "1": {
+      "title": "Year 1 — The Seed Year",
+      "theme": "Action, Independence, and New Beginnings",
+      "action_timing": "Ideal for launching businesses, name corrections, personal rebranding, and taking independent risks. Act in the first 4 months.",
+      "avoid": "Passivity, reliance on others, laziness, and dwelling on past failures.",
+      "hi_title": "वर्ष 1 — बीज वर्ष",
+      "hi_theme": "क्रिया, स्वतंत्रता और नई शुरुआत",
+      "hi_action_timing": "व्यवसाय, नाम सुधार, पुनर्ब्रांडिंग के लिए आदर्श। पहले 4 महीनों में कार्य करें।",
+      "hi_avoid": "निष्क्रियता, दूसरों पर निर्भरता और पुरानी विफलताओं पर ध्यान देना।"
+    },
+    "2": {
+      "title": "Year 2 — The Partnership Year",
+      "theme": "Cooperation, Intuition, and Slow Deliberate Growth",
+      "action_timing": "Ideal for signing contracts, forming alliances, building relationships, and gathering information. Patience is rewarded.",
+      "avoid": "Aggressive expansion, ego-driven arguments, impulsive financial risks, and solo high-stakes decisions.",
+      "hi_title": "वर्ष 2 — सहयोग वर्ष",
+      "hi_theme": "साझेदारी, धैर्य और भावनात्मक गहराई",
+      "hi_action_timing": "संबंध बनाएं, अनुबंध पर हस्ताक्षर करें, टीम के साथ काम करें।",
+      "hi_avoid": "जल्दबाजी में निर्णय और अत्यधिक संवेदनशीलता।"
+    },
+    "3": {
+      "title": "Year 3 — The Expression Year",
+      "theme": "Creativity, Social Networking, and Expansion",
+      "action_timing": "Perfect for marketing launches, public speaking engagements, travel, and leveraging your existing network to expand reach.",
+      "avoid": "Scattering focus across too many projects simultaneously, overspending on lifestyle, and unproductive social drama.",
+      "hi_title": "वर्ष 3 — अभिव्यक्ति वर्ष",
+      "hi_theme": "रचनात्मकता, सामाजिक विस्तार और आनंद",
+      "hi_action_timing": "लिखें, बोलें, नेटवर्क बढ़ाएं। सार्वजनिक उपस्थिति के लिए उत्तम।",
+      "hi_avoid": "बिखराव और गंभीर वित्तीय निर्णय।"
+    },
+    "4": {
+      "title": "Year 4 — The Foundation Year",
+      "theme": "Discipline, Structure, and Focused Effort",
+      "action_timing": "Organize finances, build operational systems, set up legal frameworks, and focus on infrastructure. Hard work is rewarded.",
+      "avoid": "Looking for shortcuts, taking speculative financial risks, and ignoring administrative or legal details.",
+      "hi_title": "वर्ष 4 — निर्माण वर्ष",
+      "hi_theme": "अनुशासन, कठोर परिश्रम और नींव निर्माण",
+      "hi_action_timing": "संपत्ति खरीदें, व्यवस्था बनाएं, दीर्घकालिक योजनाएं क्रियान्वित करें।",
+      "hi_avoid": "जोखिम भरे निवेश और अनावश्यक परिवर्तन।"
+    },
+    "5": {
+      "title": "Year 5 — The Change Year",
+      "theme": "Movement, Freedom, and Bold Pivots",
+      "action_timing": "Highly favorable for career pivots, relocation, changing mobile numbers, and aggressive networking in new markets.",
+      "avoid": "Rigid routines, resisting obvious change signals, and making long-term restrictive commitments.",
+      "hi_title": "वर्ष 5 — परिवर्तन वर्ष",
+      "hi_theme": "स्वतंत्रता, यात्रा और अप्रत्याशित बदलाव",
+      "hi_action_timing": "नई जगहें एक्सप्लोर करें, नए कौशल सीखें। परिवर्तन को अपनाएं।",
+      "hi_avoid": "स्थायी प्रतिबद्धताएं और बंधनकारी अनुबंध।"
+    },
+    "6": {
+      "title": "Year 6 — The Responsibility Year",
+      "theme": "Family, Duty, Luxury, and Home",
+      "action_timing": "Best year for buying a home, having children, resolving family disputes, and investing in premium assets.",
+      "avoid": "Neglecting family for work obligations, emotional escapism, and ignoring health.",
+      "hi_title": "वर्ष 6 — जिम्मेदारी वर्ष",
+      "hi_theme": "परिवार, सेवा और भावनात्मक स्वास्थ्य",
+      "hi_action_timing": "विवाह, गृहप्रवेश, पारिवारिक समस्याओं का समाधान। समुदाय की सेवा करें।",
+      "hi_avoid": "स्वयं की उपेक्षा और भावनात्मक बोझ उठाना।"
+    },
+    "7": {
+      "title": "Year 7 — The Reflection Year",
+      "theme": "Analysis, Spirituality, and Preparation",
+      "action_timing": "Focus on research, internal business audits, spiritual development, and higher education. Prepare for Year 8.",
+      "avoid": "Aggressive physical expansion, new product launches, and forcing financial deals that feel premature.",
+      "hi_title": "वर्ष 7 — आत्मनिरीक्षण वर्ष",
+      "hi_theme": "आध्यात्मिकता, शोध और आंतरिक ज्ञान",
+      "hi_action_timing": "ध्यान करें, उच्च शिक्षा लें, शोध करें। आत्म-खोज का अद्भुत समय।",
+      "hi_avoid": "बड़े व्यावसायिक निर्णय और सतही संबंध।"
+    },
+    "8": {
+      "title": "Year 8 — The Harvest Year",
+      "theme": "Execution, Karma, Wealth, and Authority",
+      "action_timing": "The harvest year. Favorable for major financial investments, corporate restructuring, and asserting leadership authority.",
+      "avoid": "Unethical business practices, tax evasion, arrogance, and emotional impulsivity. Karma repays instantly this year.",
+      "hi_title": "वर्ष 8 — शक्ति वर्ष",
+      "hi_theme": "धन, अधिकार और भौतिक सफलता",
+      "hi_action_timing": "बड़े निवेश, व्यापार विस्तार, नेतृत्व पद। जो बोया है उसे काटें।",
+      "hi_avoid": "भ्रष्टाचार और अहंकार।"
+    },
+    "9": {
+      "title": "Year 9 — The Completion Year",
+      "theme": "Closure, Humanitarianism, and Release",
+      "action_timing": "Finish pending projects, clear toxic relationships, close dead accounts, and donate to causes larger than yourself.",
+      "avoid": "Starting major new ventures, clinging to dead relationships, and refusing to release the past.",
+      "hi_title": "वर्ष 9 — समापन वर्ष",
+      "hi_theme": "मुक्ति, पूर्णता और परिवर्तन",
+      "hi_action_timing": "पुरानी चीजें छोड़ें, क्षमा करें, दान करें। नए चक्र की तैयारी करें।",
+      "hi_avoid": "नई परियोजनाएं शुरू करना और भूतकाल से चिपके रहना।"
+    },
+    "11": {
+      "title": "Year 11 — The Master Illumination Year",
+      "theme": "High Intuition, Spiritual Leadership, and Inspired Action",
+      "action_timing": "Follow your intuition above all logic. This is a year for inspired leadership, public influence, and spiritual growth.",
+      "avoid": "Self-doubt, anxiety spirals, materialism, and ignoring spiritual or intuitive signals.",
+      "hi_title": "मास्टर 11 — आध्यात्मिक दूत वर्ष",
+      "hi_theme": "अंतर्ज्ञान, आध्यात्मिक नेतृत्व और उच्च प्रयोजन",
+      "hi_action_timing": "आध्यात्मिक कार्य, मार्गदर्शन, लेखन और दूसरों को प्रेरित करने के लिए उत्तम।",
+      "hi_avoid": "भावनात्मक अस्थिरता और अत्यधिक संवेदनशीलता।"
+    },
+    "22": {
+      "title": "Year 22 — The Master Builder Year",
+      "theme": "Large-Scale Ambition, Legacy Building, and Global Vision",
+      "action_timing": "Build lasting institutions, think at scale, and create systems that will outlive you. Legacy projects launch here.",
+      "avoid": "Micro-management, fear of scale, and letting practical concerns override your grand vision.",
+      "hi_title": "मास्टर 22 — महा निर्माता वर्ष",
+      "hi_theme": "बड़े सपने, भौतिक निर्माण और वैश्विक प्रभाव",
+      "hi_action_timing": "बड़े निर्माण, सामाजिक परियोजनाएं और दीर्घकालिक नींव रखने का समय।",
+      "hi_avoid": "भव्यता का भ्रम और अत्यधिक महत्वाकांक्षा।"
+    }
+  },
+  "arrows": {
+    "4-9-2": {
+      "name": "Mental Plane Arrow",
+      "desc": "Exceptional memory, planning ability, and intellectual precision. Strong capacity for strategy and long-term thinking.",
+      "type": "execution",
+      "hi_name": "मानसिक तल तीर",
+      "hi_desc": "असाधारण स्मृति, योजना और बौद्धिक सटीकता। रणनीतिक सोच और दीर्घकालिक दृष्टि में श्रेष्ठ।",
+      "plane": "Mental Plane",
+      "hi_plane": "मानसिक तल",
+      "benefit": "Exceptional memory, strategic planning, intellectual leadership. Suited for research, law, medicine, and policy.",
+      "hi_benefit": "असाधारण स्मृति, रणनीतिक योजना, बौद्धिक नेतृत्व। शोध, कानून, चिकित्सा और नीति-निर्माण के लिए उपयुक्त।",
+      "partial_benefit": "Partial mental gifts — logical ability present but depth of analysis needs cultivation.",
+      "hi_partial": "आंशिक मानसिक उपहार — तार्किक क्षमता है किंतु विश्लेषण की गहराई विकास चाहती है।"
+    },
+    "3-5-7": {
+      "name": "Emotional Plane Arrow",
+      "desc": "Golden heart, high spiritual sensitivity, and deep emotional intelligence. Natural healer and counselor.",
+      "type": "spiritual",
+      "hi_name": "भावनात्मक तल तीर",
+      "hi_desc": "गहरी सहानुभूति, भावनात्मक बुद्धि और रिश्ते बनाने की विशेष क्षमता। चिकित्सा और परामर्श में श्रेष्ठ।",
+      "plane": "Emotional Plane",
+      "hi_plane": "भावनात्मक तल",
+      "benefit": "Deep empathy, emotional intelligence, healing ability. Natural counsellors, therapists, and relationship builders.",
+      "hi_benefit": "गहरी सहानुभूति, भावनात्मक बुद्धि, उपचार की क्षमता। प्राकृतिक परामर्शदाता, चिकित्सक और रिश्ते बनाने वाले।",
+      "partial_benefit": "Emotionally sensitive — some numbers activate deep feeling; others need conscious cultivation.",
+      "hi_partial": "भावनात्मक रूप से संवेदनशील — कुछ संख्याएं गहरी भावना जगाती हैं; अन्य को सचेत विकास की आवश्यकता है।"
+    },
+    "8-1-6": {
+      "name": "Practical Plane Arrow",
+      "desc": "Material success is natural. Highly grounded, physically active, and exceptionally hardworking in execution.",
+      "type": "wealth",
+      "hi_name": "व्यावहारिक तल तीर",
+      "hi_desc": "भौतिक सफलता, धन संचय और व्यावहारिक कार्यान्वयन की शक्ति। वित्त और व्यापार में श्रेष्ठ।",
+      "plane": "Practical Plane",
+      "hi_plane": "व्यावहारिक तल",
+      "benefit": "Material mastery, financial acumen, practical execution. Built for business, finance, and real-world impact.",
+      "hi_benefit": "भौतिक महारत, वित्तीय कुशलता, व्यावहारिक क्रियान्वयन। व्यापार, वित्त और वास्तविक दुनिया में प्रभाव के लिए निर्मित।",
+      "partial_benefit": "Practical foundation partially active — material success possible with focused effort.",
+      "hi_partial": "व्यावहारिक नींव आंशिक रूप से सक्रिय — केंद्रित प्रयास से भौतिक सफलता संभव।"
+    },
+    "4-3-8": {
+      "name": "Thought Plane Arrow",
+      "desc": "Strong visionary and planner. Natural affinity for politics, large organizations, and systemic leadership.",
+      "type": "execution",
+      "hi_name": "विचार तल तीर (कल्पना)",
+      "hi_desc": "रचनात्मक कल्पना और विचारों को मूर्त रूप देने की क्षमता। कला, डिजाइन और उद्यमिता में श्रेष्ठ।",
+      "plane": "Thought Plane",
+      "hi_plane": "विचार तल",
+      "benefit": "Creative imagination, innovative thinking, ability to materialise ideas. Excels in art, design, entrepreneurship.",
+      "hi_benefit": "रचनात्मक कल्पना, नवाचार, विचारों को साकार करने की क्षमता। कला, डिजाइन और उद्यमिता में श्रेष्ठ।",
+      "partial_benefit": "Creative spark present — imagination needs structured discipline to produce lasting results.",
+      "hi_partial": "रचनात्मक चिंगारी मौजूद — कल्पना को स्थायी परिणामों के लिए अनुशासित संरचना की जरूरत।"
+    },
+    "9-5-1": {
+      "name": "Will Power Arrow",
+      "desc": "Unstoppable determination and mental clarity. Gets things done regardless of obstacles. Strong decision-maker.",
+      "type": "execution",
+      "hi_name": "इच्छाशक्ति तल तीर",
+      "hi_desc": "अदम्य संकल्प, आत्मानुशासन और अपने लक्ष्य तक पहुंचने की असाधारण क्षमता।",
+      "plane": "Will Power Plane",
+      "hi_plane": "इच्छाशक्ति तल",
+      "benefit": "Indomitable will, self-discipline, unstoppable determination. Natural leaders who finish what they start.",
+      "hi_benefit": "अदम्य इच्छाशक्ति, आत्मानुशासन, अटल दृढ़ता। प्राकृतिक नेता जो जो शुरू करते हैं उसे पूरा करते हैं।",
+      "partial_benefit": "Strong determination in some areas — full will-power requires activating the missing numbers.",
+      "hi_partial": "कुछ क्षेत्रों में मजबूत दृढ़ता — पूर्ण इच्छाशक्ति के लिए लापता संख्याओं को सक्रिय करना होगा।"
+    },
+    "2-7-6": {
+      "name": "Compassion Arrow",
+      "desc": "High emotional intelligence, deep compassion, and strong intuitive understanding of others' needs.",
+      "type": "spiritual",
+      "hi_name": "करुणा तीर",
+      "hi_desc": "गहरी करुणा, भावनात्मक उपचार और दूसरों की सेवा करने की विशेष प्रतिभा। परिवार और समाज के स्तंभ।",
+      "plane": "Compassion Arrow",
+      "hi_plane": "करुणा तीर",
+      "benefit": "Deep compassion, emotional healing, devotion to family and community. Natural nurturers and caregivers.",
+      "hi_benefit": "गहरी करुणा, भावनात्मक उपचार, परिवार और समुदाय के प्रति समर्पण। प्राकृतिक पालनकर्ता।",
+      "partial_benefit": "Compassionate nature emerging — nurturing qualities present but need consistent expression.",
+      "hi_partial": "करुणामय स्वभाव उभर रहा है — पालनकर्ता गुण मौजूद हैं किंतु निरंतर अभिव्यक्ति चाहिए।"
+    },
+    "4-5-6": {
+      "name": "Golden Raj Yoga",
+      "desc": "One of the most auspicious formations. Indicates great fame, fortune, and elevated social status across the lifetime.",
+      "type": "wealth",
+      "hi_name": "स्वर्ण राज योग तीर",
+      "hi_desc": "नेतृत्व, प्रसिद्धि और उच्च उद्देश्य की ऊर्जा। प्रतिष्ठित जीवन और सामाजिक प्रभाव का संकेत।",
+      "plane": "Golden Raj Yoga",
+      "hi_plane": "स्वर्ण राज योग",
+      "benefit": "Leadership destiny, fame, higher-purpose energy. Indicates a life of distinction, social influence, and spiritual power.",
+      "hi_benefit": "नेतृत्व भाग्य, प्रसिद्धि, उच्च उद्देश्य ऊर्जा। विशिष्ट जीवन, सामाजिक प्रभाव और आध्यात्मिक शक्ति का संकेत।",
+      "partial_benefit": "Seeds of leadership present — the golden potential activates through consistent purposeful action.",
+      "hi_partial": "नेतृत्व के बीज मौजूद — सुनहरी क्षमता निरंतर उद्देश्यपूर्ण कार्य से सक्रिय होती है।"
+    },
+    "2-5-8": {
+      "name": "Silver Property Yoga",
+      "desc": "Strong potential for real estate wealth, asset accumulation, and financial stability through tangible investments.",
+      "type": "wealth",
+      "hi_name": "रजत संपत्ति योग तीर",
+      "hi_desc": "संपत्ति, धन और भौतिक समृद्धि के उतार-चढ़ाव। परिश्रम से अपार सफलता संभव।",
+      "plane": "Silver Property Yoga",
+      "hi_plane": "रजत संपत्ति योग",
+      "benefit": "Property, wealth and variable fortune. Periods of significant financial gain; requires discipline to sustain.",
+      "hi_benefit": "संपत्ति, धन और परिवर्तनशील भाग्य। महत्वपूर्ण वित्तीय लाभ के काल; इसे बनाए रखने के लिए अनुशासन जरूरी।",
+      "partial_benefit": "Financial potential present — wealth accumulation possible but needs strategic management.",
+      "hi_partial": "वित्तीय क्षमता मौजूद — धन संचय संभव लेकिन रणनीतिक प्रबंधन की आवश्यकता।"
+    },
+    "1-5-9": {
+      "name": "Determination Arrow",
+      "desc": "The spine of the grid is complete. Absolute willpower, resilience, and the ability to see any project to completion.",
+      "type": "execution",
+      "hi_name": "दृढ़ संकल्प तीर",
+      "hi_desc": "अटल दृढ़ता और कभी न हार मानने वाला स्वभाव। बाधाओं को अवसर में बदलने की शक्ति।",
+      "plane": "Determination Arrow",
+      "hi_plane": "दृढ़ संकल्प तीर",
+      "benefit": "Unstoppable resilience, converting obstacles into opportunities. Born to overcome adversity.",
+      "hi_benefit": "अटल लचीलापन, बाधाओं को अवसर में बदलना। विपरीत परिस्थितियों को जीतने के लिए जन्मे।",
+      "partial_benefit": "Determination building — resilience growing; missing numbers when activated multiply this strength.",
+      "hi_partial": "दृढ़ता का निर्माण — लचीलापन बढ़ रहा है; लापता संख्याएं सक्रिय होने पर इस शक्ति को कई गुना बढ़ा देंगी।"
+    }
+  },
+  "missing": {
+    "1": {
+      "trait": "Struggles with self-expression, asserting independence, and taking decisive initiative. Tends to wait for permission or approval.",
+      "remedy": "Practice vocal affirmations daily. Wear bright orange or red on Sundays. Take one small leadership role every week.",
+      "severity": "High",
+      "area": "Career & Independence",
+      "hi_area": "करियर और स्वतंत्रता",
+      "hi_trait": "आत्मविश्वास में कठिनाई।",
+      "hi_remedy": "रोज़ाना सकारात्मक पुष्टि करें। रविवार को नारंगी पहनें।"
+    },
+    "2": {
+      "trait": "Lacks emotional intuition, empathy, and diplomatic tact. Prone to misunderstanding others' emotional signals.",
+      "remedy": "Engage in active listening exercises, meditate near flowing water, and cultivate patience in communication.",
+      "severity": "Moderate",
+      "area": "Emotional Intelligence & Relationships",
+      "hi_area": "भावनात्मक बुद्धिमत्ता",
+      "hi_trait": "भावनाओं को व्यक्त करने में कठिनाई।",
+      "hi_remedy": "सक्रिय श्रवण। सोमवार को सफेद पहनें।"
+    },
+    "3": {
+      "trait": "Deficiency in imagination, optimism, and self-confidence. Goal manifestation requires significantly more conscious effort.",
+      "remedy": "Engage in creative hobbies (art, writing, music). Write in a daily journal. Wear yellow on Thursdays.",
+      "severity": "High",
+      "area": "Wealth Creation & Growth",
+      "hi_area": "धन सृजन",
+      "hi_trait": "रचनात्मकता में बाधा।",
+      "hi_remedy": "कला अपनाएं। गुरुवार को पीला पहनें।"
+    },
+    "4": {
+      "trait": "Lacks organizational structure, practical discipline, and follow-through execution. Highly prone to structural and financial instability.",
+      "remedy": "Adopt a strict daily planner. Declutter your physical workspace. Manage finances with a weekly ledger.",
+      "severity": "Critical",
+      "area": "Stability, Wealth & Execution",
+      "hi_area": "स्थिरता",
+      "hi_trait": "अनुशासन में कमी।",
+      "hi_remedy": "दैनिक योजनाकार। शनिवार को नीला पहनें।"
+    },
+    "5": {
+      "trait": "The core of the grid is missing — the anchor. Struggles with balance, setting boundaries, and adapting to unavoidable change.",
+      "remedy": "Establish a stable home base. Avoid extreme all-or-nothing decisions. Carry a clear quartz for centering.",
+      "severity": "Critical",
+      "area": "Core Balance & Adaptability",
+      "hi_area": "संतुलन",
+      "hi_trait": "परिवर्तन से भय।",
+      "hi_remedy": "स्थिर आधार बनाएं। बुधवार को हरा पहनें।"
+    },
+    "6": {
+      "trait": "Difficulty accepting responsibility, maintaining family harmony, and finding stable domestic peace.",
+      "remedy": "Focus on domestic duties regularly. Nurture plants or pets. Practice daily gratitude rituals.",
+      "severity": "High",
+      "area": "Family, Luxury & Responsibility",
+      "hi_area": "परिवार",
+      "hi_trait": "पारिवारिक दूरी।",
+      "hi_remedy": "पौधे पालें। शुक्रवार को गुलाबी पहनें।"
+    },
+    "7": {
+      "trait": "Disinterest in spiritual or analytical depth. Prone to shallow, surface-level interactions and decisions.",
+      "remedy": "Spend dedicated quiet time in nature weekly. Read philosophical or scientific texts. Trust your gut.",
+      "severity": "Moderate",
+      "area": "Spiritual & Analytical Depth",
+      "hi_area": "आध्यात्मिकता",
+      "hi_trait": "आंतरिक जीवन की उपेक्षा।",
+      "hi_remedy": "प्रकृति में एकांत। केतु मंत्र जाप।"
+    },
+    "8": {
+      "trait": "Struggles with financial management, asserting authority, and executing long-term material plans.",
+      "remedy": "Invest in financial literacy education. Avoid accumulating debt. Practice strict accountability in all agreements.",
+      "severity": "High",
+      "area": "Execution, Authority & Finance",
+      "hi_area": "वित्त",
+      "hi_trait": "वित्तीय अनुशासन की कमी।",
+      "hi_remedy": "वित्तीय साक्षरता। शनिवार को गहरा नीला पहनें।"
+    },
+    "9": {
+      "trait": "Lacks humanitarian vision, closure on completed cycles, and the drive to transcend personal ambition.",
+      "remedy": "Engage in regular charitable work. Consciously finish all pending tasks before starting new ones. Practice forgiveness.",
+      "severity": "Moderate",
+      "area": "Energy, Drive & Humanitarian Vision",
+      "hi_area": "ऊर्जा",
+      "hi_trait": "अधूरे कार्यों का बोझ।",
+      "hi_remedy": "परोपकारी कार्य। मंगलवार को लाल पहनें।"
+    }
+  },
+  "pinnacles": {
+    "1": {
+      "theme": "The Pioneer",
+      "energy": "Independence, Leadership, Bold Action",
+      "focus": "Assert yourself. Launch ventures, build your personal brand, and step into leadership without waiting for permission.",
+      "opportunity": "Entrepreneurship, career pivots, establishing personal authority, solo projects, and self-employment.",
+      "caution": "Avoid isolation and stubbornness. Leadership without empathy leads to burnout and missed partnerships.",
+      "planet": "Sun",
+      "hi_theme": "अग्रदूत",
+      "hi_focus": "स्वयं को मुखर करें। उद्यम शुरू करें, व्यक्तिगत ब्रांड बनाएं।",
+      "hi_opportunity": "अपना व्यवसाय शुरू करें, नेतृत्व की भूमिकाएं लें, और अपनी अनूठी पहचान बनाएं।",
+      "hi_caution": "अहंकार, दूसरों की अनदेखी और एकाकी प्रयास से बचें।",
+      "hi_planet": "सूर्य"
+    },
+    "2": {
+      "theme": "The Diplomat",
+      "energy": "Cooperation, Patience, Sensitivity",
+      "focus": "Build partnerships, strengthen relationships, and gather intelligence. This is a phase of collaboration, not conquest.",
+      "opportunity": "Marriages, business alliances, contract negotiations, creative collaborations, and emotional healing.",
+      "caution": "Avoid over-sensitivity, indecision, and self-sacrifice. Set non-negotiable personal boundaries.",
+      "planet": "Moon",
+      "hi_theme": "कूटनीतिज्ञ",
+      "hi_focus": "संबंधों को पोषित करें। टीम और साझेदारी में सफलता।",
+      "hi_opportunity": "साझेदारी, परामर्श और मध्यस्थता की भूमिकाओं में शीर्ष पर।",
+      "hi_caution": "अत्यधिक निर्भरता, दूसरों को प्रसन्न करने और निर्णायकता खोने से बचें।",
+      "hi_planet": "चंद्र"
+    },
+    "3": {
+      "theme": "The Creator",
+      "energy": "Creativity, Expression, Expansion",
+      "focus": "Express yourself through creative work, writing, speaking, or art. Build your network and amplify your voice.",
+      "opportunity": "Media, marketing, entertainment, public speaking, teaching, and brand-building.",
+      "caution": "Avoid scattering energy across too many projects. Depth beats breadth at this stage.",
+      "planet": "Jupiter",
+      "hi_theme": "सृजनकर्ता",
+      "hi_focus": "अपनी रचनात्मकता प्रकट करें। लिखें, बोलें, बनाएं।",
+      "hi_opportunity": "मीडिया, विपणन, मनोरंजन, सार्वजनिक बोलना, शिक्षण और ब्रांड-निर्माण।",
+      "hi_caution": "बहुत अधिक परियोजनाओं में ऊर्जा बिखेरने से बचें।",
+      "hi_planet": "बृहस्पति"
+    },
+    "4": {
+      "theme": "The Builder",
+      "energy": "Discipline, Structure, Hard Work",
+      "focus": "Build systems, organize finances, and lay the foundations that will support the next 9-year cycle.",
+      "opportunity": "Real estate, operational systems, financial organization, fitness, and long-term infrastructure.",
+      "caution": "Avoid shortcuts and get-rich-quick schemes. Slow, deliberate construction is the only path forward.",
+      "planet": "Rahu",
+      "hi_theme": "निर्माता",
+      "hi_focus": "मेहनत और व्यवस्था। ठोस नींव का निर्माण करें।",
+      "hi_opportunity": "कानूनी, चिकित्सा, इंजीनियरिंग या प्रबंधकीय करियर।",
+      "hi_caution": "कठोरता, अत्यधिक परिश्रम और जीवन में आनंद खोने से बचें।",
+      "hi_planet": "राहु"
+    },
+    "5": {
+      "theme": "The Adventurer",
+      "energy": "Freedom, Change, Movement",
+      "focus": "Embrace pivots, travel, new markets, and diverse experiences. Your growth comes through variety and adaptability.",
+      "opportunity": "Career changes, relocation, international work, media, trading, and digital business.",
+      "caution": "Avoid recklessness, addiction, and abandoning good structures for novelty. Not all change is progress.",
+      "planet": "Mercury",
+      "hi_theme": "साहसी",
+      "hi_focus": "अनुकूलन और अन्वेषण। बदलाव का स्वागत करें।",
+      "hi_opportunity": "बिक्री, विपणन, मीडिया, यात्रा या उद्यमशीलता।",
+      "hi_caution": "जिम्मेदारियों से बचने और अत्यधिक भोग से बचें।",
+      "hi_planet": "बुध"
+    },
+    "6": {
+      "theme": "The Nurturer",
+      "energy": "Family, Responsibility, Harmony",
+      "focus": "Serve your family and community. Invest in your home, health, and the people who depend on you.",
+      "opportunity": "Family investments, home ownership, healing, community leadership, and premium lifestyle upgrades.",
+      "caution": "Avoid martyrdom and trying to fix everyone. You cannot pour from an empty cup.",
+      "planet": "Venus",
+      "hi_theme": "पोषक",
+      "hi_focus": "परिवार और समुदाय। प्रेम और सेवा में समर्पण।",
+      "hi_opportunity": "परिवार, स्वास्थ्य, शिक्षा और सामुदायिक सेवा।",
+      "hi_caution": "दूसरों की जरूरतों में खो जाने और अपनी उपेक्षा करने से बचें।",
+      "hi_planet": "शुक्र"
+    },
+    "7": {
+      "theme": "The Seeker",
+      "energy": "Spirituality, Analysis, Inner Wisdom",
+      "focus": "Retreat inward. Study, research, and develop your expertise. A period of preparation rather than conquest.",
+      "opportunity": "Higher education, spiritual development, research, specialized mastery, and deep self-knowledge.",
+      "caution": "Avoid isolation, cynicism, and excessive skepticism. Not everyone is a threat.",
+      "planet": "Ketu",
+      "hi_theme": "अन्वेषक",
+      "hi_focus": "आत्म-ज्ञान। ध्यान, शोध और आध्यात्मिक अन्वेषण।",
+      "hi_opportunity": "उच्च शिक्षा, आध्यात्मिक विकास, अनुसंधान, विशेष महारत और गहरा आत्म-ज्ञान।",
+      "hi_caution": "अलगाव, निंदावाद और अत्यधिक संदेह से बचें।",
+      "hi_planet": "केतु"
+    },
+    "8": {
+      "theme": "The Achiever",
+      "energy": "Power, Authority, Material Success",
+      "focus": "This is your harvest phase. Assert authority, make major financial moves, and step into executive roles.",
+      "opportunity": "Corporate leadership, major investments, legal authority, and building lasting financial legacy.",
+      "caution": "Avoid greed, cutting ethical corners, and ignoring your spiritual health while pursuing material gains.",
+      "planet": "Saturn",
+      "hi_theme": "उपलब्धिकर्ता",
+      "hi_focus": "भौतिक महारत। वित्त, नेतृत्व और शक्ति का उपयोग।",
+      "hi_opportunity": "कॉर्पोरेट नेतृत्व, प्रमुख निवेश, कानूनी अधिकार और स्थायी वित्तीय विरासत बनाना।",
+      "hi_caution": "लालच, नैतिक समझौते और भौतिक लाभ के पीछे आध्यात्मिक स्वास्थ्य की अनदेखी से बचें।",
+      "hi_planet": "शनि"
+    },
+    "9": {
+      "theme": "The Humanitarian",
+      "energy": "Completion, Compassion, Global Vision",
+      "focus": "Release the old. Finish what you started. Give back generously. Your greatest work now benefits many.",
+      "opportunity": "Philanthropic ventures, global projects, artistic completion, teaching, and spiritual leadership.",
+      "caution": "Avoid clinging to relationships, projects, or identities that have completed their purpose.",
+      "planet": "Mars",
+      "hi_theme": "मानवतावादी",
+      "hi_focus": "करुणा और विरासत। मानवता की सेवा और ज्ञान देना।",
+      "hi_opportunity": "सामाजिक कार्य, कला, अध्यात्म, अंतर्राष्ट्रीय संबंध और रचनात्मक नेतृत्व।",
+      "hi_caution": "भावनात्मक अत्यधिकता, आर्थिक लापरवाही और अधूरे सपनों का बोझ उठाने से बचें।",
+      "hi_planet": "मंगल"
+    }
+  },
+  "challenges": {
+    "0": {
+      "theme": "The Master Challenge",
+      "lesson": "No single challenge dominates. You carry a full spectrum of tests — each situation brings its own unique karmic demand.",
+      "prescription": "Remain humble and adaptable at all times. Zero is paradoxically the hardest challenge because it offers no single enemy to overcome. Cultivate all virtues simultaneously."
+    },
+    "1": {
+      "theme": "Self-Assertion",
+      "lesson": "You struggle to assert your will. Either passively waiting for permission or swinging into aggression when cornered.",
+      "prescription": "Make one independent decision daily without seeking approval. Your perspective has intrinsic value. Practice saying 'No' without justification."
+    },
+    "2": {
+      "theme": "Emotional Boundaries",
+      "lesson": "Hypersensitivity to criticism, over-dependence on validation, and difficulty standing alone in conflict.",
+      "prescription": "Develop emotional self-sufficiency. Build a daily practice that grounds you before engaging with others. Distinguish your feelings from others' projections."
+    },
+    "3": {
+      "theme": "Self-Expression",
+      "lesson": "Deep self-doubt, scattered creative energy, and fear of being judged for your authentic voice.",
+      "prescription": "Write or create something daily without the intention to share it. Reconnect with joy-driven creation before purpose-driven creation."
+    },
+    "4": {
+      "theme": "Discipline vs. Rigidity",
+      "lesson": "Extreme swings between laziness and obsessive overwork. Difficulty accepting that systems and structure are liberating, not limiting.",
+      "prescription": "Build one small, non-negotiable daily discipline and maintain it for 90 days. Let consistency become your identity before ambition."
+    },
+    "5": {
+      "theme": "Constructive Freedom",
+      "lesson": "Fear of commitment, overindulgence in sensory experiences, or conversely — extreme rigidity disguised as stability.",
+      "prescription": "Choose one important relationship or project and commit fully for a defined period. Real freedom is mastered within structure, not against it."
+    },
+    "6": {
+      "theme": "Responsibility Without Martyrdom",
+      "lesson": "Either total avoidance of responsibility or dangerous over-responsibility that collapses under the weight of others' burdens.",
+      "prescription": "Define clearly which responsibilities are genuinely yours. Practice serving from a place of abundance, not guilt."
+    },
+    "7": {
+      "theme": "Faith and Depth",
+      "lesson": "Fear of solitude, excessive rationalization of intuition, or escapism into cynicism when life does not make logical sense.",
+      "prescription": "Spend 20 minutes in silence daily — no devices, no input. Begin trusting your instincts on low-stakes decisions to rebuild faith in your inner signal."
+    },
+    "8": {
+      "theme": "Ethical Power",
+      "lesson": "Misuse of power, fear of authority, or an inability to manage money and material resources effectively.",
+      "prescription": "Study financial literacy and leadership ethics together. Power practiced with honesty is the key — your challenge is not in acquiring power but in handling it responsibly."
+    },
+    "9": {
+      "theme": "Universal Compassion",
+      "lesson": "Excessive self-focus, inability to release past wounds, or swinging into impractical idealism with no grounding.",
+      "prescription": "Perform one selfless act weekly with zero expectation of return. Practice forgiving one person per month — starting with yourself."
+    }
+  },
+  "compounds": {
+    "10": {
+      "name": "Wheel of Fortune",
+      "verdict": "Fortunate",
+      "meaning": "The number of the feminine winner mentality. Success comes easily, but you hate to lose. Balanced: Luck and delegation. Unbalanced: Arrogance and isolation."
+    },
+    "11": {
+      "name": "The Lion Muzzled",
+      "verdict": "Challenging",
+      "meaning": "Great inner strength drowning in self-doubt. High intuition but prone to anxiety. Warning of hidden dangers."
+    },
+    "12": {
+      "name": "The Sacrifice",
+      "verdict": "Challenging",
+      "meaning": "Victimhood. You do things by the book, but others mess up, and you pay the price. Leads to paranoia and overthinking."
+    },
+    "13": {
+      "name": "Regeneration & Change",
+      "verdict": "Karmic",
+      "meaning": "A number of upheaval and destruction of the old to build the new. Power and dominion if used wisely."
+    },
+    "14": {
+      "name": "Movement & Challenge",
+      "verdict": "Karmic",
+      "meaning": "Magnetic communication but risk of moving too fast. Temperance is required. Risk of natural elements (water/air)."
+    },
+    "15": {
+      "name": "The Magician",
+      "verdict": "Fortunate",
+      "meaning": "Manipulation, strong charisma, and social magnetism. Can be used for high success or dark manipulation. Loved by the masses."
+    },
+    "16": {
+      "name": "The Shattered Citadel",
+      "verdict": "Karmic",
+      "meaning": "A warning of strange fatalities and accidents. Ambition that falls from a height. Spiritual awakening through loss."
+    },
+    "17": {
+      "name": "Star of the Magi",
+      "verdict": "Excellent",
+      "meaning": "A number of immortality. High intellect and charisma. You rise superior to the trials of life. Your name lives on."
+    },
+    "18": {
+      "name": "Spiritual-Material Conflict",
+      "verdict": "Challenging",
+      "meaning": "Great struggle within. Bitter family disputes. Gain through conflict and war. Warning of treachery."
+    },
+    "19": {
+      "name": "The Prince of Heaven",
+      "verdict": "Excellent",
+      "meaning": "Success, honor, and happiness. One of the most fortunate numbers. Victory over all failure."
+    },
+    "20": {
+      "name": "The Awakening",
+      "verdict": "Neutral",
+      "meaning": "The call to action for a great purpose. Creativity and passion, but danger of becoming obsessed or manic."
+    },
+    "21": {
+      "name": "Crown of the Magi",
+      "verdict": "Excellent",
+      "meaning": "Picture of the Universe. Promises general elevation in life, sudden success, and promotion. A highly fortunate number indicating victory after a long struggle."
+    },
+    "22": {
+      "name": "Blind Folly",
+      "verdict": "Warning",
+      "meaning": "Naive humanism. You trust the wrong people and get ripped off. Living in a fantasy world. Master Builder potential if balanced."
+    },
+    "23": {
+      "name": "The Royal Star of the Lion",
+      "verdict": "Excellent",
+      "meaning": "It brings success, help from superiors, and protection. One of the most fortunate numbers in numerology, guaranteeing upward mobility."
+    },
+    "24": {
+      "name": "Love and Life",
+      "verdict": "Fortunate",
+      "meaning": "Assistance from those of rank and position. Magnetic charisma, family happiness, and determination."
+    },
+    "25": {
+      "name": "Discrimination and Analysis",
+      "verdict": "Neutral",
+      "meaning": "Gaining strength through experience and learning from past mistakes. Success comes through observing others rather than rushing in."
+    },
+    "26": {
+      "name": "Partnerships and Hidden Dangers",
+      "verdict": "Warning",
+      "meaning": "Warns of disasters brought about by association with others. Requires extreme caution in business partnerships and blind trust."
+    },
+    "27": {
+      "name": "The Scepter",
+      "verdict": "Fortunate",
+      "meaning": "A number of excellent authority, command, and intellect. It promises reward through creative intellect and leadership."
+    },
+    "28": {
+      "name": "The Trusting Lamb",
+      "verdict": "Challenging",
+      "meaning": "Indicates a person frequently forced to start over. Promises wealth but carries a heavy risk of loss through trusting the wrong people."
+    },
+    "29": {
+      "name": "Uncertainty",
+      "verdict": "Challenging",
+      "meaning": "Uncertainties, treachery, and deception. Deep frustrations or unreliable friends. Like 11 but more intense."
+    },
+    "30": {
+      "name": "The Loner",
+      "verdict": "Neutral",
+      "meaning": "Deep intellect and mental superiority, but often accompanied by a tendency to isolate oneself from society."
+    },
+    "31": {
+      "name": "The Recluse",
+      "verdict": "Neutral",
+      "meaning": "The Black Sheep syndrome. Genius intellect and deep thinking, but often at the expense of social connection and loneliness."
+    },
+    "32": {
+      "name": "Communication and Charisma",
+      "verdict": "Fortunate",
+      "meaning": "Magnetic connection to masses, nations, or large corporations. Success easily achieved through speech, negotiation, or written words."
+    },
+    "33": {
+      "name": "The Master Teacher",
+      "verdict": "Excellent",
+      "meaning": "Strategic thinking and high integrity in business. Gaining prestige and charisma, but tendency to overwork."
+    },
+    "34": {
+      "name": "Spiritual Growth",
+      "verdict": "Neutral",
+      "meaning": "Strength gained through experience and patience. Not inherently lucky for rapid material wealth, but strong for inner wisdom."
+    },
+    "35": {
+      "name": "Karmic Reward",
+      "verdict": "Fortunate",
+      "meaning": "Indicates late success after overcoming significant early hurdles. Rewards come specifically from past karmic efforts."
+    },
+    "36": {
+      "name": "The Humanitarian",
+      "verdict": "Fortunate",
+      "meaning": "Authority and power. Very frank and honest. International business success but can be self-righteous."
+    },
+    "37": {
+      "name": "Royal Star of the Bull",
+      "verdict": "Excellent",
+      "meaning": "Highly fortunate. Ensures good partnerships, romance, and solid success in business and career paths."
+    },
+    "38": {
+      "name": "Visionary Leadership",
+      "verdict": "Neutral",
+      "meaning": "Intuitive and powerful, but carries the danger of hidden enemies and betrayals if intuition is ignored."
+    },
+    "39": {
+      "name": "Effort and Reward",
+      "verdict": "Fortunate",
+      "meaning": "A well-balanced number representing domestic peace, financial stability, and gradual, undeniable success."
+    },
+    "40": {
+      "name": "The Radical",
+      "verdict": "Neutral",
+      "meaning": "Revolutionary ideas and drastic changes. Can lead to great success or complete isolation depending entirely on execution."
+    },
+    "41": {
+      "name": "Magnetic Attraction",
+      "verdict": "Fortunate",
+      "meaning": "Excellent for public life, media, and mass communication. Assures financial gain, networking success, and protection."
+    },
+    "42": {
+      "name": "The Counselor",
+      "verdict": "Fortunate",
+      "meaning": "Deep devotion to family and community. Very diplomatic and trusted, but can be overly burdened by others' problems."
+    },
+    "43": {
+      "name": "Military or Strategic Success",
+      "verdict": "Warning",
+      "meaning": "Indicates upheaval, revolution, and overturning the old order. Often associated with political disruption or sudden hostile takeovers."
+    },
+    "44": {
+      "name": "The Master Healer",
+      "verdict": "Neutral",
+      "meaning": "Represents extreme discipline, but can be rigid. Often denotes heavy karmic burdens, structural challenges, but immense endurance."
+    },
+    "45": {
+      "name": "Intellectual Dominance",
+      "verdict": "Fortunate",
+      "meaning": "Represents strong leadership, unwavering courage, and total triumph over adversaries through intelligence."
+    },
+    "46": {
+      "name": "Crown of Thorns",
+      "verdict": "Challenging",
+      "meaning": "A challenging vibration denoting sudden changes, loss of prestige, or treacherous partnerships. Extreme caution is required in signatures."
+    },
+    "47": {
+      "name": "The Secretive Observer",
+      "verdict": "Challenging",
+      "meaning": "Deception and treachery from within inner circles. Requires abnormally high intuition to navigate safely."
+    },
+    "48": {
+      "name": "The Administrator",
+      "verdict": "Warning",
+      "meaning": "Extreme material focus. Can bring heavy wealth and corporate power, but often at the cost of emotional emptiness or severe personal struggles."
+    },
+    "49": {
+      "name": "The Statesman",
+      "verdict": "Neutral",
+      "meaning": "A number of unusual public influence, but success is highly volatile. Can rise incredibly fast and fall just as quickly."
+    },
+    "50": {
+      "name": "The Communicator",
+      "verdict": "Fortunate",
+      "meaning": "High intelligence and quick thinking. Excellent for tech, media, banking, and the rapid mass distribution of information."
+    },
+    "51": {
+      "name": "The Warrior",
+      "verdict": "Warning",
+      "meaning": "Massive sudden energy and potential for militant success. High risk of sudden assassination of character or legal attacks."
+    },
+    "52": {
+      "name": "The Master Builder",
+      "verdict": "Neutral",
+      "meaning": "Revolutionary changes. Requires breaking down old, decaying structures to build anew. Demands extreme mental fortitude."
+    },
+    "53": {
+      "name": "The Commander",
+      "verdict": "Fortunate",
+      "meaning": "A powerful karmic number of authority. Success is achieved through military-like discipline and breaking through obstacles."
+    },
+    "54": {
+      "name": "The Eloquent Warrior",
+      "verdict": "Fortunate",
+      "meaning": "Brings sharp intellect and the ability to win battles through speech, law, and aggressive negotiation."
+    },
+    "55": {
+      "name": "The Master of Change",
+      "verdict": "Excellent",
+      "meaning": "Double Mercury energy leading to the Wheel of Fortune (10). Incredible potential for massive business expansion, rapid travel, and intellectual dominance."
+    },
+    "56": {
+      "name": "The Diplomatic Leader",
+      "verdict": "Fortunate",
+      "meaning": "Success achieved through bringing opposing factions together. High emotional intelligence combined with undeniable authority."
+    },
+    "57": {
+      "name": "The Mystical Scholar",
+      "verdict": "Neutral",
+      "meaning": "A highly spiritual and analytical frequency. Success comes later in life through specialized knowledge rather than brute force."
+    },
+    "58": {
+      "name": "The Architect of Wealth",
+      "verdict": "Karmic",
+      "meaning": "Represents the slow, grinding accumulation of massive wealth. Requires absolute honesty, or sudden karmic losses will occur."
+    },
+    "59": {
+      "name": "The Visionary Communicator",
+      "verdict": "Fortunate",
+      "meaning": "Magnetic attraction of masses. Excellent for media, global trade, and bringing innovative ideas to the public."
+    },
+    "60": {
+      "name": "The Harmonious Home",
+      "verdict": "Excellent",
+      "meaning": "A highly blessed vibration of the Venus octave. Ensures ultimate domestic peace, luxury, and protection from severe financial ruin."
+    },
+    "61": {
+      "name": "The Introverted Mystic",
+      "verdict": "Neutral",
+      "meaning": "Deeply spiritual and analytical, but prone to profound isolation. Success comes through research and stepping away from the spotlight."
+    },
+    "62": {
+      "name": "The Grinding Wheel",
+      "verdict": "Warning",
+      "meaning": "A vibration of heavy responsibility and restricted freedom. Success is guaranteed but only through relentless, unglamorous hard work."
+    },
+    "63": {
+      "name": "The Energetic Humanitarian",
+      "verdict": "Fortunate",
+      "meaning": "Global vision and massive physical energy. Excellent for leaders of NGOs, social movements, or expansive corporate missions."
+    },
+    "64": {
+      "name": "The Wheel of Leadership",
+      "verdict": "Excellent",
+      "meaning": "A higher octave of 10. Indicates the ability to completely reinvent oneself and rise to a position of absolute authority in a new field."
+    }
+  },
+  "compat_pairs": {
+    "1-1": {
+      "verdict": "Mirror",
+      "desc": "Two suns in one sky — powerful but combustive. Equal authority causes friction unless clearly divided.",
+      "remedy": "Assign separate domains of responsibility. Never compete; co-create. Joint Om chanting on Sundays."
+    },
+    "1-2": {
+      "verdict": "Complementary",
+      "desc": "Sun and Moon — the classic balance. 1 leads, 2 nurtures. Natural polarity that builds lasting partnerships.",
+      "remedy": "1 should make decisions; 2 should set the emotional tone. Plant a Tulsi together on Mondays."
+    },
+    "1-5": {
+      "verdict": "Dynamic",
+      "desc": "Two independent energies. Exciting but unstable long-term without shared goals.",
+      "remedy": "Define a shared mission. Avoid competing for spotlight. Meditate together on Wednesdays."
+    },
+    "1-6": {
+      "verdict": "Challenging",
+      "desc": "1 demands freedom; 6 demands family duty. Values conflict unless consciously bridged.",
+      "remedy": "6 must release control; 1 must honour commitment. Offer white flowers together on Fridays."
+    },
+    "1-7": {
+      "verdict": "Neutral",
+      "desc": "Introvert meets extrovert. Healthy if both give each other space.",
+      "remedy": "Respect solitude. Do not force socialising. Spend silent time in nature together on Tuesdays."
+    },
+    "1-8": {
+      "verdict": "Adversarial",
+      "desc": "Sun and Saturn — the hardest pairing. Deep karmic lesson. Authority battles likely.",
+      "remedy": "Both must serve a cause larger than themselves. Saturday fasting together neutralises tension."
+    },
+    "1-9": {
+      "verdict": "Powerful",
+      "desc": "Both are Mars-Sun energies. United = unstoppable. Divided = explosive.",
+      "remedy": "Channel energy into a joint cause or charity. Recite Hanuman Chalisa together on Tuesdays."
+    },
+    "2-3": {
+      "verdict": "Compatible",
+      "desc": "Moon and Jupiter — wisdom and sensitivity aligned. Emotionally rich partnership.",
+      "remedy": "Share creative projects. Avoid 2 becoming over-dependent. Offer yellow flowers to Guru together."
+    },
+    "2-5": {
+      "verdict": "Unstable",
+      "desc": "Moon and Mercury — emotional vs logical. Miscommunication is the core risk.",
+      "remedy": "Journalling together resolves what words cannot. Emerald green in shared spaces calms both."
+    },
+    "2-7": {
+      "verdict": "Spiritual",
+      "desc": "Two deeply intuitive energies. Highly compatible for spiritual partnerships.",
+      "remedy": "Meditate together daily. Avoid reality-avoidance. Keep a shared spiritual journal."
+    },
+    "4-8": {
+      "verdict": "Powerful",
+      "desc": "Double Earth-Saturn energy — slow but unstoppable wealth builders. Best business pairing.",
+      "remedy": "Set joint 5-year financial plan. Blue Sapphire for 8, Gomed for 4. Saturday joint discipline ritual."
+    },
+    "5-5": {
+      "verdict": "Electric",
+      "desc": "Double Mercury — brilliant conversations, constant movement. Risk of no roots.",
+      "remedy": "Buy property together or plant a tree to ground the energy. Wednesday joint planning sessions."
+    },
+    "6-8": {
+      "verdict": "Magnetic",
+      "desc": "Venus and Saturn — luxury meets discipline. Natural attraction with mutual benefit.",
+      "remedy": "8 provides structure; 6 provides beauty. Decorate your shared space intentionally. Friday evening ritual."
+    },
+    "8-9": {
+      "verdict": "Adversarial",
+      "desc": "Saturn and Mars — karmic conflict. Power struggle, authority battles, and resentment possible.",
+      "remedy": "Both must surrender ego at the door. Oil Shani on Saturdays; Red Coral for 9 on Tuesdays. Seek mediation."
+    },
+    "1-3": {
+      "verdict": "Powerful",
+      "desc": "Sun and Jupiter — the guru-king alliance. Mutual respect, shared vision, and natural authority. One of the most auspicious pairings.",
+      "remedy": "Offer joint prayers on Sundays and Thursdays. Yellow sapphire for 3, Ruby for 1."
+    },
+    "1-4": {
+      "verdict": "Tense",
+      "desc": "Sun and Rahu — authority meets disruption. 1 seeks order; 4 breaks patterns. Creative friction that demands conscious management.",
+      "remedy": "Establish clear boundaries early. 1 must welcome 4's unconventional ideas. Joint meditation on Saturdays."
+    },
+    "2-2": {
+      "verdict": "Mirror",
+      "desc": "Double Moon energy — deeply empathic but prone to mutual emotional amplification. Excellent for spiritual bonds; challenging for business.",
+      "remedy": "Ground the energy with Monday rituals, Pearl gemstones, and joint creative expression."
+    },
+    "2-4": {
+      "verdict": "Adversarial",
+      "desc": "Moon and Rahu — emotional depth meets karmic disruption. Powerful attraction followed by confusion and boundary erosion.",
+      "remedy": "Maintain independent routines. Avoid financial entanglement early. Joint Rahu-Ketu remedies on Saturdays."
+    },
+    "2-6": {
+      "verdict": "Harmonious",
+      "desc": "Moon and Venus — the most nurturing combination. Emotional sensitivity meets aesthetic beauty. Deeply compatible for family life.",
+      "remedy": "Cultivate shared creative rituals — cooking, gardening, music. Pearl and Diamond together amplify harmony."
+    },
+    "2-8": {
+      "verdict": "Tense",
+      "desc": "Moon and Saturn — sensitivity meets severity. 2 craves warmth; 8 enforces structure. Demanding but deeply transformative.",
+      "remedy": "8 must soften communication; 2 must honour practical boundaries. Saturday discipline rituals together."
+    },
+    "2-9": {
+      "verdict": "Tense",
+      "desc": "Moon and Mars — emotional depth clashes with direct assertiveness. Passion is present but friction is frequent. Requires patience.",
+      "remedy": "2 must not suppress emotion; 9 must not dominate. Joint physical activity — yoga or nature walks — releases tension."
+    },
+    "3-3": {
+      "verdict": "Expansive",
+      "desc": "Double Jupiter — extraordinary wisdom, optimism, and generosity. Risk of over-expansion and scattered energy without grounding.",
+      "remedy": "Create a disciplined joint goal. Avoid speculation. Offer bananas at temples together on Thursdays."
+    },
+    "3-4": {
+      "verdict": "Challenging",
+      "desc": "Jupiter and Rahu — philosophical clarity meets unconventional disruption. Frequent ideological clashes but mutual growth.",
+      "remedy": "3 must embrace innovation; 4 must respect tradition. Joint learning projects bridge the gap."
+    },
+    "3-5": {
+      "verdict": "Compatible",
+      "desc": "Jupiter and Mercury — wisdom and intellect aligned. Excellent for teaching, writing, law, and all knowledge-based ventures.",
+      "remedy": "Create together — write, teach, publish. Emerald for 5 and Yellow Sapphire for 3 worn together."
+    },
+    "3-6": {
+      "verdict": "Tense",
+      "desc": "Jupiter and Venus — expansion vs harmony. 3 philosophises; 6 beautifies. Conflict between ideals and aesthetics.",
+      "remedy": "Celebrate each other's domains. 3 attends 6's artistic events; 6 engages with 3's ideas. Thursday-Friday joint ritual."
+    },
+    "3-7": {
+      "verdict": "Spiritual",
+      "desc": "Jupiter and Ketu — the guru and the mystic. Profound spiritual compatibility. Excellent for ashrams, healing, and research.",
+      "remedy": "Meditate together. Both benefit from pilgrimages. Avoid excessive detachment from worldly duties."
+    },
+    "3-8": {
+      "verdict": "Neutral",
+      "desc": "Jupiter and Saturn — philosophy meets discipline. Different tempos but mutual respect develops over time. Better in business than romance.",
+      "remedy": "3 brings vision; 8 brings execution. Saturday-Thursday joint planning sessions create lasting results."
+    },
+    "3-9": {
+      "verdict": "Powerful",
+      "desc": "Jupiter and Mars — the teacher-warrior alliance. Expansive energy directed with precision. Excellent for leadership and enterprise.",
+      "remedy": "Channel into joint service or venture. Avoid competing for authority. Red Coral and Yellow Sapphire together."
+    },
+    "4-4": {
+      "verdict": "Unstable",
+      "desc": "Double Rahu — intensely innovative but chaotic. Brilliant together in short bursts; exhausting over the long term.",
+      "remedy": "Ground with structured routines, Gomed gemstones, and Saturday fasting. Define clear roles."
+    },
+    "4-5": {
+      "verdict": "Dynamic",
+      "desc": "Rahu and Mercury — unconventional intellect meets adaptive communication. Exciting, fast-moving, prone to abrupt changes.",
+      "remedy": "Create frequent check-ins. 5 must anchor 4's ideas in reality; 4 must not derail 5's plans. Wednesday rituals."
+    },
+    "4-6": {
+      "verdict": "Harmonious",
+      "desc": "Rahu and Venus — unexpected luxury and material breakthroughs. Strong financial and aesthetic synergy despite different energies.",
+      "remedy": "Invest together in beauty, technology, or property. Gomed and Diamond worn together activates this pair."
+    },
+    "4-7": {
+      "verdict": "Neutral",
+      "desc": "Rahu and Ketu — the karmic axis. Profound transformation when together. Deep soul-contract energy that transcends conventional labels.",
+      "remedy": "Honour the karmic nature of this bond. Joint spiritual practices. Avoid projecting past-life patterns onto current reality."
+    },
+    "4-9": {
+      "verdict": "Adversarial",
+      "desc": "Rahu and Mars — disruption meets aggression. High energy conflicts, sudden reversals, and ego battles unless deeply channelled.",
+      "remedy": "Redirect energy into competitive sport, bold enterprise, or social activism. Avoid financial disputes."
+    },
+    "5-6": {
+      "verdict": "Compatible",
+      "desc": "Mercury and Venus — intellect meets beauty. Natural creative synergy. Excellent for media, design, and communication ventures.",
+      "remedy": "Collaborate creatively. Avoid 5's restlessness unsettling 6's need for peace. Emerald and Diamond together."
+    },
+    "5-7": {
+      "verdict": "Neutral",
+      "desc": "Mercury and Ketu — analytical mind meets mystical insight. Unusual compatibility with unexpected depth once trust is built.",
+      "remedy": "Engage in research or spiritual inquiry together. 5 grounds 7; 7 deepens 5. Wednesday-Saturday joint practices."
+    },
+    "5-8": {
+      "verdict": "Neutral",
+      "desc": "Mercury and Saturn — quick thinking meets long-term planning. Different speeds but complementary strengths in business.",
+      "remedy": "5 generates ideas; 8 implements them. Saturday-Wednesday planning rhythm creates powerful results."
+    },
+    "5-9": {
+      "verdict": "Neutral",
+      "desc": "Mercury and Mars — restless communication meets relentless action. Energising but prone to miscommunication under pressure.",
+      "remedy": "Develop clear communication protocols. 9 must listen more; 5 must commit more. Red and green together in shared spaces."
+    },
+    "6-6": {
+      "verdict": "Harmonious",
+      "desc": "Double Venus — extraordinary beauty, harmony, and creative output. Risk of indulgence and avoiding necessary confrontation.",
+      "remedy": "Balance luxury with discipline. Add structure to shared life. Diamond gemstones on Fridays amplify the bond."
+    },
+    "6-7": {
+      "verdict": "Spiritual",
+      "desc": "Venus and Ketu — earthly beauty meets spiritual detachment. A rare pairing that produces artistic and mystical brilliance.",
+      "remedy": "Create sacred beauty together — art, sacred space, ritual. Avoid 7's withdrawal hurting 6's need for connection."
+    },
+    "6-9": {
+      "verdict": "Tense",
+      "desc": "Venus and Mars — passion and beauty collide. Intense attraction with frequent power struggles over affection and dominance.",
+      "remedy": "Channel passion into creative collaboration. 9 must respect 6's aesthetic needs; 6 must honour 9's ambition."
+    },
+    "7-7": {
+      "verdict": "Mystical",
+      "desc": "Double Ketu — extraordinary spiritual depth and intuitive connection. Deeply private, highly evolved, struggles with worldly practicality.",
+      "remedy": "Ground through physical discipline and service. Avoid mutual withdrawal from responsibilities. Joint charity work."
+    },
+    "7-8": {
+      "verdict": "Neutral",
+      "desc": "Ketu and Saturn — detachment meets discipline. Both are inward-focused energies. Stable but emotionally distant without conscious effort.",
+      "remedy": "Create shared grounding rituals. Physical activity together prevents emotional isolation. Saturday remedies for both."
+    },
+    "7-9": {
+      "verdict": "Challenging",
+      "desc": "Ketu and Mars — spiritual detachment clashes with worldly ambition. 9 wants action; 7 wants stillness. Growth through contrast.",
+      "remedy": "9 must respect 7's need for solitude; 7 must engage with 9's energy. Tuesday meditation together balances both."
+    },
+    "8-8": {
+      "verdict": "Powerful",
+      "desc": "Double Saturn — the most karmic and disciplined pairing. Extraordinary capacity for long-term wealth creation with significant karmic burden.",
+      "remedy": "Saturday collective fasting, joint charity, and Blue Sapphire for both. Avoid accumulating shared debt."
+    },
+    "9-9": {
+      "verdict": "Explosive",
+      "desc": "Double Mars — limitless energy, courage, and drive. Either forges empires together or destroys everything in conflict. No middle ground.",
+      "remedy": "Channel into bold joint enterprise or social activism. Recite Hanuman Chalisa together on Tuesdays. Avoid ego battles."
+    }
+  },
+  "loshu_cells": {
+    "1": {
+      "sanskrit": "एक",
+      "element": "Fire",
+      "tattva": "Agni",
+      "planet": "Sun",
+      "deity": "Surya",
+      "color": "#f97316",
+      "symbol": "☉",
+      "plane": "Practical"
+    },
+    "2": {
+      "sanskrit": "दो",
+      "element": "Earth",
+      "tattva": "Prithvi",
+      "planet": "Moon",
+      "deity": "Chandra",
+      "color": "#94a3b8",
+      "symbol": "☽",
+      "plane": "Emotional"
+    },
+    "3": {
+      "sanskrit": "तीन",
+      "element": "Ether",
+      "tattva": "Akash",
+      "planet": "Jupiter",
+      "deity": "Guru",
+      "color": "#eab308",
+      "symbol": "♃",
+      "plane": "Mental"
+    },
+    "4": {
+      "sanskrit": "चार",
+      "element": "Air",
+      "tattva": "Vayu",
+      "planet": "Rahu",
+      "deity": "Rahu",
+      "color": "#3b82f6",
+      "symbol": "☊",
+      "plane": "Mental"
+    },
+    "5": {
+      "sanskrit": "पाँच",
+      "element": "Space",
+      "tattva": "Param",
+      "planet": "Mercury",
+      "deity": "Budh",
+      "color": "#22c55e",
+      "symbol": "☿",
+      "plane": "Emotional"
+    },
+    "6": {
+      "sanskrit": "छह",
+      "element": "Water",
+      "tattva": "Jal",
+      "planet": "Venus",
+      "deity": "Shukra",
+      "color": "#ec4899",
+      "symbol": "♀",
+      "plane": "Practical"
+    },
+    "7": {
+      "sanskrit": "सात",
+      "element": "Earth",
+      "tattva": "Prithvi",
+      "planet": "Ketu",
+      "deity": "Ketu",
+      "color": "#78716c",
+      "symbol": "☋",
+      "plane": "Emotional"
+    },
+    "8": {
+      "sanskrit": "आठ",
+      "element": "Air",
+      "tattva": "Vayu",
+      "planet": "Saturn",
+      "deity": "Shani",
+      "color": "#4338ca",
+      "symbol": "♄",
+      "plane": "Practical"
+    },
+    "9": {
+      "sanskrit": "नौ",
+      "element": "Fire",
+      "tattva": "Agni",
+      "planet": "Mars",
+      "deity": "Mangal",
+      "color": "#dc2626",
+      "symbol": "♂",
+      "plane": "Mental"
+    }
+  },
+  "strength_openers": [
+    "Your blueprint is wired for impact. ",
+    "The universe has encoded remarkable potential in your numbers. ",
+    "Your vibrational signature is one of rare strength and purpose. ",
+    "Few blueprints carry the depth of yours. "
+  ],
+  "joint_py_advice": {
+    "1": {
+      "advice": "Excellent year to start something new together — business, relationship, or project launch.",
+      "hi_advice": "साझे नए लक्ष्य शुरू करें।"
+    },
+    "2": {
+      "advice": "A year for deepening existing bonds. Not ideal for new ventures; great for commitment.",
+      "hi_advice": "एक-दूसरे की बात सुनें, सहयोग करें।"
+    },
+    "3": {
+      "advice": "Creative and social energy is high. Excellent for public-facing joint ventures.",
+      "hi_advice": "साथ मिलकर रचनात्मक काम करें।"
+    },
+    "4": {
+      "advice": "A foundation-building year. Hard work, but what you build now lasts.",
+      "hi_advice": "दीर्घकालिक योजनाएं बनाएं।"
+    },
+    "5": {
+      "advice": "High energy and change. Risky year for permanent commitments; great for adventures.",
+      "hi_advice": "नए अनुभव साझा करें।"
+    },
+    "6": {
+      "advice": "Family and home focus. An excellent year for marriage, buying property, or having children.",
+      "hi_advice": "पारिवारिक जिम्मेदारी में एकजुट रहें।"
+    },
+    "7": {
+      "advice": "Reflective year. Pause before major joint decisions. Research and plan instead.",
+      "hi_advice": "साथ में आध्यात्मिक विकास करें।"
+    },
+    "8": {
+      "advice": "Power year — excellent for joint financial investments and authority moves.",
+      "hi_advice": "बड़े वित्तीय निर्णय लें।"
+    },
+    "9": {
+      "advice": "Completion year. Resolve old issues before starting new joint chapters.",
+      "hi_advice": "पुराने मुद्दे सुलझाएं, माफ करें।"
+    }
+  },
+  "yogas": {
+    "derived_numerology_yog__creative": {
+      "condition": "driver_in_1_3_6_AND_conductor_in_3_6_9",
+      "name": "Derived Numerology Yog (Creative)",
+      "desc": "High potential for fame through creative leadership.",
+      "type": "execution"
+    },
+    "material_stability_yog": {
+      "condition": "grid_strong_has_4_or_8",
+      "name": "Material Stability Yog",
+      "desc": "Strong grounding and wealth retention capabilities.",
+      "type": "wealth"
+    },
+    "leadership_triad_active": {
+      "condition": "grid_strong_has_1_5_9",
+      "name": "Leadership Triad Active",
+      "desc": "1-5-9 all strong — command, adaptability, and drive aligned.",
+      "type": "execution"
+    },
+    "compassion_triad_active": {
+      "condition": "grid_strong_has_2_6_9",
+      "name": "Compassion Triad Active",
+      "desc": "2-6-9 dominant — empathy, nurturing, and humanitarian drive.",
+      "type": "spiritual"
+    },
+    "mind_triad_active": {
+      "condition": "grid_strong_has_3_5_7",
+      "name": "Mind Triad Active",
+      "desc": "3-5-7 strong — intellect, communication, and mysticism aligned.",
+      "type": "spiritual"
+    }
+  },
+  "translations": {
+    "hi": {
+      "tabs": {
+        "executive": "सारांश",
+        "timeline": "समयरेखा",
+        "structural": "संरचना",
+        "corrections": "सुधार",
+        "personality": "व्यक्तित्व",
+        "remedies": "उपाय",
+        "compatibility": "अनुकूलता"
+      },
+      "share": "शेयर करें",
+      "pdf": "PDF",
+      "word": "Word",
+      "copy_link": "लिंक कॉपी करें",
+      "whatsapp": "WhatsApp पर भेजें",
+      "compare": "तुलना करें",
+      "scan_qr": "QR स्कैन करें",
+      "planet_driver": "ग्रह चालक",
+      "driver": "चालक",
+      "conductor": "जीवन पथ",
+      "expression": "अभिव्यक्ति",
+      "soul_urge": "आत्म प्रेरणा",
+      "personality": "व्यक्तित्व",
+      "maturity": "परिपक्वता",
+      "karmic_debt": "कार्मिक ऋण",
+      "vibrational_alignment": "कंपन संरेखण",
+      "personal_year": "व्यक्तिगत वर्ष",
+      "leverage_now": "अभी करें",
+      "conserve": "संयम रखें",
+      "planetary_blueprint": "ग्रह ब्लूप्रिंट",
+      "maturity_number": "परिपक्वता संख्या",
+      "activates_after": "सक्रिय होती है उम्र के बाद",
+      "active_yogas": "सक्रिय योग",
+      "personal_year_forecast": "व्यक्तिगत वर्ष पूर्वानुमान",
+      "pinnacles": "शिखर",
+      "growth_gateways": "विकास द्वार",
+      "life_phases": "जीवन चरण",
+      "phase": "चरण",
+      "ages": "आयु",
+      "pinnacle_gift": "शिखर उपहार",
+      "gateway_gift": "द्वार उपहार",
+      "opportunity": "अवसर",
+      "caution": "सावधानी",
+      "lo_shu_grid": "लो शू ग्रिड",
+      "vedic_grid": "वैदिक अंक ग्रिड",
+      "planes": "विमान",
+      "mental": "मानसिक",
+      "emotional": "भावनात्मक",
+      "practical": "व्यावहारिक",
+      "growth_reservoirs": "विकास क्षेत्र",
+      "missing": "अनुपस्थित",
+      "dominant": "प्रभावशाली",
+      "mobile_matrix": "मोबाइल फ्रीक्वेंसी",
+      "compatible_endings": "अनुकूल अंत",
+      "full_name_expression": "पूर्ण नाम अभिव्यक्ति",
+      "soul_urge_vowels": "आत्म प्रेरणा (स्वर)",
+      "personality_consonants": "व्यक्तित्व (व्यंजन)",
+      "first_name_expression": "प्रथम नाम अभिव्यक्ति",
+      "hidden_passion": "छिपी इच्छा",
+      "balance_number": "संतुलन संख्या",
+      "subconscious_self": "अवचेतन स्वयं",
+      "bridge_number": "सेतु संख्या",
+      "name_optimal": "नाम पहले से अनुकूलित है",
+      "optimal_desc": "पूर्ण नाम अभिव्यक्ति मूल आपके ग्रह चालक के साथ संरेखित है। कोई सुधार आवश्यक नहीं।",
+      "prescribed": "अनुशंसित",
+      "current": "वर्तमान",
+      "harmonic_score": "सामंजस्य स्कोर",
+      "add": "जोड़ें",
+      "remove": "हटाएं",
+      "karmic_gifts": "कार्मिक उपहार",
+      "lesson": "पाठ",
+      "prescription": "नुस्खा",
+      "core_strength": "मूल शक्ति",
+      "growth_edge": "विकास किनारा",
+      "career_blueprint": "करियर ब्लूप्रिंट",
+      "wealth_pathway": "धन मार्ग",
+      "relationship_archetype": "रिश्ते का स्वरूप",
+      "lucky_matrix": "भाग्य मैट्रिक्स",
+      "power_days": "शक्ति के दिन",
+      "neutral_days": "सामान्य दिन",
+      "avoid_days": "परहेज़ के दिन",
+      "professional_colors": "व्यावसायिक रंग",
+      "daily_colors": "दैनिक रंग",
+      "avoid_colors": "परहेज़ के रंग",
+      "friendly_numbers": "मित्र संख्याएं",
+      "enemy_numbers": "शत्रु संख्याएं",
+      "neutral_numbers": "तटस्थ संख्याएं",
+      "gem_prescription": "रत्न नुस्खा",
+      "primary_stone": "प्राथमिक रत्न",
+      "setting_metal": "धातु",
+      "finger": "उंगली",
+      "wearing_day": "पहनने का दिन",
+      "safety_guidance": "सुरक्षा मार्गदर्शन",
+      "daily_remedies": "दैनिक उपाय",
+      "priority_action": "प्राथमिक कार्य",
+      "strictly_avoid": "कदापि न करें",
+      "power_item": "शक्ति वस्तु",
+      "planetary_reference": "ग्रह संदर्भ",
+      "enter_person_b": "व्यक्ति B दर्ज करें",
+      "full_name": "पूरा नाम",
+      "date_of_birth": "जन्म तिथि",
+      "gender": "लिंग",
+      "overall_compatibility": "समग्र अनुकूलता",
+      "radar_chart": "राडार चार्ट",
+      "driver_pair_insight": "चालक जोड़ी विश्लेषण",
+      "joint_remedy": "संयुक्त उपाय",
+      "timing_window": "समय खिड़की",
+      "per_axis_remedies": "अक्ष-वार उपाय",
+      "engine_name": "अर्थसाथी वैदिक अंक इंजन",
+      "generated_on": "तैयार किया गया",
+      "scan_to_open": "खोलने के लिए स्कैन करें",
+      "share_on_whatsapp": "WhatsApp पर शेयर करें",
+      "annual_forecast": "वार्षिक पूर्वानुमान",
+      "personal_month": "व्यक्तिगत माह",
+      "personal_day": "व्यक्तिगत दिन",
+      "month_theme": "माह विषय",
+      "favorable": "अनुकूल",
+      "unfavorable": "प्रतिकूल",
+      "transit_alerts": "पारगमन चेतावनी",
+      "active_alert": "सक्रिय चेतावनी",
+      "quick_calc": "त्वरित गणना",
+      "enter_name": "नाम दर्ज करें",
+      "enter_dob": "जन्म तिथि दर्ज करें",
+      "calculate": "गणना करें",
+      "view_full_report": "पूरी रिपोर्ट देखें"
+    }
+  },
+  "annual_months_map": {
+    "1-1": "New beginnings & identity focus",
+    "1-2": "Building & partnerships",
+    "1-3": "Creative expression",
+    "1-4": "Foundation & discipline",
+    "1-5": "Freedom & change",
+    "1-6": "Home & responsibility",
+    "1-7": "Reflection & inner work",
+    "1-8": "Power & manifestation",
+    "1-9": "Release & completion",
+    "2-1": "Independence within partnership",
+    "2-2": "Deep emotional connection",
+    "2-3": "Social creativity",
+    "2-4": "Structured diplomacy",
+    "2-5": "Flexible cooperation",
+    "2-6": "Nurturing commitments",
+    "2-7": "Spiritual partnership",
+    "2-8": "Material partnership",
+    "2-9": "Compassionate endings",
+    "3-1": "Bold creative launch",
+    "3-2": "Collaborative art",
+    "3-3": "Peak creative power",
+    "3-4": "Disciplined creativity",
+    "3-5": "Adventurous expression",
+    "3-6": "Beautiful home",
+    "3-7": "Deep creative insight",
+    "3-8": "Commercial creativity",
+    "3-9": "Artistic completion",
+    "4-1": "Starting new structures",
+    "4-2": "Partnership in building",
+    "4-3": "Creative problem solving",
+    "4-4": "Maximum discipline",
+    "4-5": "Flexible planning",
+    "4-6": "Family foundation",
+    "4-7": "Analytical depth",
+    "4-8": "Wealth building",
+    "4-9": "Completing projects",
+    "5-1": "Freedom & new identity",
+    "5-2": "Flexible cooperation",
+    "5-3": "Social adventure",
+    "5-4": "Structured freedom",
+    "5-5": "Maximum change & movement",
+    "5-6": "Freedom with responsibility",
+    "5-7": "Spiritual exploration",
+    "5-8": "Financial freedom",
+    "5-9": "Release & wandering",
+    "6-1": "Leading from love",
+    "6-2": "Harmony & family",
+    "6-3": "Creative nurturing",
+    "6-4": "Stable home base",
+    "6-5": "Freedom within family",
+    "6-6": "Maximum love & service",
+    "6-7": "Spiritual home",
+    "6-8": "Prosperous family",
+    "6-9": "Releasing relationships",
+    "7-1": "New spiritual path",
+    "7-2": "Intuitive partnership",
+    "7-3": "Creative wisdom",
+    "7-4": "Structured study",
+    "7-5": "Mystical adventure",
+    "7-6": "Spiritual family",
+    "7-7": "Maximum introspection",
+    "7-8": "Wise material decisions",
+    "7-9": "Spiritual completion",
+    "8-1": "Powerful new beginnings",
+    "8-2": "Partnership prosperity",
+    "8-3": "Creative wealth",
+    "8-4": "Maximum discipline for wealth",
+    "8-5": "Financial freedom",
+    "8-6": "Prosperous family",
+    "8-7": "Wise investments",
+    "8-8": "Peak material power",
+    "8-9": "Releasing to gain",
+    "9-1": "New after completion",
+    "9-2": "Compassionate partnership",
+    "9-3": "Artistic legacy",
+    "9-4": "Structured completion",
+    "9-5": "Freedom after completion",
+    "9-6": "Service to family",
+    "9-7": "Spiritual wisdom",
+    "9-8": "Final harvest",
+    "9-9": "Maximum release & transformation"
+  },
+  "mobile_tail_endings": {
+    "91": {
+      "combo": "Mars+Sun",
+      "benefit": "Rapid career progression, enhances authority, removes professional hesitation"
+    },
+    "19": {
+      "combo": "Sun+Mars",
+      "benefit": "Leadership assertion, competitive advantage, ignites executive decisiveness"
+    },
+    "64": {
+      "combo": "Venus+Rahu",
+      "benefit": "Sudden financial gains, material luxury, breaks long-standing wealth blockages"
+    },
+    "46": {
+      "combo": "Rahu+Venus",
+      "benefit": "Unconventional wealth channels, tech-driven prosperity, foreign income streams"
+    },
+    "28": {
+      "combo": "Moon+Saturn",
+      "benefit": "Transforms struggles into solid foundations, emotional resilience, disciplined business dealings"
+    },
+    "82": {
+      "combo": "Saturn+Moon",
+      "benefit": "Long-term karmic rewards, public trust, converts past hardships into lasting success"
+    },
+    "33": {
+      "combo": "Jupiter+Jupiter",
+      "benefit": "Wisdom expansion, financial abundance, excellent for education and spiritual commerce"
+    },
+    "55": {
+      "combo": "Mercury+Mercury",
+      "benefit": "Intellectual acceleration — sharp communication, media success, rapid deal-making"
+    },
+    "11": {
+      "combo": "Sun+Sun",
+      "benefit": "Maximum authority, solar leadership, government connections, fame and recognition"
+    },
+    "39": {
+      "combo": "Jupiter+Mars",
+      "benefit": "Expanding ambition — wisdom-backed action, academic and legal success, spiritual leadership"
+    },
+    "93": {
+      "combo": "Mars+Jupiter",
+      "benefit": "Pioneering teacher energy — initiates growth, breaks through bureaucratic obstacles"
+    },
+    "21": {
+      "combo": "Moon+Sun",
+      "benefit": "Emotional authority — combines intuition with leadership, strong public presence"
+    },
+    "13": {
+      "combo": "Sun+Jupiter",
+      "benefit": "Solar wisdom — authority through knowledge, leadership in education and law"
+    },
+    "31": {
+      "combo": "Jupiter+Sun",
+      "benefit": "Philosophical authority — commands respect, attracts mentors and institutional support"
+    },
+    "22": {
+      "combo": "Moon+Moon",
+      "benefit": "Deep intuitive resonance — heightened emotional intelligence, excellent for healing careers"
+    },
+    "14": {
+      "combo": "Sun+Rahu",
+      "benefit": "Solar disruption — breaks old patterns, technology leadership, unconventional authority"
+    },
+    "41": {
+      "combo": "Rahu+Sun",
+      "benefit": "Innovative authority — forward-thinking, digital entrepreneurship, mass influence"
+    },
+    "23": {
+      "combo": "Moon+Jupiter",
+      "benefit": "Nurturing wisdom — counsellor energy, emotional intelligence combined with teaching ability"
+    },
+    "16": {
+      "combo": "Sun+Venus",
+      "benefit": "Creative leadership — artistic authority, luxury brand success, film and entertainment"
+    },
+    "61": {
+      "combo": "Venus+Sun",
+      "benefit": "Charismatic authority — powerful social magnetism, natural brand ambassador energy"
+    },
+    "34": {
+      "combo": "Jupiter+Rahu",
+      "benefit": "Expansive disruption — unconventional wisdom, cross-cultural success, foreign collaborations"
+    },
+    "17": {
+      "combo": "Sun+Ketu",
+      "benefit": "Spiritual authority — deep research, past-life mastery, medicine and occult sciences"
+    },
+    "71": {
+      "combo": "Ketu+Sun",
+      "benefit": "Mystical leadership — draws extraordinary insights, success in research and spiritual domains"
+    },
+    "35": {
+      "combo": "Jupiter+Mercury",
+      "benefit": "Wise communicator — combines expansive thinking with sharp expression, publishing success"
+    },
+    "18": {
+      "combo": "Sun+Saturn",
+      "benefit": "Disciplined authority — builds lasting institutions, strong karma, government and law"
+    },
+    "81": {
+      "combo": "Saturn+Sun",
+      "benefit": "Structured power — karmic authority, long-term rewards, excellence in governance"
+    },
+    "27": {
+      "combo": "Moon+Ketu",
+      "benefit": "Spiritual intuition — deep healing power, psychic sensitivity, research in hidden sciences"
+    },
+    "29": {
+      "combo": "Moon+Mars",
+      "benefit": "Intuitive action — emotional courage, healing through assertiveness, strong in crisis"
+    },
+    "38": {
+      "combo": "Jupiter+Saturn",
+      "benefit": "Wise discipline — builds lasting institutions, authority through patience and deep knowledge"
+    },
+    "15": {
+      "combo": "Sun+Mercury",
+      "benefit": "Solar intellect — authoritative communication, media leadership, strategic brilliance"
+    },
+    "51": {
+      "combo": "Mercury+Sun",
+      "benefit": "Expressive authority — charismatic storytelling, executive communication, strong negotiator"
+    }
+  },
+  "jyotish_lords": {
+    "1": {
+      "planet": "Sun (Surya)",
+      "areas": "Career authority, leadership, government, self-confidence, public recognition"
+    },
+    "2": {
+      "planet": "Moon (Chandra)",
+      "areas": "Emotional balance, relationships, public dealings, intuition, domestic harmony"
+    },
+    "3": {
+      "planet": "Jupiter (Guru)",
+      "areas": "Wisdom, financial expansion, children, higher education, spiritual growth"
+    },
+    "4": {
+      "planet": "Rahu",
+      "areas": "Innovation, technology, foreign connections, unconventional success, sudden rise"
+    },
+    "5": {
+      "planet": "Mercury (Budh)",
+      "areas": "Business acumen, communication, commerce, intellect, quick wealth, media"
+    },
+    "6": {
+      "planet": "Venus (Shukra)",
+      "areas": "Wealth accumulation, luxury, relationships, arts, beauty, material comforts"
+    },
+    "7": {
+      "planet": "Ketu",
+      "areas": "Spirituality, research, occult, introspection, liberation, detachment from materialism"
+    },
+    "8": {
+      "planet": "Saturn (Shani)",
+      "areas": "Discipline, long-term wealth, karmic rewards, endurance, justice, legacy"
+    },
+    "9": {
+      "planet": "Mars (Mangal)",
+      "areas": "Courage, energy, action, real estate, competitive success, physical vitality"
+    }
+  },
+  "relation_priority_roots": {
+    "spouse": [
+      2,
+      6,
+      3
+    ],
+    "parent": [
+      2,
+      3,
+      6
+    ],
+    "sibling": [
+      3,
+      6,
+      2
+    ],
+    "child": [
+      3,
+      2,
+      6
+    ],
+    "business": [
+      5,
+      1,
+      8
+    ],
+    "friend": [
+      3,
+      6,
+      2
+    ],
+    "competitor": [
+      1,
+      5,
+      8
+    ]
+  },
+  "middle_name_fallbacks": [
+    "Kumar",
+    "Singh",
+    "Raj",
+    "Dev",
+    "Lal",
+    "Das",
+    "Nath",
+    "Ram",
+    "Ji",
+    "Bhai"
+  ],
+  "mobile_karmic_clashes": [
+    "48",
+    "84",
+    "44",
+    "88",
+    "49",
+    "94",
+    "68",
+    "86"
+  ],
+  "nav_tabs": [
+    {
+      "id": "executive",
+      "en": "Executive",
+      "hi": "कार्यकारी",
+      "icon": "fa-chart-line",
+      "tier": "free"
+    },
+    {
+      "id": "timeline",
+      "en": "Timeline",
+      "hi": "समय रेखा",
+      "icon": "fa-clock-rotate-left",
+      "tier": "free"
+    },
+    {
+      "id": "forecast",
+      "en": "Forecast",
+      "hi": "वार्षिक पूर्वानुमान",
+      "icon": "fa-calendar-days",
+      "tier": "free"
+    },
+    {
+      "id": "structural",
+      "en": "Structural",
+      "hi": "संरचनात्मक",
+      "icon": "fa-table-cells",
+      "tier": "free"
+    },
+    {
+      "id": "corrections",
+      "en": "Name Correction",
+      "hi": "नाम सुधार",
+      "icon": "fa-pen-nib",
+      "tier": "free"
+    },
+    {
+      "id": "mobile_matrix",
+      "en": "Mobile Correction",
+      "hi": "मोबाइल सुधार",
+      "icon": "fa-mobile-screen",
+      "tier": "free"
+    },
+    {
+      "id": "personality",
+      "en": "Personality",
+      "hi": "व्यक्तित्व",
+      "icon": "fa-user-astronaut",
+      "tier": "free"
+    },
+    {
+      "id": "remedies",
+      "en": "Remedies",
+      "hi": "उपाय",
+      "icon": "fa-gem",
+      "tier": "free"
+    },
+    {
+      "id": "compatibility",
+      "en": "Compatibility",
+      "hi": "अनुकूलता",
+      "icon": "fa-people-arrows",
+      "tier": "free"
+    },
+    {
+      "id": "muhurat",
+      "en": "Muhurat",
+      "hi": "मुहूर्त",
+      "icon": "fa-calendar-check",
+      "tier": "free"
+    },
+    {
+      "id": "vastu",
+      "en": "Vastu Name",
+      "hi": "वास्तु नाम",
+      "icon": "fa-house-chimney",
+      "tier": "free"
+    }
+  ],
+  "scoring": {
+    "num_weights": {
+      "1": 2,
+      "2": 1,
+      "3": 1,
+      "4": 3,
+      "5": 3,
+      "6": 1,
+      "7": 0,
+      "8": 3,
+      "9": 1
+    },
+    "yoga_type_scores": {
+      "execution": 8,
+      "wealth": 6,
+      "spiritual": 2,
+      "general": 4
+    },
+    "axis_weights": {
+      "grid": 1,
+      "yoga": 1,
+      "name": 1,
+      "mobile": 1,
+      "karmic": 1,
+      "alignment": 1
+    },
+    "name_metric_weights": {
+      "full": 8,
+      "soul_urge": 4,
+      "personality": 3,
+      "first": 2
+    },
+    "compat_axis_labels": {
+      "en": [
+        "Grid Strength",
+        "Yoga Power",
+        "Name Harmony",
+        "Mobile Freq",
+        "Karmic Balance",
+        "Alignment"
+      ],
+      "hi": [
+        "ग्रिड शक्ति",
+        "योग शक्ति",
+        "नाम सामंजस्य",
+        "मोबाइल आवृत्ति",
+        "कार्मिक संतुलन",
+        "संरेखण"
+      ]
+    },
+    "yoga_types": [
+      "execution",
+      "wealth",
+      "spiritual",
+      "general"
+    ]
+  },
+  "gem_display_fields": [
+    {
+      "key": "stone",
+      "en": "Primary Stone",
+      "hi": "प्राथमिक रत्न",
+      "icon": "fa-gem",
+      "color": "amber"
+    },
+    {
+      "key": "metal",
+      "en": "Setting Metal",
+      "hi": "धातु",
+      "icon": "fa-ring",
+      "color": "slate"
+    },
+    {
+      "key": "finger",
+      "en": "Finger",
+      "hi": "उंगली",
+      "icon": "fa-hand",
+      "color": "blue"
+    },
+    {
+      "key": "hand",
+      "en": "Hand",
+      "hi": "हाथ",
+      "icon": "fa-hands",
+      "color": "slate"
+    },
+    {
+      "key": "wearing_day",
+      "en": "Wearing Day",
+      "hi": "पहनने का दिन",
+      "icon": "fa-calendar-check",
+      "color": "emerald"
+    }
+  ],
+  "relationship_types": {
+    "spouse": {
+      "en": "Spouse",
+      "hi": "जीवनसाथी"
+    },
+    "parent": {
+      "en": "Parent",
+      "hi": "माता/पिता"
+    },
+    "sibling": {
+      "en": "Sibling",
+      "hi": "भाई/बहन"
+    },
+    "child": {
+      "en": "Child",
+      "hi": "पुत्र/पुत्री"
+    },
+    "business": {
+      "en": "Business Associate",
+      "hi": "व्यावसायिक सहयोगी"
+    },
+    "friend": {
+      "en": "Friend",
+      "hi": "मित्र"
+    },
+    "competitor": {
+      "en": "Competitor/Enemy",
+      "hi": "प्रतिस्पर्धी"
+    }
+  },
+  "name_matrix_metrics": [
+    {
+      "label_en": "Full Name Expression",
+      "label_hi": "पूर्ण नाम अभिव्यक्ति",
+      "ok": "orig_full_root",
+      "oc": "orig_full_compound",
+      "nk": "full_root",
+      "nc": "full_compound",
+      "weight": 8,
+      "desc_en": "Primary Destiny (x8)",
+      "desc_hi": "प्राथमिक नियति (×8)"
+    },
+    {
+      "label_en": "Soul Urge (Vowels)",
+      "label_hi": "आत्म प्रेरणा (स्वर)",
+      "ok": "orig_su_root",
+      "oc": "orig_su_compound",
+      "nk": "su_root",
+      "nc": "su_compound",
+      "weight": 4,
+      "desc_en": "Inner desire (x4)",
+      "desc_hi": "आंतरिक इच्छा (×4)"
+    },
+    {
+      "label_en": "Personality (Consonants)",
+      "label_hi": "व्यक्तित्व (व्यंजन)",
+      "ok": "orig_p_root",
+      "oc": "orig_p_compound",
+      "nk": "p_root",
+      "nc": "p_compound",
+      "weight": 3,
+      "desc_en": "Outer projection (x3)",
+      "desc_hi": "बाह्य प्रक्षेपण (×3)"
+    },
+    {
+      "label_en": "First Name Expression",
+      "label_hi": "प्रथम नाम अभिव्यक्ति",
+      "ok": "orig_first_root",
+      "oc": "orig_first_compound",
+      "nk": "first_root",
+      "nc": "first_compound",
+      "weight": 2,
+      "desc_en": "First-name vibration (x2)",
+      "desc_hi": "प्रथम नाम कंपन (×2)"
+    }
+  ],
+  "chaldean_map": {
+    "A": 1,
+    "I": 1,
+    "J": 1,
+    "Q": 1,
+    "Y": 1,
+    "B": 2,
+    "K": 2,
+    "R": 2,
+    "C": 3,
+    "G": 3,
+    "L": 3,
+    "S": 3,
+    "D": 4,
+    "M": 4,
+    "T": 4,
+    "E": 5,
+    "H": 5,
+    "N": 5,
+    "X": 5,
+    "U": 6,
+    "V": 6,
+    "W": 6,
+    "O": 7,
+    "Z": 7,
+    "F": 8,
+    "P": 8
+  },
+  "muhurat": {
+    "business_start": {
+      "en": "Business Launch",
+      "hi": "व्यवसाय प्रारंभ",
+      "ideal_drivers": [
+        1,
+        3,
+        6,
+        8,
+        9
+      ],
+      "avoid_drivers": [],
+      "avoid_days_of_week": []
+    },
+    "name_correction": {
+      "en": "Name Correction",
+      "hi": "नाम परिवर्तन",
+      "ideal_drivers": [
+        1,
+        3,
+        6,
+        9
+      ],
+      "avoid_drivers": [],
+      "avoid_days_of_week": []
+    },
+    "property": {
+      "en": "Property Purchase",
+      "hi": "संपत्ति खरीद",
+      "ideal_drivers": [
+        4,
+        6,
+        8
+      ],
+      "avoid_drivers": [],
+      "avoid_days_of_week": []
+    },
+    "travel": {
+      "en": "Travel / Venture",
+      "hi": "यात्रा / नया उद्यम",
+      "ideal_drivers": [
+        3,
+        5,
+        9
+      ],
+      "avoid_drivers": [],
+      "avoid_days_of_week": []
+    },
+    "marriage": {
+      "en": "Marriage / Partnership",
+      "hi": "विवाह / साझेदारी",
+      "ideal_drivers": [
+        2,
+        6,
+        9,
+        3
+      ],
+      "avoid_drivers": [],
+      "avoid_days_of_week": []
+    }
+  },
+  "vastu_name": {
+    "element_map": {
+      "1": {
+        "element": "Fire",
+        "hi": "अग्नि",
+        "vastu_dir": "SE",
+        "quality": "Leadership"
+      },
+      "2": {
+        "element": "Water",
+        "hi": "जल",
+        "vastu_dir": "N",
+        "quality": "Flow"
+      },
+      "3": {
+        "element": "Ether",
+        "hi": "आकाश",
+        "vastu_dir": "NE",
+        "quality": "Expansion"
+      },
+      "4": {
+        "element": "Earth",
+        "hi": "पृथ्वी",
+        "vastu_dir": "SW",
+        "quality": "Stability"
+      },
+      "5": {
+        "element": "Air",
+        "hi": "वायु",
+        "vastu_dir": "NW",
+        "quality": "Freedom"
+      },
+      "6": {
+        "element": "Water",
+        "hi": "जल",
+        "vastu_dir": "N",
+        "quality": "Luxury"
+      },
+      "7": {
+        "element": "Ether",
+        "hi": "आकाश",
+        "vastu_dir": "NE",
+        "quality": "Spirituality"
+      },
+      "8": {
+        "element": "Earth",
+        "hi": "पृथ्वी",
+        "vastu_dir": "SW",
+        "quality": "Authority"
+      },
+      "9": {
+        "element": "Fire",
+        "hi": "अग्नि",
+        "vastu_dir": "SE",
+        "quality": "Energy"
+      }
+    },
+    "business_ideal_roots": [
+      1,
+      3,
+      5,
+      6,
+      8,
+      9
+    ],
+    "avoid_roots": [],
+    "grade_thresholds": {
+      "Excellent": 80,
+      "Good": 65,
+      "Neutral": 50,
+      "Caution": 0
+    }
+  },
+  "composite_insights": {
+    "1": {
+      "en": "Pioneer Composite — Bold leadership entity.",
+      "hi": "अग्रदूत मिश्रण — साहसी नेतृत्व।"
+    },
+    "2": {
+      "en": "Harmony Composite — Built for diplomacy and partnership.",
+      "hi": "सद्भाव मिश्रण — कूटनीति के लिए।"
+    },
+    "3": {
+      "en": "Creative Composite — Joy and abundance for media.",
+      "hi": "रचनात्मक मिश्रण — मीडिया में उत्कृष्ट।"
+    },
+    "4": {
+      "en": "Builder Composite — Builds lasting institutions.",
+      "hi": "निर्माता मिश्रण — स्थायी संस्थाएं।"
+    },
+    "5": {
+      "en": "Freedom Composite — Dynamic for trading and technology.",
+      "hi": "स्वतंत्रता मिश्रण — व्यापार के लिए।"
+    },
+    "6": {
+      "en": "Nurture Composite — Excellence in wellness and education.",
+      "hi": "पोषण मिश्रण — शिक्षा में श्रेष्ठ।"
+    },
+    "7": {
+      "en": "Wisdom Composite — Research-driven, profound in science.",
+      "hi": "ज्ञान मिश्रण — विज्ञान में गहरा।"
+    },
+    "8": {
+      "en": "Power Composite — Financial mastery through discipline.",
+      "hi": "शक्ति मिश्रण — वित्तीय महारत।"
+    },
+    "9": {
+      "en": "Legacy Composite — Humanitarian impact in society.",
+      "hi": "विरासत मिश्रण — समाज में प्रभाव।"
+    }
+  },
+  "tithi_compat": {
+    "Pratipada": {
+      "root": 1,
+      "quality": "Auspicious for starts",
+      "hi": "प्रतिपदा"
+    },
+    "Dwitiya": {
+      "root": 2,
+      "quality": "Good for partnerships",
+      "hi": "द्वितीया"
+    },
+    "Tritiya": {
+      "root": 3,
+      "quality": "Excellent for creativity",
+      "hi": "तृतीया"
+    },
+    "Chaturthi": {
+      "root": 4,
+      "quality": "Caution: avoid new ventures",
+      "hi": "चतुर्थी"
+    },
+    "Panchami": {
+      "root": 5,
+      "quality": "Travel and freedom",
+      "hi": "पंचमी"
+    },
+    "Shashthi": {
+      "root": 6,
+      "quality": "Family and love",
+      "hi": "षष्ठी"
+    },
+    "Saptami": {
+      "root": 7,
+      "quality": "Spiritual pursuits",
+      "hi": "सप्तमी"
+    },
+    "Ashtami": {
+      "root": 8,
+      "quality": "Power and karma",
+      "hi": "अष्टमी"
+    },
+    "Navami": {
+      "root": 9,
+      "quality": "Victory and completion",
+      "hi": "नवमी"
+    },
+    "Dashami": {
+      "root": 1,
+      "quality": "New beginnings",
+      "hi": "दशमी"
+    },
+    "Ekadashi": {
+      "root": 2,
+      "quality": "Fasting and reflection",
+      "hi": "एकादशी"
+    },
+    "Dwadashi": {
+      "root": 3,
+      "quality": "Joy and celebration",
+      "hi": "द्वादशी"
+    },
+    "Trayodashi": {
+      "root": 4,
+      "quality": "Foundation work",
+      "hi": "त्रयोदशी"
+    },
+    "Chaturdashi": {
+      "root": 5,
+      "quality": "Transition energy",
+      "hi": "चतुर्दशी"
+    },
+    "Purnima": {
+      "root": 6,
+      "quality": "Fulfilment and peak energy",
+      "hi": "पूर्णिमा"
+    },
+    "Amavasya": {
+      "root": 9,
+      "quality": "Ancestor rituals only",
+      "hi": "अमावस्या"
+    }
+  },
+  "_version": "V2027.300"
+}

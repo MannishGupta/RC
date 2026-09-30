@@ -1,0 +1,20 @@
+{
+  "master_tracking_email": "admin.logistics@company.com",
+  "working_hours": {
+    "start": "09:00",
+    "end": "19:00",
+    "timezone": "Asia/Kolkata"
+  },
+  "mandatory_designations": [
+    "Driver",
+    "Office Runner"
+  ],
+  "mandatory_departments": [
+    "Logistics",
+    "Operations",
+    "Administration"
+  ],
+  "heartbeat_timeout_minutes": 10,
+  "logistics_admin_id": "",
+  "logistics_admin_name": ""
+}
