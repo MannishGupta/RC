@@ -807,7 +807,7 @@ $DASHBOARD_STATE = [
     <link rel="stylesheet" href="/assets/dashboard.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>">
 
     <link rel="stylesheet" href="/assets/a11y.css?v=20260928.07">
-    <link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
+    <link rel="stylesheet" href="/assets/contrast-lock.css?v=20261003.22">
     <script src="assets/a11y-focus-trap.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
     <script src="assets/a11y-tooltip.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
 <style id="rc-btn-contrast-lock">
