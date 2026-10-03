@@ -78,6 +78,12 @@ unset($_schemaFile);
 // India-first defaults (IST, en_IN)
 if (class_exists('AppLocale')) { AppLocale::boot(); }
 
+// Phase-1 modular layer (App\Rc\*) — strangler-compatible
+$_rcBoot = __DIR__ . '/Rc/bootstrap_rc.php';
+if (is_readable($_rcBoot)) { require_once $_rcBoot; }
+unset($_rcBoot);
+
+
 
 if (!class_exists('TenantPaths') && is_file(__DIR__ . '/TenantPaths.php')) { require_once __DIR__ . '/TenantPaths.php'; }
 class AppUtils {
@@ -90,22 +96,93 @@ class AppUtils {
     }
 
     public static function getBaseUrl() {
-        $protocol = ((string)($_SERVER['HTTPS'] ?? 'off') !== 'off') ? 'https' : 'http';
+        $https = (!empty($_SERVER['HTTPS']) && (string)$_SERVER['HTTPS'] !== 'off')
+            || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https')
+            || ((string)($_SERVER['SERVER_PORT'] ?? '') === '443');
+        $protocol = $https ? 'https' : 'http';
         $safeHost = preg_replace('/[^a-zA-Z0-9.:-]/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
-        return $protocol . "://" . $safeHost;
+        return $protocol . '://' . $safeHost;
     }
 
     public static function getImagePath($f) {
         if (!$f) return null;
-        $f = basename((string)$f);
-        $p = IMG_PATH . DIRECTORY_SEPARATOR . $f;
-        return file_exists($p) ? "images/" . $f : null;
+        $f = basename(str_replace(array("\\", "\0"), array("/", ""), (string)$f));
+        if ($f === "" || $f === "." || $f === "..") {
+            return null;
+        }
+        $imgRoot = defined("IMG_PATH") ? IMG_PATH : (defined("DATA_PATH") ? DATA_PATH . "/media/images" : "");
+        $dirs = array();
+        if ($imgRoot !== "" && is_dir($imgRoot)) {
+            $dirs[] = $imgRoot;
+        }
+        $legacy = (defined("BASE_PATH") ? BASE_PATH : dirname(__DIR__)) . "/images";
+        if (is_dir($legacy)) {
+            $dirs[] = $legacy;
+        }
+        foreach ($dirs as $dir) {
+            $p = $dir . DIRECTORY_SEPARATOR . $f;
+            if (is_file($p)) {
+                return "images/" . $f;
+            }
+        }
+        $lower = strtolower($f);
+        foreach ($dirs as $dir) {
+            $list = @scandir($dir);
+            if (!is_array($list)) {
+                continue;
+            }
+            foreach ($list as $entry) {
+                if ($entry === "." || $entry === "..") {
+                    continue;
+                }
+                if (strtolower($entry) === $lower && is_file($dir . DIRECTORY_SEPARATOR . $entry)) {
+                    return "images/" . $entry;
+                }
+            }
+        }
+        return null;
     }
+
+    /**
+     * Canonical digital business / profile card URL for a team slug.
+     * Used by QR payloads, OG tags, share links — must land on ?card=business&slug=
+     * (never a bare /{slug} path, which 404s on this app).
+     */
+    public static function getCardUrl($slug, string $card = 'business'): string
+    {
+        $slug = self::sanitizeSlug((string)$slug);
+        $card = preg_replace('/[^a-z]/', '', strtolower($card)) ?: 'business';
+        if ($slug === '') {
+            return rtrim(self::getBaseUrl(), '/') . '/';
+        }
+        return rtrim(self::getBaseUrl(), '/') . '/?card=' . $card . '&slug=' . rawurlencode($slug);
+    }
+
     public static function getFullUrl($path) {
-        if (!$path) return "";
-        if (strpos((string)$path, 'http') === 0) return (string)$path;
-        $base = rtrim(self::getBaseUrl() . dirname((string)($_SERVER['PHP_SELF'] ?? '/')), '/');
-        return $base . '/' . ltrim((string)$path, '/');
+        if (!$path) return '';
+        $path = (string)$path;
+        if (strpos($path, 'http') === 0) {
+            return $path;
+        }
+        // Query-style paths: ?card=business&slug=x
+        if (isset($path[0]) && $path[0] === '?') {
+            return rtrim(self::getBaseUrl(), '/') . '/' . $path;
+        }
+        if (strpos($path, 'card=') !== false) {
+            return rtrim(self::getBaseUrl(), '/') . '/?' . ltrim($path, '?');
+        }
+        // Bare team slug → business card (QR / share target). Do NOT emit /{slug}.
+        $trim = ltrim($path, '/');
+        if ($trim !== '' && strpos($trim, '/') === false && preg_match('/^[a-z0-9][a-z0-9\-_]*$/i', $trim)) {
+            return self::getCardUrl($trim, 'business');
+        }
+        $script = (string)($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/');
+        $scriptDir = dirname($script);
+        if ($scriptDir === '\\' || $scriptDir === '.' || $scriptDir === '') {
+            $scriptDir = '/';
+        }
+        $base = rtrim(self::getBaseUrl() . ($scriptDir === '/' ? '' : $scriptDir), '/');
+        return $base . '/' . ltrim($path, '/');
     }
     public static function getDOB($d) {
         $dob = $d['dob'] ?? $d['birthday'] ?? $d['birth_date'] ?? '';
@@ -527,8 +604,8 @@ class AppAuth {
             "upgrade-insecure-requests",
             "img-src 'self' data: blob: https:",
             "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com",
-            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sheetjs.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net",
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sheetjs.com https://cdn.jsdelivr.net",
             "frame-src 'self' https://www.google.com https://maps.google.com https://www.google.co.in https://maps.googleapis.com",
             "child-src 'self' https://www.google.com https://maps.google.com blob:",
             "connect-src 'self' https://cdn.sheetjs.com https://api.open-meteo.com https://air-quality-api.open-meteo.com https://cdn.jsdelivr.net",
@@ -1770,7 +1847,7 @@ class CardContext {
         $comp['favicon_url'] = AppUtils::getImagePath($comp['favicon'] ?? '');
         $comp['cover_url']   = AppUtils::getImagePath('cover.jpg');
 
-        return ['meta' => ['slug' => $s, 'url' => AppUtils::getFullUrl($s)], 'person' => $person, 'company' => $comp];
+        return ['meta' => ['slug' => $s, 'url' => AppUtils::getCardUrl($s, 'business')], 'person' => $person, 'company' => $comp];
     }
 }
 

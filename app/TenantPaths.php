@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /**
  * TenantPaths — safe multi-tenant directory enumeration (Windows open_basedir safe).
- * Version: 20260928.10
+ * Version: 20261003.01
  *
  * Never treat files (.htaccess, README.md, map.json) as tenant folders.
  * Only real directories whose names look like tenant ids are returned.
@@ -31,6 +31,12 @@ final class TenantPaths
             $folder = $tenantsDir . DIRECTORY_SEPARATOR . $d;
             // Guard: only real directories (never files like .htaccess / README.md)
             if (!@is_dir($folder)) {
+                continue;
+            }
+            if (!class_exists('TenantTombstone', false) && is_file(__DIR__ . '/TenantTombstone.php')) {
+                require_once __DIR__ . '/TenantTombstone.php';
+            }
+            if (class_exists('TenantTombstone') && TenantTombstone::isDeleted((string)$d)) {
                 continue;
             }
             $out[] = $d;

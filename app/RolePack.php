@@ -41,7 +41,7 @@ final class RolePack
             }
             return array_values(array_map('strval', $tabs));
         }
-        return ['team', 'terms'];
+        return ['team', 'terms', 'numero', 'bank', 'docs', 'events', 'locations', 'statutory', 'access', 'statistics'];
     }
 
     public static function canAccess(?string $user, string $tab): bool

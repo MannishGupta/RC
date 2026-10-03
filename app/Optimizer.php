@@ -83,7 +83,27 @@ class SystemDataOptimizer
             self::phaseTrimSessions();
             self::phaseTrimLogs();
             self::phaseOrphanMedia();
-            self::phaseConvertImagesWebp();
+            // BUG FIX: the likely actual cause of the HTTP 500 this was
+            // crashing with. This phase is deliberately, carefully capped
+            // for a SINGLE tenant's single run (25 images per pass, 6MB/25MP
+            // ceilings per image, its own comment notes shared hosting often
+            // caps memory at 128MB) -- but a multi-tenant sweep runs the
+            // full phase sequence once per tenant, in the same PHP process,
+            // within the same request's memory budget. Multiplying bounded
+            // single-tenant image decode/encode work across several tenants
+            // sequentially is a realistic way to exhaust memory even with
+            // those caps in place -- and PHP's memory-exhaustion fatal is
+            // NOT catchable by the \Throwable wrapper around this whole
+            // method, so it would surface exactly as an uncaught 500 with no
+            // JSON body, bypassing the graceful error handling entirely.
+            // Skipped only for the multi-tenant sweep; the normal
+            // single-tenant optimize button (self::run(), not this method)
+            // is untouched and still converts images as before.
+            if (!$lightweight) {
+                self::phaseConvertImagesWebp();
+            } else {
+                self::log('WebP convert skipped (multi-tenant sweep — run per-tenant optimise to convert images for a specific tenant).');
+            }
             self::phaseRebuildDataCache();
             self::phasePublicTeamAndHealth();
             self::phaseLogRotateAndBackupHint();
@@ -387,18 +407,29 @@ class SystemDataOptimizer
     private static function phaseEnsureDirs(): void
     {
         $data = self::dataRoot();
+        // BUG FIX: IMG_PATH/DOC_PATH/SESSION_PATH/etc. are constants fixed once
+        // per request by tenant_bootstrap.php, for whichever tenant resolved
+        // from the current request's host. During a multi-tenant sweep
+        // (runAllTenants -> runForDataPath, one call per tenant within the
+        // SAME request), these constants never change between iterations --
+        // so they were correct for exactly one tenant and silently pointed at
+        // that same tenant's folders on every other pass, while $data itself
+        // (from self::dataRoot(), which DOES check the per-tenant override)
+        // correctly changed each time. Always build from $data for the
+        // per-tenant subdirectories now, so every path in this list actually
+        // tracks the tenant currently being processed.
         $dirs = [
             $data,
-            defined('IMG_PATH') ? IMG_PATH : ($data . '/media/images'),
-            defined('DOC_PATH') ? DOC_PATH : ($data . '/media/documents'),
-            defined('SESSION_PATH') ? SESSION_PATH : ($data . '/sessions'),
-            defined('LOG_PATH') ? LOG_PATH : ($data . '/logs'),
-            defined('BACKUP_PATH') ? BACKUP_PATH : ($data . '/backups'),
-            defined('DISPATCH_DATA_PATH') ? DISPATCH_DATA_PATH : ($data . '/dispatch'),
-            defined('JANAM_DATA_PATH') ? JANAM_DATA_PATH : ($data . '/janam'),
-            defined('VALUE_DATA_PATH') ? VALUE_DATA_PATH : ($data . '/value'),
-            defined('RUNNERS_DATA_PATH') ? RUNNERS_DATA_PATH : ($data . '/runners'),
-            defined('CONFIG_DATA_PATH') ? CONFIG_DATA_PATH : ($data . '/config'),
+            $data . '/media/images',
+            $data . '/media/documents',
+            $data . '/sessions',
+            $data . '/logs',
+            $data . '/backups',
+            $data . '/dispatch',
+            $data . '/janam',
+            $data . '/value',
+            $data . '/runners',
+            $data . '/config',
             $data . '/media',
             $data . '/tmp',
         ];
@@ -983,9 +1014,10 @@ class SystemDataOptimizer
 
     private static function phaseTrimSessions(): void
     {
-        $dir = defined('SESSION_PATH')
-            ? SESSION_PATH
-            : ((defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/sessions');
+        // BUG FIX: same issue as phaseEnsureDirs above -- SESSION_PATH is
+        // fixed per request, not per tenant being swept. self::dataRoot()
+        // is the one source that actually tracks the current sweep target.
+        $dir = self::dataRoot() . '/sessions';
         if (!is_dir($dir)) {
             return;
         }
@@ -1303,9 +1335,18 @@ class SystemDataOptimizer
     /** @return array<string,mixed> */
     private static function bankSchema(): array
     {
+        // 'qr_image' added to match the live schema in app/bootstrap.php,
+        // which already includes it -- this copy had drifted out of sync.
+        // Not a functional bug on its own: phaseNormalizeList's
+        // array_merge($schema, $row) keeps any key already present in the
+        // real record regardless of whether it's listed here, so qr_image
+        // was never actually stripped by normalisation. Fixed anyway so
+        // this schema accurately documents every field bank records hold,
+        // rather than silently relying on merge behaviour a future reader
+        // wouldn't know to check.
         return [
             'id' => '', 'slug' => '', 'bank_name' => '', 'holder_name' => '',
-            'acc_no' => '', 'ifsc' => '', 'branch' => '', 'upi_id' => '',
+            'acc_no' => '', 'ifsc' => '', 'branch' => '', 'upi_id' => '', 'qr_image' => '',
         ];
     }
 
@@ -1397,7 +1438,18 @@ class SystemDataOptimizer
                 $add($company[$k] ?? '');
             }
         }
-        foreach (['team', 'docs', 'cartags'] as $ns) {
+        // BUG FIX: 'bank' and 'locations' both store a filename directly
+        // under the SAME images/ directory this scanner watches --
+        // bank.qr_image (the pre-generated static UPI QR, written to
+        // images/ specifically so sharing never depends on a live
+        // generator link -- see index.php's "Bank: pre-generate static UPI
+        // QR into images/" comment) and locations.logo / locations.photo
+        // (present in locationsSchema() below). Neither namespace was
+        // checked here, so a bank record's own QR code, or a location's own
+        // logo/photo, would have been treated as unreferenced and become
+        // eligible for deletion by this same scanner -- despite being
+        // actively linked from and used by that exact record.
+        foreach (['team', 'docs', 'cartags', 'bank', 'locations'] as $ns) {
             $rows = AppDB::read($ns);
             if (!is_array($rows)) {
                 continue;
@@ -1406,7 +1458,7 @@ class SystemDataOptimizer
                 if (!is_array($row)) {
                     continue;
                 }
-                foreach (['photo', 'doc_file', 'logo', 'cover'] as $k) {
+                foreach (['photo', 'doc_file', 'logo', 'cover', 'qr_image'] as $k) {
                     $add($row[$k] ?? '');
                 }
             }
@@ -1513,7 +1565,12 @@ class SystemDataOptimizer
             if (function_exists('rc_storage_self_heal')) {
                 rc_storage_self_heal($path);
             }
-            $r = self::runForDataPath($path, $force);
+            // Always lightweight here: this loop multiplies the full phase
+            // sequence across every tenant within one request, so the heavy
+            // per-tenant image-conversion phase is skipped regardless of how
+            // many tenants currently exist, keeping behaviour predictable as
+            // tenants are added later rather than depending on today's count.
+            $r = self::runForDataPath($path, $force, true);
             $results[] = [
                 'tenant' => $tid,
                 'path'   => $path,
@@ -1548,7 +1605,7 @@ class SystemDataOptimizer
     /**
      * @return array{status:string,logs:list<string>,message?:string}
      */
-    private static function runForDataPath(string $dataPath, bool $force = true): array
+    private static function runForDataPath(string $dataPath, bool $force = true, bool $lightweight = false): array
     {
         self::$logs = [];
         $prev = $GLOBALS['RC_OPT_DATA_PATH'] ?? null;

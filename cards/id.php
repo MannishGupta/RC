@@ -126,7 +126,7 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
         html,body{height:100%}
         body{
             /* TYPOGRAPHY FIX: was missing 'Aptos' (this project's established primary corporate typeface, used everywhere else -- dashboard.php, business.php, the numerology report) and had NO Devanagari fallback at all. Any Hindi text in a name, department, or company field -- a genuine, reachable case in an Indian company directory, with no language-toggle logic needed to trigger it -- would have rendered in the browser's uncontrolled default Devanagari font, visually mismatched against the rest of the card. Aligned to the same stack used consistently across the rest of the app. */
-            font-family:'Inter','Aptos','Noto Sans Devanagari',system-ui,-apple-system,'Segoe UI',sans-serif;
+            font-family:'Aptos','Inter','Noto Sans Devanagari',system-ui,-apple-system,'Segoe UI',sans-serif;
             background:
                 radial-gradient(circle at 50% 0%, #1a1a1a 0%, #050505 65%);
             display:flex;justify-content:center;align-items:center;min-height:100vh;

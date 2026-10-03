@@ -57,15 +57,36 @@ $ogDesc  = ($lang === 'hi')
     ? 'Driver ' . (int)$core['driver'] . ' · Conductor ' . (int)$core['conductor'] . ' · वैदिक अंकशास्त्र'
     : 'Driver ' . (int)$core['driver'] . ' · Conductor ' . (int)$core['conductor'] . ' · Vedic Numerology';
     
-// Fallback OG image: use absPhoto (profile pic), else company logo, else skip
-$_coLogo = '';
-if (class_exists('AppDB')) { $_co=AppDB::read('company'); $_coLogo = !empty($_co['logo']) ? $protocol.$safeHost.'/images/'.basename($_co['logo']) : ''; }
-$ogImg = !empty($absPhoto) ? $absPhoto : (!empty($_coLogo) ? $_coLogo : '');
-$ogUrl   = $shareUrl;
-
-// ── Dynamic client name (from AppDB company record) ────────────
 $clientName='Arthsathi';
 if (class_exists('AppDB')) { $_co=AppDB::read('company'); if(!empty($_co['name'])) $clientName=(string)$_co['name']; elseif(!empty($_co[0]['name'])) $clientName=(string)$_co[0]['name']; }
+
+// OG image: profile photo → company logo → dynamic SVG card (WhatsApp/LinkedIn safe)
+$_coLogo = '';
+if (class_exists('AppDB')) {
+    $_co = AppDB::read('company');
+    if (is_array($_co) && !empty($_co['logo'])) {
+        $_coLogo = $protocol . $safeHost . '/images/' . rawurlencode(basename((string)$_co['logo']));
+    } elseif (is_array($_co) && !empty($_co[0]['logo'])) {
+        $_coLogo = $protocol . $safeHost . '/images/' . rawurlencode(basename((string)$_co[0]['logo']));
+    }
+}
+$ogImg = '';
+if (!empty($absPhoto) && strpos((string)$absPhoto, 'ui-avatars.com') === false) {
+    $ogImg = (string)$absPhoto;
+} elseif ($_coLogo !== '') {
+    $ogImg = $_coLogo;
+} else {
+    $ogImg = $protocol . $safeHost . '/tools/og_card.php?' . http_build_query([
+        'name' => (string)($p['name'] ?? 'Numerology'),
+        'role' => 'Vedic Numerology Report',
+        'company' => (string)($clientName ?? 'Arthsathi'),
+        'kind' => ($lang === 'hi' ? 'वैदिक अंकशास्त्र' : 'Vedic Numerology'),
+    ]);
+}
+// clientName may not be set yet — safe fallback after
+$ogUrl = $shareUrl;
+
+// ── Dynamic client name (from AppDB company record) ────────────
 
 // ── V2027.300: Muhurat ────────────────────────────────────────
 $muhuratData=[];

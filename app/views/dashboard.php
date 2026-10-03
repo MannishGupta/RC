@@ -1501,6 +1501,39 @@ $DASHBOARD_STATE = [
 
         <!-- dashboardApp: assets/dashboard-app.js -->
 
+<script>
+// SAFETY NET, not a fix for the root cause: added after a live deployment
+// showed an empty sidebar and header with no visible error at all. Root
+// cause there was assets/dashboard-app.js missing or stale on the server --
+// x-data="dashboardApp" silently fails to resolve, the surrounding <aside>
+// and <header> markup still renders as plain HTML, but every x-for loop
+// that depends on Alpine (navGroups, primaryNav) never populates. Nothing
+// in the browser tells you why; it just looks broken.
+// This checks for the actual SYMPTOM (the sidebar has zero rendered nav
+// links) a couple of seconds after load, rather than guessing at Alpine's
+// internal state -- that makes it catch this failure mode regardless of
+// the exact underlying cause (a missing file, a load-order problem, a
+// future JS error in that file), not just this one specific incident.
+// Deliberately framework-independent: if Alpine itself is the thing that
+// failed to load, a check that depends on Alpine would fail silently too.
+(function () {
+    setTimeout(function () {
+        var nav = document.getElementById('rc-sidebar-nav');
+        if (!nav || nav.querySelector('.sidebar-link, .section-label')) return; // rendered fine
+
+        var banner = document.createElement('div');
+        banner.setAttribute('role', 'alert');
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;' +
+            'background:#7f1d1d;color:#fef2f2;font:600 13px/1.5 system-ui,sans-serif;' +
+            'padding:10px 16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+        banner.innerHTML = 'Navigation failed to load &mdash; the sidebar and header controls are missing their content. ' +
+            'A required file likely failed to load: <code style="background:rgba(0,0,0,.25);padding:1px 6px;border-radius:4px">assets/dashboard-app.js</code>. ' +
+            'Check the browser console (F12) and the Network tab for a 404 on that file, then confirm it exists on the server.';
+        document.body.insertBefore(banner, document.body.firstChild);
+    }, 2500);
+})();
+</script>
+
 <?php $cp = __DIR__ . '/partials/command_palette.php'; if (is_file($cp)) require $cp; ?>
 </body>
 </html>

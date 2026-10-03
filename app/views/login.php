@@ -41,9 +41,10 @@ $logoW = 160;
 $logoH = 48;
 ?>
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="reserve">
 <head>
     <meta charset="UTF-8">
+    <?php require __DIR__ . '/partials/rc_theme_head.php'; ?>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0f172a">
     <meta name="color-scheme" content="light">

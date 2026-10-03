@@ -451,7 +451,7 @@ final class VehicleCatalog
             'citroen' => 'citroen.in',
         ];
         if (!empty($domains[$slug])) {
-            return 'https://logo.clearbit.com/' . $domains[$slug];
+            return 'https://www.google.com/s2/favicons?domain=' . rawurlencode($domains[$slug]) . '&sz=128';
         }
 
         // 3) Generic

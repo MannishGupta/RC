@@ -90,6 +90,13 @@ class SeoShare
                 ? $logo
                 : ($base . '/images/' . rawurlencode(basename($logo)));
         }
+        $labels = [
+            'business' => 'Digital Business Card',
+            'id' => 'Employee ID Card',
+            'visiting' => 'Visiting Card',
+            'qr' => 'QR Contact Card',
+            'numero' => 'Vedic Numerology Report',
+        ];
         // Dynamic SVG OG card when no photo/logo — strong WhatsApp/LinkedIn preview
         if ($img === '') {
             $q = http_build_query([
@@ -100,12 +107,6 @@ class SeoShare
             ]);
             $img = $base . '/tools/og_card.php?' . $q;
         }
-        $labels = [
-            'business' => 'Digital Business Card',
-            'id' => 'Employee ID Card',
-            'visiting' => 'Visiting Card',
-            'qr' => 'QR Contact Card',
-        ];
         $label = $labels[$kind] ?? 'Contact Card';
         $title = $name . ($role !== '' && $role !== '-' ? ' · ' . $role : '') . ($comp !== '' ? ' | ' . $comp : '');
         if (mb_strlen($title) > 65) {
