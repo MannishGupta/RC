@@ -29,7 +29,7 @@
                     return [
                         {id:'team',   icon:'fa-solid fa-users',       label:'Human Capital'},
                         {id:'docs',   icon:'fa-solid fa-folder-open', label:'Documents'},
-                        {id:'bank',   icon:'fa-solid fa-building-columns', label:'Treasury'},
+                        {id:'bank',   icon:'fa-solid fa-building-columns', label:'Treasury & Banking Ledger'},
                         {id:'events', icon:'fa-solid fa-calendar',    label:'Calendar'}
                     ];
                 },
@@ -60,13 +60,13 @@
                     groups.push({ title: 'Field Operations', items: [
                         { id: 'tracking', icon: 'fa-solid fa-location-crosshairs', label: 'Live Location' },
                         { id: 'ops',      icon: 'fa-solid fa-clipboard-list',      label: 'Field Ops Hub' },
-                        { id: 'cartags',  icon: 'fa-solid fa-car',                 label: 'Vehicle Inventory' },
+                        { id: 'cartags',  icon: 'fa-solid fa-car',                 label: 'Fleet Asset Registry' },
                         { id: 'dispatch', icon: 'fa-solid fa-route',               label: 'Dispatch & Routes' },
-                        { id: 'locations',icon: 'fa-solid fa-map-location-dot',    label: 'Standard Locations' },
+                        { id: 'locations',icon: 'fa-solid fa-map-location-dot',    label: 'Shared Locations' },
                         { id: 'assets',   icon: 'fa-solid fa-box-open',            label: 'Asset Checkout' },
                     ]});
                     groups.push({ title: 'Institutional Resources', items: [
-                        { id: 'bank',      icon: 'fa-solid fa-building-columns', label: 'Treasury & Banking' },
+                        { id: 'bank',      icon: 'fa-solid fa-building-columns', label: 'Treasury & Banking Ledger' },
                         { id: 'docs',      icon: 'fa-solid fa-folder-open',      label: 'Document Vault' },
                         { id: 'events',    icon: 'fa-solid fa-calendar-days',    label: 'Calendar' },
                         { id: 'statutory', icon: 'fa-solid fa-scale-balanced',   label: 'Compliance Register' },
@@ -315,7 +315,7 @@
                         { ns: 'team', label: 'People', tab: 'team', fields: ['name','phone','mobile','email','designation_name','department_name','gotra','slug'] },
                         { ns: 'docs', label: 'Documents', tab: 'docs', fields: ['title','name','doc_name','category','tags'] },
                         { ns: 'cartags', label: 'Vehicles', tab: 'cartags', fields: ['plate','tag_id','make_model','name','owner_name'] },
-                        { ns: 'bank', label: 'Treasury', tab: 'bank', fields: ['bank_name','acc_no','upi_id','holder_name','ifsc'] },
+                        { ns: 'bank', label: 'Treasury & Banking Ledger', tab: 'bank', fields: ['bank_name','acc_no','upi_id','holder_name','ifsc'] },
                         { ns: 'locations', label: 'Locations', tab: 'locations', fields: ['name','city','address','pincode'] },
                     ];
                     const out = [];

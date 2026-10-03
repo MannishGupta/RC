@@ -24,19 +24,24 @@ window.rcMediaUrl = window.rcMediaUrl || function (name) {
   if (!name) return '';
   var n = String(name).trim();
   if (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0) return n;
-  // strip query and path prefixes (images/, media/, tenants/...)
   n = n.split('?')[0].replace(/^.*[\\/]/, '');
   if (!n) return '';
   var base = (typeof window.RC_BASE === 'string' && window.RC_BASE) ? window.RC_BASE.replace(/\/$/, '') : '';
-  // Prefer media gateway (tenant-safe); images/ also rewritten on Apache/IIS
-  return base + '/media_serve.php?f=' + encodeURIComponent(n);
+  return base + '/media_serve.php?f=' + encodeURIComponent(n) + '&v=1';
 };
 window.rcMediaOnError = window.rcMediaOnError || function (el) {
-  if (!el || el.dataset.rcTried) return;
-  el.dataset.rcTried = '1';
-  var n = (el.getAttribute('data-src-name') || '').replace(/^.*[\\/]/, '');
+  if (!el) return;
+  var step = parseInt(el.dataset.rcStep || '0', 10);
+  var n = (el.getAttribute('data-src-name') || el.getAttribute('alt') || '').replace(/^.*[\\/]/, '');
+  if (!n && el.src) {
+    try { n = decodeURIComponent((el.src.split('f=')[1] || '').split('&')[0]); } catch(e) {}
+  }
   if (!n) { el.style.display = 'none'; return; }
-  el.src = '/images/' + encodeURIComponent(n);
+  el.dataset.rcStep = String(step + 1);
+  if (step === 0) { el.src = '/media_serve.php?f=' + encodeURIComponent(n); return; }
+  if (step === 1) { el.src = '/images/' + encodeURIComponent(n); return; }
+  if (step === 2) { el.src = '/images/' + encodeURIComponent(n.split('.')[0] + '.webp'); return; }
+  el.style.display = 'none';
 };
 </script>
 <div class="w-full flex flex-col gap-4" x-data="{ q: '' }">

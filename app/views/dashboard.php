@@ -348,7 +348,7 @@ $titles = [
     'bank' => 'Treasury & Banking Ledger',
     'docs' => 'Corporate Document Vault',
     'events' => 'Corporate Calendar & Observances',
-    'locations' => 'Enterprise Premises Registry',
+    'locations' => 'Shared Locations',
     'statutory' => 'Regulatory Compliance Register',
     'terms' => 'Governance & Acceptable Use Policy',
     'company' => 'Organizational Configuration',
@@ -421,22 +421,36 @@ $DASHBOARD_STATE = [
         var stored = null;
         try { stored = localStorage.getItem(k); } catch (e) {}
         // Default = device preference when user has not chosen
-        var theme = (stored === 'light' || stored === 'dark')
-          ? stored
-          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        var allowed = {system:1,light:1,dark:1,reserve:1};
+        function rcResolve(p){
+          if (p==='light'||p==='dark'||p==='reserve') return p;
+          try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e){ return 'light'; }
+        }
+        var stored = null; try { stored = localStorage.getItem(k); } catch(e){}
+        if (!stored || !allowed[stored]) stored = 'system';
+        var theme = rcResolve(stored);
         document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-        window.rcSetTheme = function(t) {
-          if (t !== 'light' && t !== 'dark') t = 'light';
+        document.documentElement.setAttribute('data-theme-pref', stored);
+        document.documentElement.classList.toggle('dark', theme==='dark'||theme==='reserve');
+        window.rcSetTheme = function(pref){
+          if (!allowed[pref]) pref='system';
+          try { localStorage.setItem(k, pref); } catch(e){}
+          var t = rcResolve(pref);
           document.documentElement.setAttribute('data-theme', t);
-          document.documentElement.classList.toggle('dark', t === 'dark');
-          try { localStorage.setItem(k, t); } catch (e) {}
+          document.documentElement.setAttribute('data-theme-pref', pref);
+          document.documentElement.classList.toggle('dark', t==='dark'||t==='reserve');
+          document.querySelectorAll('[data-rc-theme-opt]').forEach(function(btn){
+            var on = btn.getAttribute('data-rc-theme-opt')===pref;
+            btn.setAttribute('aria-pressed', on?'true':'false');
+            btn.classList.toggle('is-active', on);
+          });
         };
-        window.rcToggleTheme = function() {
-          var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-          window.rcSetTheme(cur === 'dark' ? 'light' : 'dark');
+        window.rcToggleTheme = function(){
+          var order=['system','light','dark','reserve'];
+          var cur='system'; try{cur=localStorage.getItem(k)||'system';}catch(e){}
+          var i=order.indexOf(cur); window.rcSetTheme(order[(i+1)%order.length]);
         };
-        // Follow OS changes only when user has not manually overridden
+// Follow OS changes only when user has not manually overridden
         if (!stored && window.matchMedia) {
           try {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
@@ -822,13 +836,31 @@ $DASHBOARD_STATE = [
 
     </script>
     
-    <link rel="stylesheet" href="/assets/dashboard.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>
-    <link rel="stylesheet" href="/assets/rc-layout-lock.css?v=20261003.04">">
+    <link rel="stylesheet" href="/assets/dashboard.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>">
+    <link rel="stylesheet" href="/assets/rc-layout-lock.css?v=20261003.04">
 
     <link rel="stylesheet" href="/assets/a11y.css?v=20260928.07">
     <link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
     <script src="assets/a11y-focus-trap.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
     <script src="assets/a11y-tooltip.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
+<style id="rc-bank-qr-cap">
+.rc-bank-qr-box, [data-bank-id], [data-bank-id] canvas, [data-bank-id] img {
+  max-width: 120px !important; max-height: 120px !important;
+}
+[data-bank-id] { width: 120px !important; height: 120px !important; }
+</style>
+<style id="rc-theme-seg-css">
+.rc-theme-seg{display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;background:#f8fafc;height:1.75rem}
+.rc-theme-seg__btn{border:0;padding:0 .4rem;font-size:.65rem;font-weight:700;line-height:1.75rem;color:#475569;background:transparent;cursor:pointer;border-right:1px solid #e2e8f0}
+.rc-theme-seg__btn:last-child{border-right:0}
+.rc-theme-seg__btn.is-active,.rc-theme-seg__btn[aria-pressed="true"]{background:#2563eb;color:#fff}
+html[data-theme="dark"] .rc-theme-seg{background:#1e293b;border-color:#334155}
+html[data-theme="dark"] .rc-theme-seg__btn{color:#cbd5e1;border-right-color:#334155}
+html[data-theme="dark"] .rc-theme-seg__btn.is-active{background:#3b82f6;color:#fff}
+html[data-theme="reserve"] .rc-theme-seg{background:#1a0f0c;border-color:#3d2a1f}
+html[data-theme="reserve"] .rc-theme-seg__btn{color:#d4c4a8;border-right-color:#3d2a1f}
+html[data-theme="reserve"] .rc-theme-seg__btn.is-active{background:#b45309;color:#fff7ed}
+</style>
 </head>
 
 <body class="rc-app-shell" x-data="dashboardApp" 
@@ -979,10 +1011,13 @@ $DASHBOARD_STATE = [
             <button type="button" x-show="!sidebarOpen && isSuperAdmin" @click="showChangelog = true"
                     class="text-center w-full rounded-md py-1 text-[10px] font-mono font-bold text-sky-300 hover:text-white bg-slate-800 border border-slate-600"
                     title="Changelog">v<span x-text="state.context.v"></span></button>
-            <button type="button" onclick="window.rcToggleTheme && window.rcToggleTheme()"
-                        class="ctrl-btn rc-hit-lg" title="Toggle Interface Theme" aria-label="Toggle colour theme">
-                    <i class="fa-solid fa-moon text-xs" aria-hidden="true"></i>
-                </button>
+            <div class="rc-theme-seg" role="group" aria-label="Colour theme">
+                    <button type="button" data-rc-theme-opt="system" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('system')" title="System">Sys</button>
+                    <button type="button" data-rc-theme-opt="light" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('light')" title="Light">Light</button>
+                    <button type="button" data-rc-theme-opt="dark" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('dark')" title="Dark">Dark</button>
+                    <button type="button" data-rc-theme-opt="reserve" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('reserve')" title="Reserve">Res</button>
+                </div>
+                <script>(function(){try{var p=localStorage.getItem('rc-theme')||'system';document.querySelectorAll('[data-rc-theme-opt]').forEach(function(b){var on=b.getAttribute('data-rc-theme-opt')===p;b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('is-active',on);});}catch(e){}})();</script>
                 <button type="button" @click="logout()" class="rc-hit-lg text-slate-600 hover:text-red-400 transition-colors shrink-0 ml-auto flex items-center justify-center" title="Terminate Session" aria-label="Terminate session and sign out">
                 <i class="fa-solid fa-power-off text-xs" aria-hidden="true"></i>
             </button>
@@ -1266,9 +1301,17 @@ $DASHBOARD_STATE = [
                             <template x-for="i in paginatedList" :key="i.id">
                                 <div class="w-full bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-blue-500 relative overflow-hidden group hover:border-blue-300 hover:shadow-md transition-all flex flex-col md:flex-row md:items-start justify-between gap-4">
                                     <div class="flex flex-col md:flex-row gap-6 w-full flex-1 min-w-0">
-                                        <div class="md:w-36 shrink-0 md:border-r border-slate-100 md:pr-4 min-w-0">
-                                            <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Reference ID</div>
-                                            <div class="font-mono text-base font-bold text-slate-700 truncate" x-text="i.slug || i.id || '-'"></div>
+                                        <div class="md:w-40 shrink-0 md:border-r border-slate-100 md:pr-4 min-w-0 flex flex-col items-start gap-2">
+                                            <div class="w-full">
+                                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Reference ID</div>
+                                                <div class="font-mono text-sm font-bold text-slate-700 truncate" x-text="i.slug || i.id || '-'"></div>
+                                            </div>
+                                            <div class="w-[72px] h-[72px] rounded-xl border border-slate-200 bg-white p-2 flex items-center justify-center overflow-hidden shadow-sm shrink-0" title="Bank logo">
+                                                <template x-if="i.bank_logo">
+                                                    <img :src="i.bank_logo" alt="" width="72" height="72" class="max-w-full max-h-full object-contain" loading="lazy" @error="$el.style.display='none'">
+                                                </template>
+                                                <span class="text-slate-300 text-2xl" x-show="!i.bank_logo"><i class="fa-solid fa-building-columns"></i></span>
+                                            </div>
                                         </div>
                                         <div class="flex-1 min-w-0 md:border-r border-slate-100 md:px-4 space-y-2">
                                             <div><div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Account Holder</div><div class="font-bold text-slate-800 text-base truncate" x-text="i.holder_name"></div></div>
@@ -1285,7 +1328,7 @@ $DASHBOARD_STATE = [
                                         <div class="shrink-0 flex flex-col items-center justify-center gap-1.5 md:border-l border-slate-100 md:pl-4"
                                              x-show="i.upi_id || i.qr_image"
                                              x-cloak>
-                                            <div class="w-[7.5rem] h-[7.5rem] rounded-xl border-2 border-slate-200 bg-white p-1.5 shadow-sm flex items-center justify-center overflow-hidden"
+                                            <div class="rc-bank-qr-box w-[7.5rem] h-[7.5rem] max-w-[120px] max-h-[120px] rounded-xl border-2 border-slate-200 bg-white p-1.5 shadow-sm flex items-center justify-center overflow-hidden"
                                                  :data-bank-id="i.id"
                                                  x-init="$nextTick(() => window.rcPaintBankQr && window.rcPaintBankQr($el, i))">
                                                 <template x-if="i.qr_image">
