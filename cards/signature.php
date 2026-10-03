@@ -1,4 +1,4 @@
-<?php // Version: 20261003.15
+<?php // Version: 20261003.16
 declare(strict_types=1);
 /**
  * Email signature generator — dual layouts:
@@ -145,21 +145,27 @@ $socialMeta = [
     'whatsapp'  => ['WhatsApp', '25d366'],
 ];
 $socialLinks = [];
-foreach ($socialMeta as $_k => [$_label, $_col]) {
+$order = ['linkedin', 'twitter', 'instagram', 'facebook', 'youtube', 'whatsapp'];
+$seen = [];
+foreach ($order as $_k) {
+    if (!isset($socialMeta[$_k])) {
+        continue;
+    }
+    [$_label, $_col] = $socialMeta[$_k];
     $_v = $_validUrl($_personSocial[$_k] ?? $_companySocial[$_k] ?? '');
     if ($_v === '' && $_k === 'twitter') {
         $_v = $_validUrl($_personSocial['x'] ?? $_companySocial['x'] ?? '');
     }
-    if ($_v === '') {
+    if ($_v === '' || isset($seen[$_k])) {
         continue;
     }
-    $key = $_k === 'x' ? 'twitter' : $_k;
+    $seen[$_k] = true;
     $socialLinks[] = [
         'url'   => $_v,
         'label' => $_label,
         'color' => $_col,
-        'icon'  => $socialSvg($key),
-        'key'   => $key,
+        'icon'  => $socialSvg($_k),
+        'key'   => $_k,
     ];
 }
 
@@ -184,7 +190,7 @@ $socialRowHtml = static function (array $socials) use ($e): string {
                 . 'font-weight:bold;text-decoration:none;border-radius:3px;">' . $e($s['label']) . '</a>';
         }
     }
-    return '<tr><td style="padding:6px 0 2px;line-height:18px;">' . $cells . '</td></tr>';
+    return '<tr><td style="padding:6px 0 2px;line-height:18px;text-align:left;">' . $cells . '</td></tr>';
 };
 
 /**
@@ -225,10 +231,6 @@ $sigFull = static function (array $d) use ($e, $socialRowHtml): string {
         $left .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#334155;line-height:1.4;padding:1px 0 0 0;">'
             . 'E: <a href="mailto:' . $e($d['email']) . '" style="color:#334155;text-decoration:none;">' . $e($d['email']) . '</a></td></tr>';
     }
-    $soc = $socialRowHtml($d['socials'] ?? []);
-    if ($soc !== '') {
-        $left .= $soc;
-    }
     $left .= '</table>';
 
     // Right: company block — landscape logo on top; portrait logo beside/above stack
@@ -266,6 +268,11 @@ $sigFull = static function (array $d) use ($e, $socialRowHtml): string {
     if ($tw !== []) {
         $right .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#334155;line-height:1.4;padding:4px 0 0 0;">'
             . implode('&nbsp;|&nbsp;', $tw) . '</td></tr>';
+    }
+    // Social links — left-aligned under company details band
+    $soc = $socialRowHtml($d['socials'] ?? []);
+    if ($soc !== '') {
+        $right .= $soc;
     }
     $right .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;padding:4px 0 0 0;">'
         . '<a href="' . $e($d['cardUrl']) . '" style="color:#94a3b8;text-decoration:none;">View digital card →</a></td></tr>';
