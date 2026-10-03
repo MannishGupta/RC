@@ -82,7 +82,7 @@ window.rcMediaOnError = function (el) {
   <div class="flex flex-wrap items-center gap-2" x-show="(filteredList||[]).some(i => i.logo || i.photo)">
     <template x-for="i in (filteredList||[]).filter(i => i.logo || i.photo)" :key="'lg-'+(i.id||i.slug||i.name)">
       <div class="rc-loc-logo-shell h-12 w-12 rounded-lg p-1.5 flex items-center justify-center overflow-hidden" :title="i.name">
-        <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($el)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy"
+        <img :src="i.logo_url || rcMediaUrl(i.logo || i.photo || i.image)" :data-src-name="i.logo || i.photo || i.image" @error="rcMediaOnError($el)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy"
              @error="$el.style.display='none'">
       </div>
     </template>
@@ -101,10 +101,10 @@ window.rcMediaOnError = function (el) {
       <article class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-3 min-h-[3.75rem]">
           <div class="w-14 h-14 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-            <template x-if="i.logo || i.photo">
-              <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($el)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy">
+            <template x-if="i.logo_url || i.logo || i.photo || i.image">
+              <img :src="i.logo_url || rcMediaUrl(i.logo || i.photo || i.image)" :data-src-name="i.logo || i.photo || i.image" @error="rcMediaOnError($el)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy">
             </template>
-            <template x-if="!(i.logo || i.photo)">
+            <template x-if="!(i.logo_url || i.logo || i.photo || i.image)">
               <i class="fa-solid fa-building text-slate-300 text-lg"></i>
             </template>
           </div>

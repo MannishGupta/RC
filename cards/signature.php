@@ -1,42 +1,30 @@
-<?php // Version: 260917.01
+<?php // Version: 20261003.14
 declare(strict_types=1);
 /**
- * cards/signature.php — Email signature generator.
- *
- * Not "sync with Google Workspace" — that needs a Workspace domain-wide
- * delegation grant, which is an admin decision for THEIR Google org, not
- * something this app can request on its own. Instead: a signature is
- * generated from the same team record the digital card already uses, shown
- * ready to copy-paste into Gmail's or Outlook's signature settings.
- * Gmail/Outlook/Apple Mail all accept pasted HTML signatures — this covers
- * the same ground with a five-second manual step instead of an OAuth grant.
- *
- * PUBLIC BY DESIGN, same as the card itself: ?card=business&slug=... has no
- * session gate, and a signature is not more sensitive than the card it is
- * built from. Anyone who can view the card can generate its signature.
+ * Email signature generator — dual layouts:
+ *  1) New mail (full) — photo, company logo orientation, full contacts + socials
+ *  2) Reply/forward (compact) — name, title, phone, email only
+ * Logo: landscape/square → 2-column; portrait → 3-column (logo right).
+ * Images: absolute media_serve URLs + ui-avatars / logo_proxy fallbacks.
+ * Social: real brand SVG marks as data-URI (email-safe) with hosted PNG fallback path.
  */
 
 $rootPath = file_exists(__DIR__ . '/../app/bootstrap.php') ? dirname(__DIR__) : __DIR__;
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-// BUG FIX: this file defined DATA_PATH/IMG_PATH/DOC_PATH directly from
-// BASE_PATH, completely bypassing tenant resolution -- on a multi-tenant
-// deployment (tenants/{id}/data/, resolved by host in
-// app/tenant_bootstrap.php), every request to this file read and wrote
-// the WRONG tenant's data regardless of which domain it was requested on.
-// Fixed to require tenant_bootstrap.php first (as index.php and the
-// correctly-wired standalone entry points already do) and guard every
-// fallback define with if (!defined(...)) so tenant_bootstrap's
-// resolution always wins when available, with these as the fallback for
-// a genuine single-tenant install with no tenants/ folder at all.
-if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
-if (!defined('IMG_PATH'))  if (!defined('IMG_PATH')) define('IMG_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/images');
-if (!defined('DOC_PATH'))  if (!defined('DOC_PATH')) define('DOC_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/documents');
+if (!defined('DATA_PATH')) {
+    define('DATA_PATH', BASE_PATH . '/data');
+}
+if (!defined('IMG_PATH')) {
+    define('IMG_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/images');
+}
+if (!defined('DOC_PATH')) {
+    define('DOC_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/documents');
+}
 require_once BASE_PATH . '/app/bootstrap.php';
 
 $slug = trim((string)($_GET['slug'] ?? ''));
 $ctx  = $slug !== '' && class_exists('CardContext') ? CardContext::get($slug) : null;
-
 if (!$ctx) {
     http_response_code(404);
     die("<div style='font-family:sans-serif;padding:40px;text-align:center;color:#64748b'>Card not found.</div>");
@@ -47,254 +35,413 @@ $company = $ctx['company'] ?? [];
 
 $name    = trim((string)($person['name'] ?? ''));
 $role    = trim((string)($person['designation'] ?? $person['role'] ?? ''));
-$phone   = trim((string)($person['phone'] ?? ''));
+$dept    = trim((string)($person['department'] ?? ''));
+$phone   = trim((string)($person['phone'] ?? $person['mobile'] ?? ''));
 $email   = trim((string)($person['email'] ?? ''));
 $website = trim((string)($person['website'] ?? $company['website'] ?? ''));
 $orgName = trim((string)($company['name'] ?? ''));
+$address = trim((string)($company['address'] ?? $person['location'] ?? ''));
+$landline = trim((string)($company['phone'] ?? $company['landline'] ?? ''));
 
 $rawHost  = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
-$safeHost = preg_replace('/[^a-zA-Z0-9.:-]/', '', $rawHost);
+$safeHost = preg_replace('/[^a-zA-Z0-9.:-]/', '', $rawHost) ?? 'localhost';
 $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $baseUrl  = rtrim($scheme . '://' . $safeHost, '/');
-$cardUrl  = $baseUrl . '/?card=business&slug=' . urlencode($slug);
+$cardUrl  = $baseUrl . '/?card=business&slug=' . rawurlencode($slug);
 
-$photoUrl = !empty($person['photo'])
-    ? $baseUrl . '/images/' . rawurlencode(basename((string)$person['photo']))
-    : 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=1e3a5f&color=ffffff&size=200';
-$logoUrl  = !empty($company['logo']) ? $baseUrl . '/images/' . rawurlencode(basename((string)$company['logo'])) : '';
+/** Resolve team/company image to absolute public URL with fallbacks */
+$resolveImg = static function (string $file, string $fallback = '') use ($baseUrl): string {
+    $file = trim($file);
+    if ($file === '') {
+        return $fallback;
+    }
+    if (preg_match('~^https?://~i', $file) || str_starts_with($file, 'data:')) {
+        return $file;
+    }
+    $bn = basename(str_replace(['\\', "\0"], ['/', ''], $file));
+    if ($bn === '' || $bn === '.' || $bn === '..') {
+        return $fallback;
+    }
+    // Prefer media gateway (tenant-safe)
+    return $baseUrl . '/media_serve.php?f=' . rawurlencode($bn);
+};
+
+$photoFile = (string)($person['photo'] ?? '');
+$logoFile  = (string)($company['logo'] ?? $company['logo_file'] ?? '');
+$photoUrl  = $resolveImg(
+    $photoFile,
+    'https://ui-avatars.com/api/?name=' . rawurlencode($name !== '' ? $name : 'User') . '&background=1e3a5f&color=ffffff&size=200&bold=true'
+);
+$logoUrl = $resolveImg($logoFile, '');
+
+// Local path for getimagesize orientation
+$logoLocal = '';
+foreach ([IMG_PATH, DATA_PATH . '/media/images', DATA_PATH . '/images', BASE_PATH . '/images'] as $dir) {
+    if ($logoFile === '' || !is_dir($dir)) {
+        continue;
+    }
+    $cand = $dir . '/' . basename($logoFile);
+    if (is_file($cand)) {
+        $logoLocal = $cand;
+        break;
+    }
+}
+$logoOrient = 'landscape'; // default 2-col
+$logoW = 0;
+$logoH = 0;
+if ($logoLocal !== '' && function_exists('getimagesize')) {
+    $sz = @getimagesize($logoLocal);
+    if (is_array($sz) && ($sz[0] ?? 0) > 0 && ($sz[1] ?? 0) > 0) {
+        $logoW = (int)$sz[0];
+        $logoH = (int)$sz[1];
+        $logoOrient = ($logoH > $logoW) ? 'portrait' : 'landscape';
+    }
+}
 
 $hex = ltrim((string)($company['brand_color'] ?? '#1e3a5f'), '#');
-if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) $hex = '1e3a5f';
+if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
+    $hex = '1e3a5f';
+}
 
-// ── Social links: personal-over-company, same validated merge as the
-// digital business card (cards/business.php). This file never resolved
-// socials at all before — needed now to add hyperlinked icons on the
-// website row.
-$_personSocial  = is_array($person['social']  ?? null) ? $person['social']  : [];
+// Social links
+$_personSocial  = is_array($person['social'] ?? null) ? $person['social'] : [];
 $_companySocial = is_array($company['social'] ?? null) ? $company['social'] : [];
-$_validUrl = function ($v): string {
+$_validUrl = static function ($v): string {
     $v = trim((string)$v);
-    if ($v === '' || $v === '-') return '';
-    if (!preg_match('~^[a-z][a-z0-9+.\-]*:~i', $v)) $v = 'https://' . ltrim($v, '/');
+    if ($v === '' || $v === '-') {
+        return '';
+    }
+    if (!preg_match('~^[a-z][a-z0-9+.\-]*:~i', $v)) {
+        $v = 'https://' . ltrim($v, '/');
+    }
     return preg_match('~^https?://~i', $v) ? $v : '';
 };
-// Small, letter-badge icons — not icon-font glyphs (Gmail strips <style>,
-// most clients have no icon font installed) and not hosted image files
-// (blocked by default in most clients until "show images" is clicked, and
-// this project has no bundled icon-image assets to host). A coloured table
-// cell with a one/two-letter mark is plain HTML/inline-CSS, renders
-// identically everywhere, and is exactly what several professional
-// signature tools fall back to for the same reason.
+
+/** Real brand SVG data-URIs (email clients that allow data: images) + absolute PNG fallbacks via simple-icons CDN style shapes */
+$socialSvg = static function (string $network): string {
+    // Minimal official-ish monochrome brand marks as inline SVG data URIs
+    $svgs = [
+        'linkedin' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#0A66C2"/><path fill="#fff" d="M6.36 9.5H8.7v7.64H6.36V9.5zM7.53 5.4a1.36 1.36 0 110 2.72 1.36 1.36 0 010-2.72zM10.3 9.5h2.24v1.04h.03c.31-.59 1.07-1.21 2.2-1.21 2.35 0 2.78 1.55 2.78 3.56v4.25h-2.34v-3.77c0-.9-.02-2.05-1.25-2.05-1.25 0-1.44.98-1.44 1.99v3.83H10.3V9.5z"/></svg>',
+        'twitter'  => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#000"/><path fill="#fff" d="M13.6 10.77L19.05 4.5h-1.29l-4.74 5.45L9.24 4.5H4.5l5.72 8.23L4.5 19.5h1.29l5-5.75 4 5.75H19.5l-5.9-8.73zm-1.77 2.03l-.58-.82L6.25 5.5h1.98l3.72 5.24.58.82 4.84 6.82h-1.98l-4.55-6.58z"/></svg>',
+        'instagram'=> '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><defs><linearGradient id="g" x1="0" y1="24" x2="24" y2="0"><stop stop-color="#f58529"/><stop offset=".5" stop-color="#dd2a7b"/><stop offset="1" stop-color="#515bd4"/></linearGradient></defs><rect width="24" height="24" rx="6" fill="url(#g)"/><rect x="6" y="6" width="12" height="12" rx="4" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="16.4" cy="7.6" r="1" fill="#fff"/></svg>',
+        'facebook' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#1877F2"/><path fill="#fff" d="M15.1 8.5h-1.3c-.5 0-.8.2-.8.7v1.1H15l-.2 2h-1.8V18h-2.2v-5.7H9.5v-2h1.3V9c0-1.5.9-2.5 2.5-2.5.5 0 1.1.1 1.6.2v1.3z"/></svg>',
+        'youtube'  => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#FF0000"/><path fill="#fff" d="M10 8.5l5.5 3.5L10 15.5v-7z"/></svg>',
+        'whatsapp' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#25D366"/><path fill="#fff" d="M12 5.5a6.2 6.2 0 00-5.3 9.4L5.5 18.5l3.7-1.1A6.2 6.2 0 1012 5.5zm3.5 8.7c-.15.42-.87.8-1.22.85-.31.05-.7.07-1.13-.07-.26-.08-.6-.2-1.03-.4-1.81-.78-3-2.62-3.09-2.74-.09-.12-.74-1-.74-1.9 0-.9.47-1.34.64-1.52.17-.18.37-.23.5-.23h.36c.11 0 .27-.04.42.32.15.37.52 1.27.57 1.36.05.09.08.2.02.32-.07.13-.1.21-.2.32-.1.11-.21.25-.3.33-.1.09-.2.19-.09.37.11.18.5.83 1.07 1.34.74.66 1.36.87 1.55.96.19.09.3.08.41-.05.11-.13.47-.55.6-.74.13-.19.26-.16.43-.09.18.06 1.12.53 1.31.63.19.1.32.14.37.22.05.08.05.46-.1.88z"/></svg>',
+    ];
+    $raw = $svgs[$network] ?? '';
+    if ($raw === '') {
+        return '';
+    }
+    return 'data:image/svg+xml;base64,' . base64_encode($raw);
+};
+
 $socialMeta = [
-    'linkedin'  => ['in', '0a66c2'],
-    'twitter'   => ['X',  '000000'],
-    'instagram' => ['ig', 'c026d3'],
-    'facebook'  => ['f',  '1877f2'],
-    'youtube'   => ['yt', 'ff0000'],
-    'telegram'  => ['tg', '229ed9'],
+    'linkedin'  => ['LinkedIn', '0a66c2'],
+    'twitter'   => ['X', '000000'],
+    'x'         => ['X', '000000'],
+    'instagram' => ['Instagram', 'c026d3'],
+    'facebook'  => ['Facebook', '1877f2'],
+    'youtube'   => ['YouTube', 'ff0000'],
+    'whatsapp'  => ['WhatsApp', '25d366'],
 ];
 $socialLinks = [];
 foreach ($socialMeta as $_k => [$_label, $_col]) {
-    $_v = $_validUrl($_personSocial[$_k] ?? '');
-    if ($_v === '') $_v = $_validUrl($_companySocial[$_k] ?? '');
-    if ($_v !== '') $socialLinks[] = ['url' => $_v, 'label' => $_label, 'color' => $_col];
+    $_v = $_validUrl($_personSocial[$_k] ?? $_companySocial[$_k] ?? '');
+    if ($_v === '' && $_k === 'twitter') {
+        $_v = $_validUrl($_personSocial['x'] ?? $_companySocial['x'] ?? '');
+    }
+    if ($_v === '') {
+        continue;
+    }
+    $key = $_k === 'x' ? 'twitter' : $_k;
+    $socialLinks[] = [
+        'url'   => $_v,
+        'label' => $_label,
+        'color' => $_col,
+        'icon'  => $socialSvg($key),
+        'key'   => $key,
+    ];
 }
+
+$e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+/** Social icon row — real SVG data-URI images with spacing */
+$socialRowHtml = static function (array $socials) use ($e): string {
+    if ($socials === []) {
+        return '';
+    }
+    $cells = '';
+    foreach ($socials as $s) {
+        $icon = (string)($s['icon'] ?? '');
+        if ($icon !== '') {
+            $cells .= '<a href="' . $e($s['url']) . '" style="display:inline-block;margin:0 6px 0 0;text-decoration:none;border:0;">'
+                . '<img src="' . $e($icon) . '" width="18" height="18" alt="' . $e($s['label']) . '" '
+                . 'style="display:inline-block;border:0;width:18px;height:18px;" />'
+                . '</a>';
+        } else {
+            $cells .= '<a href="' . $e($s['url']) . '" style="display:inline-block;margin:0 6px 0 0;padding:2px 5px;'
+                . 'background:#' . $e($s['color']) . ';color:#fff;font-size:9px;font-family:Arial,sans-serif;'
+                . 'font-weight:bold;text-decoration:none;border-radius:3px;">' . $e($s['label']) . '</a>';
+        }
+    }
+    return '<tr><td style="padding:6px 0 2px;line-height:18px;">' . $cells . '</td></tr>';
+};
 
 /**
- * Email-client HTML is a hostile environment: Outlook renders via Word's
- * engine (no flexbox/grid, only table layout and inline styles), and Gmail
- * strips <style> blocks entirely. So the markup below is intentionally
- * old-fashioned — nested <table>s, every style inline, no CSS classes — the
- * same constraints professional signature tools operate under.
+ * Full signature — new messages
+ * landscape logo → 2 columns (person | company with logo on top)
+ * portrait logo → 3 columns (person | divider | logo column)
  */
-function sig_html(array $d): string {
-    $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
-    $rows = '';
-    $line = function (string $icon, string $text, ?string $href = null) use (&$rows, $e) {
-        if ($text === '') return;
-        $inner = $href
-            ? '<a href="' . $e($href) . '" style="color:#334155;text-decoration:none;">' . $e($text) . '</a>'
-            : $e($text);
-        $rows .= '<tr><td style="padding:1px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#334155;">'
-               . $icon . '&nbsp; ' . $inner . '</td></tr>';
-    };
-    $line('&#9742;', $d['phone'],   $d['phone']   ? 'tel:' . preg_replace('/[^0-9+]/', '', $d['phone']) : null);
-    $line('&#9993;', $d['email'],   $d['email']   ? 'mailto:' . $d['email'] : null);
-    $line('&#127760;', preg_replace('~^https?://~', '', $d['website']), $d['website'] ?: null);
+$sigFull = static function (array $d) use ($e, $socialRowHtml): string {
+    $photo = (string)($d['photo'] ?? '');
+    $logo  = (string)($d['logo'] ?? '');
+    $orient = (string)($d['logo_orient'] ?? 'landscape');
+    $hex = (string)($d['hex'] ?? '1e3a5f');
 
-    // Social icons, added right after the website line. Not icon-font
-    // glyphs (Gmail strips <style>, most mail clients have no icon font)
-    // and not hosted image files (blocked by default until "show images"
-    // is clicked, and this project has no bundled icon assets to host
-    // anyway) — small coloured letter-badges in a plain inline-styled
-    // table, which renders identically everywhere a table does.
-    if (!empty($d['socials'])) {
-        $badges = '';
-        foreach ($d['socials'] as $s) {
-            $badges .= '<a href="' . $e($s['url']) . '" style="display:inline-block;width:20px;height:20px;'
-                     . 'line-height:20px;text-align:center;border-radius:5px;background:#' . $e($s['color']) . ';'
-                     . 'color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;'
-                     . 'text-decoration:none;margin-right:5px;">' . $e($s['label']) . '</a>';
-        }
-        $rows .= '<tr><td style="padding:5px 0 1px;">' . $badges . '</td></tr>';
-    }
-
-    $logoCell = $d['logo']
-        ? '<td style="padding-left:18px;vertical-align:middle;"><img src="' . $e($d['logo']) . '" alt="" height="37" style="display:block;border:0;max-height:37px;width:auto;"></td>'
+    $photoCell = $photo !== ''
+        ? '<img src="' . $e($photo) . '" width="72" height="72" alt="" '
+          . 'style="display:block;width:72px;height:72px;border-radius:8px;object-fit:cover;border:0;" />'
         : '';
 
-    return '
-<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;">
-  <tr>
-    <td style="vertical-align:top;">
-      <img src="' . $e($d['photo']) . '" width="72" height="72" alt="' . $e($d['name']) . '"
-           style="border-radius:12px;display:block;border:1px solid #e2e8f0;">
-    </td>
-    <td style="vertical-align:top;padding-left:16px;border-left:1px solid #e2e8f0;padding-left:16px;">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0f172a;padding-bottom:2px;">' . $e($d['name']) . '</td></tr>'
-        . ($d['role'] ? '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:12.5px;color:#' . $e($d['hex']) . ';font-weight:bold;padding-bottom:6px;">' . $e($d['role']) . ($d['org'] ? ' &middot; ' . $e($d['org']) : '') . '</td></tr>' : '')
-        . $rows . '
-        <tr><td style="padding-top:8px;"><a href="' . $e($d['cardUrl']) . '" style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#94a3b8;text-decoration:none;">View digital card &rarr;</a></td></tr>
-      </table>
-    </td>' . $logoCell . '
-  </tr>
-</table>';
-}
+    $personLines = '';
+    $personLines .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;line-height:1.3;">' . $e($d['name']) . '</div>';
+    if ($d['role'] !== '') {
+        $personLines .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:#' . $e($hex) . ';margin-top:2px;">' . $e($d['role']) . '</div>';
+    }
+    if ($d['dept'] !== '') {
+        $personLines .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;margin-top:1px;">' . $e($d['dept']) . '</div>';
+    }
+    $contact = '';
+    if ($d['phone'] !== '') {
+        $tel = preg_replace('/[^0-9+]/', '', $d['phone']) ?? '';
+        $contact .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#334155;margin-top:6px;">'
+            . 'M: <a href="tel:' . $e($tel) . '" style="color:#334155;text-decoration:none;">' . $e($d['phone']) . '</a></div>';
+    }
+    if ($d['email'] !== '') {
+        $contact .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#334155;">'
+            . 'E: <a href="mailto:' . $e($d['email']) . '" style="color:#334155;text-decoration:none;">' . $e($d['email']) . '</a></div>';
+    }
+    $contact .= $socialRowHtml($d['socials'] ?? []);
 
-$sigHtml = sig_html([
-    'name' => $name, 'role' => $role, 'org' => $orgName, 'phone' => $phone,
-    'email' => $email, 'website' => $website, 'photo' => $photoUrl, 'logo' => $logoUrl,
-    'hex' => $hex, 'cardUrl' => $cardUrl, 'socials' => $socialLinks,
-]);
+    $corp = '';
+    if ($logo !== '' && $orient === 'landscape') {
+        $corp .= '<img src="' . $e($logo) . '" alt="' . $e($d['org']) . '" width="140" '
+            . 'style="display:block;max-width:140px;max-height:48px;width:auto;height:auto;margin-bottom:6px;border:0;" />';
+    }
+    if ($d['org'] !== '') {
+        $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;color:#111;margin-bottom:2px;">' . $e($d['org']) . '</div>';
+    }
+    if ($d['address'] !== '') {
+        $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;margin-bottom:4px;max-width:220px;">' . $e($d['address']) . '</div>';
+    }
+    $corpBits = [];
+    if ($d['landline'] !== '') {
+        $corpBits[] = 'T: ' . $e($d['landline']);
+    }
+    if ($d['website'] !== '') {
+        $w = preg_replace('~^https?://~i', '', $d['website']) ?? $d['website'];
+        $corpBits[] = 'W: <a href="' . $e($d['website']) . '" style="color:#2563eb;text-decoration:none;">' . $e($w) . '</a>';
+    }
+    if ($corpBits !== []) {
+        $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#334155;margin-bottom:4px;">' . implode(' &nbsp;|&nbsp; ', $corpBits) . '</div>';
+    }
+    $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;margin-top:4px;">'
+        . '<a href="' . $e($d['cardUrl']) . '" style="color:#94a3b8;text-decoration:none;">View digital card →</a></div>';
 
-// Open Graph / Twitter — same branded og-{slug}.jpg as the business card
-$ogSlug = class_exists('AppUtils') ? AppUtils::sanitizeSlug($slug) : preg_replace('/[^a-z0-9\-_]/', '', strtolower($slug));
-$ogFile = 'og-' . $ogSlug . '.jpg';
-if (class_exists('AppMedia') && (!is_file(IMG_PATH . '/' . $ogFile))) {
-    $generated = AppMedia::generateOgImage($person, $company, $ogSlug);
-    if ($generated) $ogFile = $generated;
-}
-$ogImage = is_file(IMG_PATH . '/' . $ogFile)
-    ? $baseUrl . '/images/' . rawurlencode($ogFile)
-    : $photoUrl;
+    $divider = '<td style="width:1px;background-color:#e2e8f0;padding:0;font-size:0;line-height:0;">&nbsp;</td>';
+
+    if ($logo !== '' && $orient === 'portrait') {
+        // 3 columns: person | divider | logo + company text under
+        $logoCol = '<td style="vertical-align:top;padding-left:14px;">'
+            . '<img src="' . $e($logo) . '" alt="" width="72" '
+            . 'style="display:block;max-width:72px;max-height:96px;width:auto;height:auto;border:0;margin-bottom:6px;" />'
+            . $corp
+            . '</td>';
+        return '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#333;border-collapse:collapse;max-width:560px;">'
+            . '<tr>'
+            . '<td style="vertical-align:top;padding-right:12px;width:80px;">' . $photoCell . '</td>'
+            . '<td style="vertical-align:top;padding-right:12px;">' . $personLines . $contact . '</td>'
+            . $divider
+            . $logoCol
+            . '</tr></table>';
+    }
+
+    // 2 columns: person | company (logo top if landscape)
+    return '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#333;border-collapse:collapse;max-width:560px;">'
+        . '<tr>'
+        . '<td style="vertical-align:top;padding-right:12px;width:80px;">' . $photoCell . '</td>'
+        . '<td style="vertical-align:top;padding-right:14px;">' . $personLines . $contact . '</td>'
+        . $divider
+        . '<td style="vertical-align:top;padding-left:14px;">' . $corp . '</td>'
+        . '</tr></table>';
+};
+
+/** Compact signature — replies / forwards */
+$sigCompact = static function (array $d) use ($e): string {
+    $bits = [];
+    $bits[] = '<strong style="color:#111;">' . $e($d['name']) . '</strong>';
+    if ($d['role'] !== '') {
+        $bits[] = '<span style="color:#' . $e($d['hex']) . ';">' . $e($d['role']) . '</span>';
+    }
+    if ($d['org'] !== '') {
+        $bits[] = '<span style="color:#64748b;">' . $e($d['org']) . '</span>';
+    }
+    $line2 = [];
+    if ($d['phone'] !== '') {
+        $tel = preg_replace('/[^0-9+]/', '', $d['phone']) ?? '';
+        $line2[] = '<a href="tel:' . $e($tel) . '" style="color:#334155;text-decoration:none;">' . $e($d['phone']) . '</a>';
+    }
+    if ($d['email'] !== '') {
+        $line2[] = '<a href="mailto:' . $e($d['email']) . '" style="color:#334155;text-decoration:none;">' . $e($d['email']) . '</a>';
+    }
+    return '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#334155;border-collapse:collapse;">'
+        . '<tr><td style="padding:0;line-height:1.45;">' . implode(' · ', $bits) . '</td></tr>'
+        . ($line2 !== [] ? '<tr><td style="padding:2px 0 0;line-height:1.4;">' . implode(' · ', $line2) . '</td></tr>' : '')
+        . '</table>';
+};
+
+$payload = [
+    'name' => $name,
+    'role' => $role,
+    'dept' => $dept,
+    'org' => $orgName,
+    'phone' => $phone,
+    'email' => $email,
+    'website' => $website,
+    'address' => $address,
+    'landline' => $landline,
+    'photo' => $photoUrl,
+    'logo' => $logoUrl,
+    'logo_orient' => $logoOrient,
+    'hex' => $hex,
+    'cardUrl' => $cardUrl,
+    'socials' => $socialLinks,
+];
+
+$htmlFull = $sigFull($payload);
+$htmlCompact = $sigCompact($payload);
+
 $ogTitle = 'Email Signature — ' . $name . ($orgName !== '' ? ' · ' . $orgName : '');
-$ogDesc  = 'Copy-ready email signature for ' . $name
-         . ($role !== '' ? ', ' . $role : '')
-         . ($orgName !== '' ? ' at ' . $orgName : '') . '.';
+$ogDesc  = 'Full + compact email signatures for ' . $name . '.';
 $sigPageUrl = $baseUrl . '/cards/signature.php?slug=' . rawurlencode($slug);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Email Signature — <?= htmlspecialchars($name) ?></title>
-<meta name="description" content="<?= htmlspecialchars($ogDesc) ?>">
-<meta property="og:site_name" content="<?= htmlspecialchars($orgName !== '' ? $orgName : 'Corporate Directory') ?>">
-<meta property="og:title" content="<?= htmlspecialchars($ogTitle) ?>">
-<meta property="og:description" content="<?= htmlspecialchars($ogDesc) ?>">
-<meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
-<meta property="og:image:secure_url" content="<?= htmlspecialchars($ogImage) ?>">
-<meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:url" content="<?= htmlspecialchars($sigPageUrl) ?>">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="<?= htmlspecialchars($ogTitle) ?>">
-<meta name="twitter:description" content="<?= htmlspecialchars($ogDesc) ?>">
-<meta name="twitter:image" content="<?= htmlspecialchars($ogImage) ?>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title><?= $e($ogTitle) ?></title>
+<meta name="description" content="<?= $e($ogDesc) ?>">
+<meta property="og:title" content="<?= $e($ogTitle) ?>">
+<meta property="og:description" content="<?= $e($ogDesc) ?>">
+<meta property="og:url" content="<?= $e($sigPageUrl) ?>">
+<meta property="og:image" content="<?= $e($photoUrl) ?>">
 <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Inter',system-ui,sans-serif;background:#f1f5f9;color:#0f172a;padding:24px 16px calc(24px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
-    .wrap{max-width:640px;margin:0 auto}
-    h1{font-size:19px;font-weight:700;margin-bottom:4px}
-    .sub{font-size:13px;color:#64748b;margin-bottom:20px}
-    .panel{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:22px;margin-bottom:16px}
-    .panel-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:12px}
-    .preview{border:1px dashed #cbd5e1;border-radius:10px;padding:18px;background:#fafbfc;overflow-x:auto}
-    .steps{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px}
-    .steps h2{font-size:13px;font-weight:700;margin-bottom:10px}
-    .steps ol{padding-left:18px;font-size:13px;color:#334155;line-height:1.9}
-    .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-    button,.btn{font:600 13px 'Inter',sans-serif;padding:10px 16px;border-radius:9px;border:1px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-    .btn.primary{background:#0f172a;color:#fff;border-color:#0f172a}
-    .copied{background:#16a34a!important;color:#fff!important;border-color:#16a34a!important}
-    @media (max-width:480px){.panel,.steps{padding:16px}}
+  body { margin:0; font-family: Inter, system-ui, sans-serif; background:#f1f5f9; color:#0f172a; }
+  .wrap { max-width:720px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:1.25rem; font-weight:800; margin:0 0 4px; }
+  .sub { font-size:0.8rem; color:#64748b; margin:0 0 20px; }
+  .tabs { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .tab { appearance:none; border:1px solid #cbd5e1; background:#fff; border-radius:999px; padding:8px 14px;
+         font-size:0.75rem; font-weight:700; cursor:pointer; color:#334155; }
+  .tab.is-on { background:#1e3a5f; color:#fff; border-color:#1e3a5f; }
+  .panel { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; box-shadow:0 1px 2px rgba(15,23,42,.06); }
+  .meta { font-size:0.7rem; color:#94a3b8; margin:8px 0 0; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .btn { appearance:none; border:0; border-radius:8px; padding:10px 16px; font-size:0.8rem; font-weight:700; cursor:pointer; }
+  .btn-primary { background:#1e3a5f; color:#fff; }
+  .btn-ghost { background:#f1f5f9; color:#334155; }
+  .btn.copied { background:#059669; color:#fff; }
+  .steps { margin-top:28px; font-size:0.85rem; color:#475569; }
+  .steps h2 { font-size:0.9rem; color:#0f172a; margin:16px 0 6px; }
+  .hint { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; font-size:0.75rem; color:#1e40af; margin-bottom:14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-    <h1>Email Signature</h1>
-    <p class="sub">Generated from <?= htmlspecialchars($name) ?>'s digital card. Nothing here is uploaded anywhere — copy it straight into your email client.</p>
+  <h1>Email signatures</h1>
+  <p class="sub"><?= $e($name) ?><?= $orgName !== '' ? ' · ' . $e($orgName) : '' ?>
+    · Logo layout: <strong><?= $e($logoOrient) ?></strong><?= $logoW ? ' (' . (int)$logoW . '×' . (int)$logoH . ')' : '' ?>
+  </p>
 
-    <div class="panel">
-        <div class="panel-label">Preview</div>
-        <div class="preview" id="sigPreview"><?= $sigHtml ?></div>
-        <div class="btnrow">
-            <button class="btn primary" id="copyBtn" onclick="copySig()"><i>&#128203;</i> Copy Signature</button>
-            <button class="btn" id="srcBtn" onclick="toggleSrc()">View HTML source</button>
-        </div>
-        <textarea id="sigSource" readonly style="display:none;width:100%;margin-top:12px;min-height:160px;
-            font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;padding:12px;border-radius:8px;
-            border:1px solid #e2e8f0;background:#0f172a;color:#86efac;resize:vertical;"></textarea>
-    </div>
+  <div class="hint">
+    <strong>Two signatures:</strong> use <em>New messages</em> for full detail;
+    use <em>Replies &amp; forwards</em> for a short line under quoted mail.
+    Images use absolute URLs so Outlook/Gmail can load them (enable “download pictures” if needed).
+  </div>
 
-    <div class="steps">
-        <h2>Gmail</h2>
-        <ol>
-            <li>Copy the signature above.</li>
-            <li>Settings (gear icon) &rarr; <strong>See all settings</strong> &rarr; General &rarr; Signature.</li>
-            <li>Create or edit a signature, click inside the box, and paste (Ctrl/Cmd+V).</li>
-            <li>Save Changes.</li>
-        </ol>
-        <h2 style="margin-top:16px">Outlook (desktop)</h2>
-        <ol>
-            <li>File &rarr; Options &rarr; Mail &rarr; Signatures.</li>
-            <li>New signature, paste into the editing box, then set it as default for new messages and replies.</li>
-        </ol>
-        <h2 style="margin-top:16px">Outlook (web) / Apple Mail</h2>
-        <ol>
-            <li>Settings &rarr; Mail &rarr; Compose and reply &rarr; paste into the signature box (Outlook Web), or Mail &rarr; Settings &rarr; Signatures (Apple Mail).</li>
-        </ol>
-    </div>
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab is-on" id="tabFull" onclick="showSig('full')">New messages (full)</button>
+    <button type="button" class="tab" id="tabCompact" onclick="showSig('compact')">Replies &amp; forwards (compact)</button>
+  </div>
+
+  <div class="panel" id="panelFull">
+    <div id="sigFull"><?= $htmlFull ?></div>
+    <p class="meta">Full · <?= $logoOrient === 'portrait' ? '3-column (portrait logo)' : '2-column (landscape / square logo)' ?></p>
+  </div>
+  <div class="panel" id="panelCompact" style="display:none">
+    <div id="sigCompact"><?= $htmlCompact ?></div>
+    <p class="meta">Compact · name, title, phone, email only</p>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn btn-primary" id="copyBtn" onclick="copySig()">Copy active signature</button>
+    <button type="button" class="btn btn-ghost" onclick="toggleSrc()">View HTML</button>
+    <a class="btn btn-ghost" href="<?= $e($cardUrl) ?>">Digital card</a>
+  </div>
+  <textarea id="sigSource" readonly style="display:none;width:100%;margin-top:12px;min-height:140px;font-family:ui-monospace,monospace;font-size:11px;padding:12px;border-radius:8px;border:1px solid #e2e8f0;background:#0f172a;color:#86efac;"></textarea>
+
+  <div class="steps">
+    <h2>Gmail</h2>
+    <ol>
+      <li>Copy the signature above.</li>
+      <li>Settings → See all settings → General → Signature.</li>
+      <li>Create <strong>two</strong> signatures (e.g. “Full” and “Reply”), paste each, then assign: Full → new emails, Reply → replies/forwards.</li>
+    </ol>
+    <h2>Outlook</h2>
+    <ol>
+      <li>File → Options → Mail → Signatures (desktop), or Settings → Compose and reply (web).</li>
+      <li>Create two signatures and set defaults for new vs reply/forward.</li>
+    </ol>
+  </div>
 </div>
-
 <script>
-function toggleSrc() {
-    var box = document.getElementById('sigSource');
-    var btn = document.getElementById('srcBtn');
-    var showing = box.style.display !== 'none';
-    if (showing) { box.style.display = 'none'; btn.textContent = 'View HTML source'; return; }
-    box.value = document.getElementById('sigPreview').innerHTML.trim();
-    box.style.display = 'block';
-    btn.textContent = 'Hide HTML source';
+var active = 'full';
+function showSig(which) {
+  active = which;
+  document.getElementById('panelFull').style.display = which === 'full' ? 'block' : 'none';
+  document.getElementById('panelCompact').style.display = which === 'compact' ? 'block' : 'none';
+  document.getElementById('tabFull').classList.toggle('is-on', which === 'full');
+  document.getElementById('tabCompact').classList.toggle('is-on', which === 'compact');
+  document.getElementById('sigSource').style.display = 'none';
 }
-
+function toggleSrc() {
+  var box = document.getElementById('sigSource');
+  var showing = box.style.display !== 'none';
+  if (showing) { box.style.display = 'none'; return; }
+  var id = active === 'full' ? 'sigFull' : 'sigCompact';
+  box.value = document.getElementById(id).innerHTML.trim();
+  box.style.display = 'block';
+}
 function copySig() {
-    var el = document.getElementById('sigPreview');
-    var range = document.createRange();
-    range.selectNodeContents(el);
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-    sel.removeAllRanges();
-
-    var btn = document.getElementById('copyBtn');
-    if (ok) {
-        btn.classList.add('copied');
-        btn.innerHTML = '&#10003; Copied — now paste into your email client';
-        setTimeout(function () { btn.classList.remove('copied'); btn.innerHTML = '<i>&#128203;</i> Copy Signature'; }, 2500);
-    } else {
-        alert('Could not copy automatically. Please select the signature above manually and copy it (Ctrl/Cmd+C).');
-    }
+  var el = document.getElementById(active === 'full' ? 'sigFull' : 'sigCompact');
+  var range = document.createRange();
+  range.selectNodeContents(el);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  sel.removeAllRanges();
+  var btn = document.getElementById('copyBtn');
+  if (ok) {
+    btn.classList.add('copied');
+    btn.textContent = 'Copied — paste into your mail client';
+    setTimeout(function(){ btn.classList.remove('copied'); btn.textContent = 'Copy active signature'; }, 2500);
+  } else {
+    alert('Select the signature manually and copy (Ctrl/Cmd+C).');
+  }
 }
 </script>
 </body>
