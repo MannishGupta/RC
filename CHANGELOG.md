@@ -1,5 +1,24 @@
 # Fusion Resource Centre — Changelog
 
+## 20261003.04 — GitHub audit + layout + blood report
+
+### Audit (github.com/MannishGupta/RC)
+- 187 PHP files parse clean
+- TenantTombstone + multi-tenant paths present
+- IIS web.config hides data, tenants, app
+
+### Layout
+- body.rc-app-shell flex row: sidebar + main only
+- Footer inside main (no third column)
+- assets/rc-layout-lock.css dark/reserve/light sidebar ink
+
+### Blood report
+- Photos/OG via media_serve.php
+- Removed informal wit block; clinical framing
+- Hero photo when available
+
+# Fusion Resource Centre — Changelog
+
 ## 20260929.21 — 30 Sep 2026 · Vehicle Inventory: real OEM logos, removed the white-hole artifact
 
 Reported from a live screenshot: a visible white circle in every vehicle

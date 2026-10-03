@@ -1,6 +1,6 @@
 <?php
 /**
- * Version: 20260929.18
+ * Version: 20261003.04
  * Full Open Graph / Twitter / canonical SEO for share previews
  * India distribution, physiological highlights, awareness action plan + compatibility chart
  * Blood Group Intelligence Report — team compatibility + positive lore
@@ -591,10 +591,11 @@ function bg_header(string $title, array $ctx = []): void {
     $photo = trim((string)($ctx['photo'] ?? ''));
     $ogImg = '';
     if ($photo !== '') {
-        if (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
+        if (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://') || str_starts_with($photo, 'data:')) {
             $ogImg = $photo;
         } else {
-            $ogImg = $base . '/images/' . rawurlencode(basename($photo));
+            $fn = basename(str_replace(['\\', '/'], '/', $photo));
+            $ogImg = $base . '/media_serve.php?f=' . rawurlencode($fn);
         }
     }
     if ($ogImg === '') {
@@ -722,6 +723,15 @@ bg_header($title, [
 // Hero
 echo '<div class="card">';
 echo '<div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">';
+$photoHero = trim((string)($focus['photo'] ?? ''));
+if ($photoHero !== '') {
+    if (str_starts_with($photoHero, 'http://') || str_starts_with($photoHero, 'https://') || str_starts_with($photoHero, 'data:')) {
+        $photoSrc = $photoHero;
+    } else {
+        $photoSrc = 'media_serve.php?f=' . rawurlencode(basename(str_replace(['\\', '/'], '/', $photoHero)));
+    }
+    echo '<img src="' . bg_h($photoSrc) . '" alt="" width="72" height="72" style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid #e2e8f0" loading="lazy">';
+}
 echo '<div><div class="hero-group">' . bg_h($g !== '' ? $g : '—') . '</div>';
 echo '<div class="meta">' . bg_h($lore['emoji'] . ' ' . $lore['title']) . '</div></div>';
 echo '<div style="flex:1;min-width:12rem">';
@@ -732,19 +742,17 @@ if ($focus['designation'] !== '') {
 echo '</div></div></div>';
 
 // Positive traits
-echo '<div class="grid2">';
-echo '<div class="card"><h2>✨ ' . bg_h(bg_t(['Positive highlights', 'सकारात्मक झलक'])) . '</h2>';
+echo '<div class="card"><h2>✨ ' . bg_h(bg_t(['Clinical & population highlights', 'नैदानिक व जनसंख्या झलक'])) . '</h2>';
+echo '<p class="meta" style="margin:0 0 .65rem">' . bg_h(bg_t([
+    'Population and evolutionary themes from published literature — not personal medical advice.',
+    'प्रकाशित साहित्य से जनसंख्या/विकासवादी विषय — व्यक्तिगत चिकित्सकीय सलाह नहीं।',
+])) . '</p>';
 foreach ($lore['traits'] as $tr) {
     echo '<div class="trait"><span aria-hidden="true">◆</span><span>' . bg_h($tr) . '</span></div>';
 }
 echo '</div>';
-echo '<div class="card"><h2>🧠 ' . bg_h(bg_t(['Wit & workplace lore', 'विट व वर्कप्लेस लोर'])) . '</h2>';
-foreach ($lore['wit'] as $w) {
-    echo '<p style="margin:.4rem 0;font-size:.92rem;line-height:1.45">“' . bg_h($w) . '”</p>';
-}
-echo '</div></div>';
 
-echo '<div class="card"><h2>📎 ' . bg_h(bg_t(['India & system facts', 'भारत व प्रणाली तथ्य'])) . '</h2>';
+echo '<div class="card"><h2>📎 ' . bg_h(bg_t(['India context & awareness', 'भारत संदर्भ व जागरूकता'])) . '</h2>';
 if (!empty($lore['india_share'])) {
     echo '<p style="margin:0 0 .5rem;font-weight:800;color:#9f1239">' . bg_h($lore['india_share']) . '</p>';
 }
