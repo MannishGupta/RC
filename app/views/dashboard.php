@@ -321,8 +321,25 @@ if (class_exists('RolePack') && !$isSuperAdmin) {
         $validTabs[] = 'terms';
     }
 }
+// Per-tenant module matrix (Super Admin disables modules for this tenant).
+// Company Admin / Visitor must never see or open disabled modules.
+if (!class_exists('ModuleRegistry') && is_file(BASE_PATH . '/app/ModuleRegistry.php')) {
+    require_once BASE_PATH . '/app/ModuleRegistry.php';
+}
+if (class_exists('ModuleRegistry') && !$isSuperAdmin) {
+    $validTabs = ModuleRegistry::filterTabs($validTabs, false);
+    // Never expose control-plane to Co. Admin / Visitor
+    $validTabs = array_values(array_filter($validTabs, static function ($t) {
+        return !in_array($t, ['tenants', 'monitor', 'opt'], true);
+    }));
+}
 if (!in_array($currentTab, $validTabs, true)) {
-    $currentTab = $validTabs[0] ?? 'team';
+    if (class_exists('ModuleRegistry') && !$isSuperAdmin) {
+        $res = ModuleRegistry::resolveTab((string)$currentTab, $validTabs);
+        $currentTab = $res['tab'] ?? ($validTabs[0] ?? 'team');
+    } else {
+        $currentTab = $validTabs[0] ?? 'team';
+    }
 }
 
 
@@ -385,7 +402,8 @@ $DASHBOARD_STATE = [
         'isSuperAdmin' => $isSuperAdmin,
         'isPublic'     => $isPublic,
         'pack'         => class_exists('RolePack') ? RolePack::packIdForUser($rcUser ?? null) : ($isAdmin ? 'admin' : 'public'),
-        'allowedTabs'  => class_exists('RolePack') ? RolePack::allowedTabs($rcUser ?? null) : null,
+        'allowedTabs'  => $validTabs,
+        'modules'     => (class_exists('ModuleRegistry') ? ModuleRegistry::clientPayload() : ['enabled' => []]),
     ],
     'data'    => $normalizedData,
     'company' => $viewData['company'] ?? [],

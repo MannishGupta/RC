@@ -97,15 +97,23 @@
                         { id: 'access', icon: 'fa-solid fa-user-shield', label: 'Access Mode' },
                         { id: 'terms',  icon: 'fa-solid fa-scroll',      label: 'Governance Policy' },
                     ]});
-                    const allowed = (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.auth)
-                        ? window.__DASHBOARD_STATE__.auth.allowedTabs : null;
-                    if (Array.isArray(allowed)) {
-                        return groups.map(g => ({
-                            ...g,
-                            items: g.items.filter(it => !it.id || allowed.includes(it.id) || it.url)
-                        })).filter(g => g.items.length);
-                    }
-                    return groups;
+                    const auth = (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.auth) ? window.__DASHBOARD_STATE__.auth : {};
+                    const allowed = Array.isArray(auth.allowedTabs) ? auth.allowedTabs : null;
+                    const modEnabled = (auth.modules && auth.modules.enabled) ? auth.modules.enabled : {};
+                    const isSa = !!auth.isSuperAdmin;
+                    return groups.map(g => ({
+                        ...g,
+                        items: g.items.filter(it => {
+                            if (!it.id) return true; // external url items
+                            if (['tenants','monitor','opt'].includes(it.id) && !isSa) return false;
+                            if (Array.isArray(allowed) && !allowed.includes(it.id) && !it.url) return false;
+                            // Module matrix: disabled modules hidden for Co Admin / Visitor
+                            if (!isSa && Object.prototype.hasOwnProperty.call(modEnabled, it.id) && !modEnabled[it.id]) {
+                                return false;
+                            }
+                            return true;
+                        })
+                    })).filter(g => g.items.length);
                 },
                 init() {
                     if (typeof this.loadFavourites === 'function') this.loadFavourites();

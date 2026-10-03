@@ -1,5 +1,14 @@
 # Changelog
 
+## 20261003.09 — Module matrix enforced for Company Admin
+
+- Disabled modules (Super Admin matrix) are removed from Co. Admin / Visitor `$validTabs` via `ModuleRegistry::filterTabs`
+- `auth.allowedTabs` now equals the filtered list (not RolePack-only)
+- Alpine nav hides disabled modules and blocks tenants/monitor/opt for non–Super Admin
+- Tenant Setup tab hard-gated Super Admin only
+
+# Changelog
+
 ## 20261003.07 — Cartags plate header, bank logos, location logos, load
 
 - **Vehicle tags:** registration number in dark header — large, bold, centered after OEM logo; logo always on **white tile** (black SVG/PNG OEMs stay visible in dark UI)

@@ -495,7 +495,12 @@ if (!defined('BASE_PATH')) {
             <div class="rc-ed-grid">
               <label class="span-2">
                 <span class="rc-ed-lbl">Financial institution</span>
-                <input type="text" class="rc-ed-input" x-model="form.bank_name" placeholder="e.g. HDFC Bank · State Bank of India" autocomplete="organization">
+                <?php $masterKind = 'banks'; $masterModel = 'form.bank_name'; $masterInputClass = 'rc-ed-input';
+            $md = __DIR__ . '/master_dropdown.php';
+            if (is_file($md)) { include $md; }
+            else { ?>
+            <input type="text" class="rc-ed-input" x-model="form.bank_name" placeholder="e.g. HDFC Bank" autocomplete="organization">
+            <?php } ?>
               </label>
               <label class="span-2">
                 <span class="rc-ed-lbl">Account principal (beneficiary)</span>

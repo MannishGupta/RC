@@ -9,6 +9,30 @@
  */
 declare(strict_types=1);
 
+function jp_theme_css(): void {
+    global $_jpTheme, $_jpEmbed;
+    $t = $_jpTheme ?? 'light';
+    echo '<style id="jp-embed-theme">';
+    if ($t === 'light') {
+        echo 'html,body{background:#f8fafc!important;color:#0f172a!important}';
+        echo '.card,.jp-now-card{background:#fff!important;color:#0f172a!important;border-color:#e2e8f0!important}';
+        echo 'h1,h2,h3,.meta,p,td,th,li,label{color:#0f172a!important}';
+        echo 'a{color:#2563eb!important}';
+    } elseif ($t === 'dark') {
+        echo 'html,body{background:#0f172a!important;color:#e2e8f0!important}';
+    }
+    if (!empty($_jpEmbed)) {
+        echo 'body{max-width:100%!important;margin:0!important;padding:0.75rem!important}';
+        echo '.chrome .chrome-btn[href="/?tab=team"]{display:none}';
+    }
+    echo '</style>';
+}
+
+$_jpEmbed = isset($_GET['embed']) && (string)$_GET['embed'] === '1';
+$_jpTheme = preg_replace('/[^a-z]/', '', strtolower((string)($_GET['theme'] ?? 'light'))) ?: 'light';
+if (!in_array($_jpTheme, ['light','dark','reserve'], true)) { $_jpTheme = 'light'; }
+
+
 
 
 $base = __DIR__;
@@ -69,7 +93,11 @@ function jp_require_manage(string $context = 'manage Janam profiles'): void {
     http_response_code(403);
     header('Content-Type: text/html; charset=utf-8');
     $msg = htmlspecialchars('Sign in as Company Admin to ' . $context . '.', ENT_QUOTES, 'UTF-8');
-    echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    $_jpTheme = preg_replace('/[^a-z]/', '', strtolower((string)($_GET['theme'] ?? '')));
+if (!in_array($_jpTheme, ['light','dark','reserve'], true)) {
+    $_jpTheme = 'light';
+}
+echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         . '<title>Access limited</title></head><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:2rem auto;padding:1rem">'
         . '<h1 style="font-size:1.25rem">Access limited</h1>'
         . '<p>' . $msg . '</p>'
