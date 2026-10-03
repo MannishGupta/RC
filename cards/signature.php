@@ -1,4 +1,4 @@
-<?php // Version: 20261003.14
+<?php // Version: 20261003.15
 declare(strict_types=1);
 /**
  * Email signature generator — dual layouts:
@@ -193,90 +193,95 @@ $socialRowHtml = static function (array $socials) use ($e): string {
  * portrait logo → 3 columns (person | divider | logo column)
  */
 $sigFull = static function (array $d) use ($e, $socialRowHtml): string {
-    $photo = (string)($d['photo'] ?? '');
-    $logo  = (string)($d['logo'] ?? '');
+    $photo  = (string)($d['photo'] ?? '');
+    $logo   = (string)($d['logo'] ?? '');
     $orient = (string)($d['logo_orient'] ?? 'landscape');
-    $hex = (string)($d['hex'] ?? '1e3a5f');
+    $hex    = (string)($d['hex'] ?? '1e3a5f');
 
-    $photoCell = $photo !== ''
-        ? '<img src="' . $e($photo) . '" width="72" height="72" alt="" '
-          . 'style="display:block;width:72px;height:72px;border-radius:8px;object-fit:cover;border:0;" />'
-        : '';
-
-    $personLines = '';
-    $personLines .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#111;line-height:1.3;">' . $e($d['name']) . '</div>';
+    // Left: person block (tight, ≤10–12px — Outlook-friendly)
+    $left = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">';
+    if ($photo !== '') {
+        $left .= '<tr><td style="padding:0 0 8px 0;">'
+            . '<img src="' . $e($photo) . '" width="64" height="64" alt="" '
+            . 'style="display:block;width:64px;height:64px;border-radius:6px;object-fit:cover;border:0;" />'
+            . '</td></tr>';
+    }
+    $left .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;color:#111111;line-height:1.25;padding:0;">'
+        . $e($d['name']) . '</td></tr>';
     if ($d['role'] !== '') {
-        $personLines .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:600;color:#' . $e($hex) . ';margin-top:2px;">' . $e($d['role']) . '</div>';
+        $left .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:600;color:#' . $e($hex) . ';line-height:1.3;padding:2px 0 0 0;">'
+            . $e($d['role']) . '</td></tr>';
     }
     if ($d['dept'] !== '') {
-        $personLines .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;margin-top:1px;">' . $e($d['dept']) . '</div>';
+        $left .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#64748b;line-height:1.3;padding:1px 0 0 0;">'
+            . $e($d['dept']) . '</td></tr>';
     }
-    $contact = '';
     if ($d['phone'] !== '') {
         $tel = preg_replace('/[^0-9+]/', '', $d['phone']) ?? '';
-        $contact .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#334155;margin-top:6px;">'
-            . 'M: <a href="tel:' . $e($tel) . '" style="color:#334155;text-decoration:none;">' . $e($d['phone']) . '</a></div>';
+        $left .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#334155;line-height:1.4;padding:6px 0 0 0;">'
+            . 'M: <a href="tel:' . $e($tel) . '" style="color:#334155;text-decoration:none;">' . $e($d['phone']) . '</a></td></tr>';
     }
     if ($d['email'] !== '') {
-        $contact .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#334155;">'
-            . 'E: <a href="mailto:' . $e($d['email']) . '" style="color:#334155;text-decoration:none;">' . $e($d['email']) . '</a></div>';
+        $left .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#334155;line-height:1.4;padding:1px 0 0 0;">'
+            . 'E: <a href="mailto:' . $e($d['email']) . '" style="color:#334155;text-decoration:none;">' . $e($d['email']) . '</a></td></tr>';
     }
-    $contact .= $socialRowHtml($d['socials'] ?? []);
+    $soc = $socialRowHtml($d['socials'] ?? []);
+    if ($soc !== '') {
+        $left .= $soc;
+    }
+    $left .= '</table>';
 
-    $corp = '';
-    if ($logo !== '' && $orient === 'landscape') {
-        $corp .= '<img src="' . $e($logo) . '" alt="' . $e($d['org']) . '" width="140" '
-            . 'style="display:block;max-width:140px;max-height:48px;width:auto;height:auto;margin-bottom:6px;border:0;" />';
+    // Right: company block — landscape logo on top; portrait logo beside/above stack
+    $right = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">';
+    if ($logo !== '' && $orient !== 'portrait') {
+        // Landscape / square: logo above company name (max ~140×48)
+        $right .= '<tr><td style="padding:0 0 6px 0;">'
+            . '<img src="' . $e($logo) . '" alt="' . $e($d['org']) . '" width="140" '
+            . 'style="display:block;max-width:140px;max-height:48px;width:auto;height:auto;border:0;" />'
+            . '</td></tr>';
+    }
+    if ($logo !== '' && $orient === 'portrait') {
+        $right .= '<tr><td style="padding:0 0 6px 0;">'
+            . '<img src="' . $e($logo) . '" alt="' . $e($d['org']) . '" width="72" '
+            . 'style="display:block;max-width:72px;max-height:96px;width:auto;height:auto;border:0;" />'
+            . '</td></tr>';
     }
     if ($d['org'] !== '') {
-        $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;color:#111;margin-bottom:2px;">' . $e($d['org']) . '</div>';
+        $right .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;color:#111111;line-height:1.25;padding:0;">'
+            . $e($d['org']) . '</td></tr>';
     }
     if ($d['address'] !== '') {
-        $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#64748b;margin-bottom:4px;max-width:220px;">' . $e($d['address']) . '</div>';
+        $right .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#64748b;line-height:1.35;padding:3px 0 0 0;max-width:260px;">'
+            . $e($d['address']) . '</td></tr>';
     }
-    $corpBits = [];
+    $tw = [];
     if ($d['landline'] !== '') {
-        $corpBits[] = 'T: ' . $e($d['landline']);
+        $tw[] = 'T: ' . $e($d['landline']);
     }
     if ($d['website'] !== '') {
         $w = preg_replace('~^https?://~i', '', $d['website']) ?? $d['website'];
-        $corpBits[] = 'W: <a href="' . $e($d['website']) . '" style="color:#2563eb;text-decoration:none;">' . $e($w) . '</a>';
+        $w = rtrim($w, '/');
+        $tw[] = 'W: <a href="' . $e($d['website']) . '" style="color:#2563eb;text-decoration:none;">' . $e($w) . '</a>';
     }
-    if ($corpBits !== []) {
-        $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#334155;margin-bottom:4px;">' . implode(' &nbsp;|&nbsp; ', $corpBits) . '</div>';
+    if ($tw !== []) {
+        $right .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#334155;line-height:1.4;padding:4px 0 0 0;">'
+            . implode('&nbsp;|&nbsp;', $tw) . '</td></tr>';
     }
-    $corp .= '<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;margin-top:4px;">'
-        . '<a href="' . $e($d['cardUrl']) . '" style="color:#94a3b8;text-decoration:none;">View digital card →</a></div>';
+    $right .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;padding:4px 0 0 0;">'
+        . '<a href="' . $e($d['cardUrl']) . '" style="color:#94a3b8;text-decoration:none;">View digital card →</a></td></tr>';
+    $right .= '</table>';
 
-    $divider = '<td style="width:1px;background-color:#e2e8f0;padding:0;font-size:0;line-height:0;">&nbsp;</td>';
-
-    if ($logo !== '' && $orient === 'portrait') {
-        // 3 columns: person | divider | logo + company text under
-        $logoCol = '<td style="vertical-align:top;padding-left:14px;">'
-            . '<img src="' . $e($logo) . '" alt="" width="72" '
-            . 'style="display:block;max-width:72px;max-height:96px;width:auto;height:auto;border:0;margin-bottom:6px;" />'
-            . $corp
-            . '</td>';
-        return '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#333;border-collapse:collapse;max-width:560px;">'
-            . '<tr>'
-            . '<td style="vertical-align:top;padding-right:12px;width:80px;">' . $photoCell . '</td>'
-            . '<td style="vertical-align:top;padding-right:12px;">' . $personLines . $contact . '</td>'
-            . $divider
-            . $logoCol
-            . '</tr></table>';
-    }
-
-    // 2 columns: person | company (logo top if landscape)
-    return '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#333;border-collapse:collapse;max-width:560px;">'
+    // Exactly 3 cells: left | 1px rule | right — no trailing empty columns
+    return '<table cellpadding="0" cellspacing="0" border="0" '
+        . 'style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#333333;border-collapse:collapse;mso-table-lspace:0;mso-table-rspace:0;">'
         . '<tr>'
-        . '<td style="vertical-align:top;padding-right:12px;width:80px;">' . $photoCell . '</td>'
-        . '<td style="vertical-align:top;padding-right:14px;">' . $personLines . $contact . '</td>'
-        . $divider
-        . '<td style="vertical-align:top;padding-left:14px;">' . $corp . '</td>'
-        . '</tr></table>';
+        . '<td valign="top" style="vertical-align:top;padding:0 14px 0 0;">' . $left . '</td>'
+        . '<td valign="top" width="1" style="width:1px;border-left:1px solid #d1d5db;padding:0;font-size:0;line-height:0;">&nbsp;</td>'
+        . '<td valign="top" style="vertical-align:top;padding:0 0 0 14px;">' . $right . '</td>'
+        . '</tr>'
+        . '</table>';
 };
 
-/** Compact signature — replies / forwards */
 $sigCompact = static function (array $d) use ($e): string {
     $bits = [];
     $bits[] = '<strong style="color:#111;">' . $e($d['name']) . '</strong>';
@@ -378,7 +383,7 @@ $sigPageUrl = $baseUrl . '/cards/signature.php?slug=' . rawurlencode($slug);
 
   <div class="panel" id="panelFull">
     <div id="sigFull"><?= $htmlFull ?></div>
-    <p class="meta">Full · <?= $logoOrient === 'portrait' ? '3-column (portrait logo)' : '2-column (landscape / square logo)' ?></p>
+    <p class="meta">Full · person | company · logo <?= $logoOrient === 'portrait' ? 'portrait (side column style on top of company)' : 'landscape (above company name)' ?></p>
   </div>
   <div class="panel" id="panelCompact" style="display:none">
     <div id="sigCompact"><?= $htmlCompact ?></div>
