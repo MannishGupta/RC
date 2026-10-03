@@ -161,5 +161,5 @@ if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
     <?php endif; ?>
     
 <?php require dirname(__DIR__, 2) . '/partials/lightbox.php'; ?>
-<link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
+<link rel="stylesheet" href="/assets/contrast-lock.css?v=20261003.22">
 </head>
