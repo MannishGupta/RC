@@ -1,11 +1,10 @@
 # Changelog
 
-## 20261003.11 — Real bank & OEM logos
+## 20261003.12 — Logo proxy + location media
 
-- Local monogram SVGs (letter badges) demoted to last fallback
-- Bank logos resolve from masters domain → Clearbit → Google favicon
-- `bankLogoFor()` + improved name matching (ICICI Bank → icici)
-- Vehicle cards link `oem_logo` to resolved manufacturer (make/model parse)
-- VehicleCatalog prefers Clearbit domain marks over simple-icons glyphs
-- Client `rcLogoCascade` walks candidate list on image error
+- New `logo_proxy.php`: server fetches Google/DuckDuckGo/Clearbit, caches 30 days under `data/cache/logos/`
+- Bank + OEM logo URLs use same-origin proxy (no browser Clearbit block)
+- `media_serve` searches more folders (media/locations, uploads, assets/locations)
+- Location images: multi-step fallback (media_serve → /images → webp → jpg)
+- Vehicle header logo shell + cascade; hide broken-image glyphs
 

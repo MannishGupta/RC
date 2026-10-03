@@ -432,7 +432,7 @@ final class VehicleCatalog
         if (!empty($domains[$slug])) {
             $d = $domains[$slug];
             // Prefer Clearbit full-color mark; UI onerror can fall back to Google
-            return 'https://logo.clearbit.com/' . rawurlencode($d);
+            return '/logo_proxy.php?d=' . rawurlencode($d) . '&sz=128';
         }
 
         // 3) Generic

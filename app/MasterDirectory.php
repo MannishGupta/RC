@@ -109,7 +109,7 @@ final class MasterDirectory
         }
 
         // Brandfetch public CDN (no API key for basic icon)
-        return 'https://cdn.brandfetch.io/' . rawurlencode($domain) . '/w/128/h/128/icon?c=1idQ9bF5F5F5F5F5F5F5';
+        return '/logo_proxy.php?d=' . rawurlencode($domain) . '&sz=128';
     }
 
 /** All candidate URLs for client-side onerror cascade — real brand marks first */
@@ -129,10 +129,11 @@ final class MasterDirectory
             }
         }
 
-        // 1) Domain-based brand marks (actual logos, not monograms)
+        // 1) Same-origin proxy (fetches Google/DDG/Clearbit server-side + cache)
         if ($domain !== '') {
-            $out[] = 'https://logo.clearbit.com/' . rawurlencode($domain);
+            $out[] = '/logo_proxy.php?d=' . rawurlencode($domain) . '&sz=128';
             $out[] = 'https://www.google.com/s2/favicons?domain=' . rawurlencode($domain) . '&sz=128';
+            $out[] = 'https://icons.duckduckgo.com/ip3/' . rawurlencode($domain) . '.ico';
         }
 
         // 2) VehicleCatalog domain logos when OEM slug/make known

@@ -253,15 +253,13 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
                             <div class="flex items-center gap-3 relative">
                                 <!-- OEM logo always on white tile so black SVGs stay visible -->
                                 <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-md overflow-hidden p-1.5 ring-1 ring-white/30">
-                                    <template x-if="t.oem_logo || t.manufacturer || t.make">
-                                        <img :src="t.oem_logo" :alt="t.manufacturer || t.make || ''" class="max-h-9 max-w-full object-contain" width="40" height="36" loading="lazy"
+                                    <div class="w-11 h-11 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden shrink-0">
+                                        <img x-show="t.oem_logo" :src="t.oem_logo" :alt="t.manufacturer || t.make || 'OEM'"
+                                             class="max-h-full max-w-full object-contain" width="40" height="40" loading="lazy"
                                              :data-cands="JSON.stringify(t.oem_logo_candidates || [])"
-                                             @error="window.rcLogoCascade && window.rcLogoCascade($el)"
-                                             @error="$el.style.display='none'; $el.nextElementSibling && ($el.nextElementSibling.style.display='flex')">
-                                    </template>
-                                    <span class="w-full h-full items-center justify-center text-slate-500" :style="t.oem_logo ? 'display:none' : 'display:flex'">
-                                        <i class="fa-solid fa-car text-base"></i>
-                                    </span>
+                                             @error="window.rcLogoCascade && window.rcLogoCascade($el)">
+                                        <i x-show="!t.oem_logo" class="fa-solid fa-car text-slate-300"></i>
+                                    </div>
                                 </div>
                                 <!-- Plate number: dominant, centered in remaining header -->
                                 <div class="flex-1 min-w-0 text-center px-1">

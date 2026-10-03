@@ -43,7 +43,11 @@ foreach ([
     (defined('DATA_PATH') ? DATA_PATH : '') . '/images',
     (defined('DATA_PATH') ? DATA_PATH : '') . '/media',
     (defined('DATA_PATH') ? DATA_PATH : '') . '/media/logos',
+    (defined('DATA_PATH') ? DATA_PATH : '') . '/media/locations',
     (defined('DATA_PATH') ? DATA_PATH : '') . '/locations',
+    (defined('DATA_PATH') ? DATA_PATH : '') . '/uploads',
+    BASE_PATH . '/uploads',
+    BASE_PATH . '/assets/locations',
 ] as $extra) {
     if ($extra !== '' && is_dir($extra) && !in_array($extra, $searchDirs, true)) {
         $searchDirs[] = $extra;
