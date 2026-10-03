@@ -1,0 +1,227 @@
+[
+  {
+    "id": "bnk-sbi",
+    "display_name": "State Bank of India",
+    "slug": "sbi",
+    "domain_name": "sbi.co.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/sbi.svg",
+    "brand_color": "#22409A"
+  },
+  {
+    "id": "bnk-hdfc",
+    "display_name": "HDFC Bank",
+    "slug": "hdfc",
+    "domain_name": "hdfcbank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/hdfc.svg",
+    "brand_color": "#004C8F"
+  },
+  {
+    "id": "bnk-icici",
+    "display_name": "ICICI Bank",
+    "slug": "icici",
+    "domain_name": "icicibank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/icici.svg",
+    "brand_color": "#F58220"
+  },
+  {
+    "id": "bnk-pnb",
+    "display_name": "Punjab National Bank",
+    "slug": "pnb",
+    "domain_name": "pnbindia.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/pnb.svg",
+    "brand_color": "#9D1D26"
+  },
+  {
+    "id": "bnk-bob",
+    "display_name": "Bank of Baroda",
+    "slug": "bob",
+    "domain_name": "bankofbaroda.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/bob.svg",
+    "brand_color": "#F15A22"
+  },
+  {
+    "id": "bnk-canara",
+    "display_name": "Canara Bank",
+    "slug": "canara",
+    "domain_name": "canarabank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/canara.svg",
+    "brand_color": "#00AEEF"
+  },
+  {
+    "id": "bnk-axis",
+    "display_name": "Axis Bank",
+    "slug": "axis",
+    "domain_name": "axisbank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/axis.svg",
+    "brand_color": "#97144D"
+  },
+  {
+    "id": "bnk-union",
+    "display_name": "Union Bank of India",
+    "slug": "union",
+    "domain_name": "unionbankofindia.co.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/union.svg",
+    "brand_color": "#E87722"
+  },
+  {
+    "id": "bnk-boi",
+    "display_name": "Bank of India",
+    "slug": "boi",
+    "domain_name": "bankofindia.co.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/boi.svg",
+    "brand_color": "#E31C23"
+  },
+  {
+    "id": "bnk-indian",
+    "display_name": "Indian Bank",
+    "slug": "indian",
+    "domain_name": "indianbank.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/indian.svg",
+    "brand_color": "#004B87"
+  },
+  {
+    "id": "bnk-kotak",
+    "display_name": "Kotak Mahindra Bank",
+    "slug": "kotak",
+    "domain_name": "kotak.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/kotak.svg",
+    "brand_color": "#ED1C24"
+  },
+  {
+    "id": "bnk-indusind",
+    "display_name": "IndusInd Bank",
+    "slug": "indusind",
+    "domain_name": "indusind.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/indusind.svg",
+    "brand_color": "#7A1F3D"
+  },
+  {
+    "id": "bnk-idbi",
+    "display_name": "IDBI Bank",
+    "slug": "idbi",
+    "domain_name": "idbibank.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/idbi.svg",
+    "brand_color": "#F7941D"
+  },
+  {
+    "id": "bnk-central",
+    "display_name": "Central Bank of India",
+    "slug": "central",
+    "domain_name": "centralbankofindia.co.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/central.svg",
+    "brand_color": "#1B4F9C"
+  },
+  {
+    "id": "bnk-iob",
+    "display_name": "Indian Overseas Bank",
+    "slug": "iob",
+    "domain_name": "iob.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/iob.svg",
+    "brand_color": "#E31C23"
+  },
+  {
+    "id": "bnk-uco",
+    "display_name": "UCO Bank",
+    "slug": "uco",
+    "domain_name": "ucobank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/uco.svg",
+    "brand_color": "#E30613"
+  },
+  {
+    "id": "bnk-bom",
+    "display_name": "Bank of Maharashtra",
+    "slug": "bom",
+    "domain_name": "bankofmaharashtra.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/bom.svg",
+    "brand_color": "#1E4D8C"
+  },
+  {
+    "id": "bnk-psb",
+    "display_name": "Punjab & Sind Bank",
+    "slug": "psb",
+    "domain_name": "punjabandsindbank.co.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/psb.svg",
+    "brand_color": "#003366"
+  },
+  {
+    "id": "bnk-yes",
+    "display_name": "Yes Bank",
+    "slug": "yes",
+    "domain_name": "yesbank.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/yes.svg",
+    "brand_color": "#002B5C"
+  },
+  {
+    "id": "bnk-idfc",
+    "display_name": "IDFC FIRST Bank",
+    "slug": "idfc",
+    "domain_name": "idfcfirstbank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/idfc.svg",
+    "brand_color": "#9B1D20"
+  },
+  {
+    "id": "bnk-federal",
+    "display_name": "Federal Bank",
+    "slug": "federal",
+    "domain_name": "federalbank.co.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/federal.svg",
+    "brand_color": "#0054A6"
+  },
+  {
+    "id": "bnk-bandhan",
+    "display_name": "Bandhan Bank",
+    "slug": "bandhan",
+    "domain_name": "bandhanbank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/bandhan.svg",
+    "brand_color": "#E31C23"
+  },
+  {
+    "id": "bnk-au",
+    "display_name": "AU Small Finance Bank",
+    "slug": "au",
+    "domain_name": "aubank.in",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/au.svg",
+    "brand_color": "#E87722"
+  },
+  {
+    "id": "bnk-rbl",
+    "display_name": "RBL Bank",
+    "slug": "rbl",
+    "domain_name": "rblbank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/rbl.svg",
+    "brand_color": "#1B3A6B"
+  },
+  {
+    "id": "bnk-cub",
+    "display_name": "City Union Bank",
+    "slug": "cub",
+    "domain_name": "cityunionbank.com",
+    "status": "active",
+    "local_logo": "/assets/logos/banks/cub.svg",
+    "brand_color": "#0066B3"
+  }
+]

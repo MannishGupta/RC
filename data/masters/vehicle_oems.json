@@ -1,0 +1,142 @@
+[
+  {
+    "id": "oem-mercedes",
+    "display_name": "Mercedes-Benz",
+    "slug": "mercedes-benz",
+    "domain_name": "mercedes-benz.co.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-bmw",
+    "display_name": "BMW",
+    "slug": "bmw",
+    "domain_name": "bmw.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-audi",
+    "display_name": "Audi",
+    "slug": "audi",
+    "domain_name": "audi.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-toyota",
+    "display_name": "Toyota",
+    "slug": "toyota",
+    "domain_name": "toyota.co.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-honda",
+    "display_name": "Honda",
+    "slug": "honda",
+    "domain_name": "honda.co.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-hyundai",
+    "display_name": "Hyundai",
+    "slug": "hyundai",
+    "domain_name": "hyundai.com",
+    "status": "active"
+  },
+  {
+    "id": "oem-maruti",
+    "display_name": "Maruti Suzuki",
+    "slug": "maruti-suzuki",
+    "domain_name": "marutisuzuki.com",
+    "status": "active"
+  },
+  {
+    "id": "oem-tata",
+    "display_name": "Tata Motors",
+    "slug": "tata",
+    "domain_name": "tatamotors.com",
+    "status": "active"
+  },
+  {
+    "id": "oem-mahindra",
+    "display_name": "Mahindra",
+    "slug": "mahindra",
+    "domain_name": "mahindra.com",
+    "status": "active"
+  },
+  {
+    "id": "oem-kia",
+    "display_name": "Kia",
+    "slug": "kia",
+    "domain_name": "kia.com",
+    "status": "active"
+  },
+  {
+    "id": "oem-vw",
+    "display_name": "Volkswagen",
+    "slug": "volkswagen",
+    "domain_name": "volkswagen.co.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-skoda",
+    "display_name": "Skoda",
+    "slug": "skoda",
+    "domain_name": "skoda-auto.co.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-mg",
+    "display_name": "MG Motor",
+    "slug": "mg",
+    "domain_name": "mgmotor.co.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-nissan",
+    "display_name": "Nissan",
+    "slug": "nissan",
+    "domain_name": "nissan.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-renault",
+    "display_name": "Renault",
+    "slug": "renault",
+    "domain_name": "renault.co.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-volvo",
+    "display_name": "Volvo",
+    "slug": "volvo",
+    "domain_name": "volvocars.com",
+    "status": "active"
+  },
+  {
+    "id": "oem-jaguar",
+    "display_name": "Jaguar",
+    "slug": "jaguar",
+    "domain_name": "jaguar.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-landrover",
+    "display_name": "Land Rover",
+    "slug": "land-rover",
+    "domain_name": "landrover.in",
+    "status": "active"
+  },
+  {
+    "id": "oem-byd",
+    "display_name": "BYD",
+    "slug": "byd",
+    "domain_name": "byd.com",
+    "status": "active"
+  },
+  {
+    "id": "oem-suzuki",
+    "display_name": "Suzuki",
+    "slug": "suzuki",
+    "domain_name": "suzukimotorcycle.co.in",
+    "status": "active"
+  }
+]

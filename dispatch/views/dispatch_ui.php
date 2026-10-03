@@ -17,8 +17,10 @@ $locations = d_locations();
 $activeRoutes = array_values(array_filter($routes, static fn($r) => is_array($r) && ($r['status'] ?? '') === 'active'));
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="reserve">
 <head>
+<?php if (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_theme_head.php')) { require BASE_PATH . '/app/views/partials/rc_theme_head.php'; } ?>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dispatch Console · Live Routes</title>
