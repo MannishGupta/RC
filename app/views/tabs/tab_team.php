@@ -531,7 +531,7 @@ document.addEventListener('alpine:init', () => {
                     </button>
                     <div class="rc-vcard-photo">
                         <template x-if="i.photo">
-                            <img :src="'images/' + i.photo" alt="" loading="lazy" width="72" height="72">
+                            <img :src="(window.rcMediaUrl ? rcMediaUrl(i.photo) : ('media_serve.php?f=' + encodeURIComponent(String(i.photo).replace(/^.*[\\\/]/,''))))" alt="" loading="lazy" width="72" height="72">
                         </template>
                         <template x-if="!i.photo">
                             <span x-text="(i.name || '?').charAt(0).toUpperCase()"></span>

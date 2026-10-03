@@ -129,7 +129,7 @@ $logoH = 48;
         @media (prefers-reduced-motion:reduce){.spin{animation:none}}
     </style>
     <link rel="stylesheet" href="assets/a11y.css?v=260921.29">
-<link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
+<link rel="stylesheet" href="/assets/contrast-lock.css?v=20261003.22">
     <script src="assets/a11y-tooltip.js?v=260921.29" defer></script>
 </head>
 <body>
