@@ -1551,7 +1551,7 @@ function jp_report_chrome_css(): void {
 .rc-chrome{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.6rem;padding:.65rem .85rem;margin:0 0 1rem;border-radius:14px;background:rgba(255,253,247,.92);border:1.5px solid #f59e0b;box-shadow:0 4px 16px rgba(12,74,110,.12)}
 .rc-chrome-left{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem}
 .rc-chrome-right{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin-left:auto}
-.rc-chrome-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .85rem;border-radius:999px;border:1px solid #d97706;background:#fffbeb;color:#9a3412;font-weight:800;font-size:.78rem;text-decoration:none;cursor:pointer;line-height:1.2}
+.rc-chrome-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .85rem;border-radius:999px;border:1px solid #d97706;background:#fffbeb;color:#9a3412!important;font-weight:800;font-size:.78rem;text-decoration:none;cursor:pointer;line-height:1.2}
 .rc-chrome-btn:hover{background:#fef3c7;color:#7c2d12}
 .rc-chrome-btn.pri{background:linear-gradient(135deg,#c2410c,#b45309);color:#fff;border-color:#9a3412}
 .rc-chrome-btn.pri:hover{filter:brightness(1.06);color:#fff}
@@ -2043,10 +2043,15 @@ th{font-size:.65rem;text-transform:uppercase;letter-spacing:.04em;color:var(--jp
 .ni-s{font-size:.7rem;font-weight:700;color:var(--jp-accent)}
 .ni-p{display:block;font-size:.7rem;margin-top:4px}
 .footer-note{color:var(--jp-muted);font-size:.75rem;margin-top:1.5rem}
+/* RC button contrast lock — never white-on-white */
+.rc-chrome-btn.pri,.jp-print-btn,.dock .pri{color:#ffffff!important}
+button.rc-chrome-btn,a.rc-chrome-btn{color:#9a3412!important}
+button.rc-chrome-btn.pri,a.rc-chrome-btn.pri{color:#ffffff!important;background:linear-gradient(135deg,#c2410c,#b45309)!important}
+.jp-print-btn{background:#0f172a!important;color:#f8fafc!important;border:1px solid #334155}
 .dock{position:fixed;bottom:1.1rem;right:1.1rem;z-index:40;display:flex;gap:6px;padding:6px;border-radius:14px;background:var(--jp-dock);border:1px solid rgba(148,163,184,.25);box-shadow:0 8px 28px rgba(15,23,42,.35)}
-.dock a,.dock button{background:transparent;color:#e2e8f0;border:none;padding:.45rem .75rem;border-radius:10px;font-size:.7rem;font-weight:700;cursor:pointer;text-decoration:none}
+.dock a,.dock button{background:rgba(30,41,59,.95);color:#f8fafc!important;border:1px solid rgba(148,163,184,.35);padding:.45rem .75rem;border-radius:10px;font-size:.7rem;font-weight:700;cursor:pointer;text-decoration:none}
 .dock a:hover,.dock button:hover{background:rgba(255,255,255,.1);color:#fff}
-.dock .pri{background:#2563eb;color:#fff}
+.dock .pri{background:#2563eb!important;color:#ffffff!important}
 @media print{
   .no-print,nav.tabs,.dock{display:none!important}
   body{background:#fff}

@@ -1,4 +1,4 @@
-<?php // Version: 20261003.17
+<?php // Version: 20261003.20
 declare(strict_types=1);
 /**
  * Email signature generator — dual layouts:
@@ -123,20 +123,22 @@ $_validUrl = static function ($v): string {
  * Fallback: coloured HTML badge (no image) if icon URL empty.
  */
 $socialIconUrl = static function (string $network) use ($baseUrl): string {
-    $network = preg_replace('/[^a-z]/', '', strtolower($network)) ?? '';
-    if ($network === '' || $network === 'x') {
-        $network = $network === 'x' ? 'twitter' : $network;
+    $network = strtolower(preg_replace('/[^a-z]/', '', $network) ?? '');
+    if ($network === 'x') {
+        $network = 'twitter';
     }
     if ($network === '') {
         return '';
     }
+    // Prefer static brand PNG (real logo artwork)
     $staticRel = '/assets/icons/social/' . $network . '.png';
     $_bp = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
     if (is_file($_bp . $staticRel)) {
-        return $baseUrl . $staticRel;
+        return $baseUrl . $staticRel . '?v=20261003.20';
     }
-    return $baseUrl . '/social_icon.php?n=' . rawurlencode($network) . '&s=36';
+    return $baseUrl . '/social_icon.php?n=' . rawurlencode($network) . '&s=64&v=20261003.20';
 };
+
 
 $socialMeta = [
     'linkedin'  => ['LinkedIn', '0a66c2'],
@@ -174,37 +176,43 @@ foreach ($order as $_k) {
 
 $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-/** Social icon row — hosted PNG (absolute URL); HTML badge fallback (iOS-safe) */
+/** Social icon row — real brand PNG logos (hosted on same origin; iOS-safe when remote images load) */
 $socialRowHtml = static function (array $socials) use ($e): string {
     if ($socials === []) {
         return '';
     }
-    // Nested table keeps icons horizontal in Apple Mail / Outlook
-    $inner = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>';
+    $fallbackGlyph = [
+        'LinkedIn' => ['in', '0A66C2'],
+        'X' => ['X', '111111'],
+        'Instagram' => ['ig', 'E1306C'],
+        'Facebook' => ['f', '1877F2'],
+        'YouTube' => ['YT', 'FF0000'],
+        'WhatsApp' => ['wa', '25D366'],
+    ];
+    $inner = '<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-collapse:collapse;mso-table-lspace:0;mso-table-rspace:0;"><tr>';
     foreach ($socials as $s) {
-        $icon = (string)($s['icon'] ?? '');
         $label = (string)($s['label'] ?? '');
-        $short = [
-            'LinkedIn' => 'in', 'X' => 'X', 'Instagram' => 'ig',
-            'Facebook' => 'f', 'YouTube' => 'YT', 'WhatsApp' => 'wa',
-        ];
-        $badge = $short[$label] ?? mb_substr($label, 0, 2);
+        $icon  = (string)($s['icon'] ?? '');
+        $url   = (string)($s['url'] ?? '');
         $inner .= '<td style="padding:0 6px 0 0;vertical-align:middle;">';
-        $inner .= '<a href="' . $e($s['url']) . '" style="text-decoration:none;border:0;">';
+        $inner .= '<a href="' . $e($url) . '" target="_blank" rel="noopener noreferrer" style="text-decoration:none;border:0;line-height:0;">';
         if ($icon !== '') {
-            // Hosted PNG — works when mail client loads remote images
-            $inner .= '<img src="' . $e($icon) . '" width="20" height="20" alt="' . $e($label) . '" '
-                . 'style="display:block;width:20px;height:20px;border:0;border-radius:4px;" />';
+            $inner .= '<img src="' . $e($icon) . '" width="22" height="22" alt="' . $e($label) . '" '
+                . 'title="' . $e($label) . '" '
+                . 'style="display:block;width:22px;height:22px;border:0;border-radius:4px;" />';
         } else {
-            $inner .= '<span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;'
-                . 'background:#' . $e($s['color']) . ';color:#ffffff;font-family:Arial,Helvetica,sans-serif;'
-                . 'font-size:9px;font-weight:bold;border-radius:4px;">' . $e($badge) . '</span>';
+            $pair = $fallbackGlyph[$label] ?? ['•', $s['color'] ?? '64748b'];
+            $inner .= '<span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;'
+                . 'background:#' . $e($pair[1]) . ';color:#fff;font-family:Arial,sans-serif;font-size:10px;font-weight:700;'
+                . 'border-radius:4px;">' . $e($pair[0]) . '</span>';
         }
         $inner .= '</a></td>';
     }
     $inner .= '</tr></table>';
     return '<tr><td style="padding:8px 0 2px;text-align:left;">' . $inner . '</td></tr>';
 };
+
+
 
 
 /**

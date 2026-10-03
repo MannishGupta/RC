@@ -861,6 +861,12 @@ html[data-theme="reserve"] .rc-theme-seg{background:#1a0f0c;border-color:#3d2a1f
 html[data-theme="reserve"] .rc-theme-seg__btn{color:#d4c4a8;border-right-color:#3d2a1f}
 html[data-theme="reserve"] .rc-theme-seg__btn.is-active{background:#b45309;color:#fff7ed}
 </style>
+<style id="rc-btn-contrast-lock">
+/* Never white text on white / light fills */
+.rc-ed-btn-primary,button.rc-ed-btn-primary,[type=submit].rc-ed-btn-primary{color:#fff!important}
+.rc-chrome-btn:not(.pri){color:#9a3412!important}
+button.bg-white,a.bg-white{color:#0f172a!important}
+</style>
 </head>
 
 <body class="rc-app-shell" x-data="dashboardApp" 

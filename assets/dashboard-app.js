@@ -817,7 +817,7 @@ get filteredList() {
                     document.body.setAttribute('data-print-title', title);
                     document.body.setAttribute('data-print-date', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }));
                     if (tab === 'team') {
-                        window.open('tools/print_directory.php?tab=team', '_blank', 'noopener');
+                        window.open('print_directory.php?tab=team', '_blank', 'noopener');
                         return;
                     }
                     window.print();

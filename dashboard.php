@@ -810,6 +810,12 @@ $DASHBOARD_STATE = [
     <link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
     <script src="assets/a11y-focus-trap.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
     <script src="assets/a11y-tooltip.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
+<style id="rc-btn-contrast-lock">
+/* Never white text on white / light fills */
+.rc-ed-btn-primary,button.rc-ed-btn-primary,[type=submit].rc-ed-btn-primary{color:#fff!important}
+.rc-chrome-btn:not(.pri){color:#9a3412!important}
+button.bg-white,a.bg-white{color:#0f172a!important}
+</style>
 </head>
 
 <body x-data="dashboardApp" 

@@ -59,10 +59,10 @@ $photoFile = !empty($person['photo']) ? basename($person['photo']) : '';
 $logoFile  = !empty($company['logo'])  ? basename($company['logo'])  : '';
 
 $photo = $photoFile
-    ? '/images/' . $photoFile
+    ? ('media_serve.php?f=' . rawurlencode($photoFile))
     : 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=1a1a1a&color=c9a84c&size=256';
 
-$logo        = $logoFile ? '/images/' . $logoFile : '';
+$logo        = $logoFile ? ('media_serve.php?f=' . rawurlencode($logoFile)) : '';
 $companyName = $company['name'] ?? 'Organization';
 $website     = $company['website'] ?? '';
 
@@ -135,7 +135,7 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
 
         .id-card{
             width:336px;background:var(--charcoal);border-radius:20px;
-            overflow:hidden;position:relative;
+            overflow:visible;position:relative;
             box-shadow:0 30px 70px -20px rgba(0,0,0,.7),0 0 0 1px var(--hairline);
         }
         /* Hairline corner accents — the "engraved" detail that separates a
@@ -160,19 +160,20 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
         .company-text{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ivory-dim)}
 
         .avatar-wrap{
-            position:absolute;left:50%;bottom:-48px;transform:translateX(-50%);
+            position:absolute;left:50%;bottom:-52px;transform:translateX(-50%);
             width:112px;height:112px;border-radius:50%;padding:3px;z-index:10;
             background:conic-gradient(from 180deg,var(--gold),var(--gold-light),var(--gold));
-            overflow:visible;box-sizing:border-box;
+            overflow:hidden;box-sizing:border-box;
+            box-shadow:0 4px 16px rgba(0,0,0,.35);
         }
         .avatar-wrap img{
             width:100%;height:100%;border-radius:50%;
-            object-fit:cover;object-position:center 18%;
+            object-fit:cover;object-position:50% 22%;
             border:3px solid var(--charcoal);display:block;cursor:zoom-in;
             background:#1e293b;
         }
 
-        .id-body{padding:64px 26px 8px;text-align:center}
+        .id-body{padding:68px 26px 12px;text-align:center}
         .id-name{font-family:'Instrument Serif','Noto Sans Devanagari',serif;font-size:25px;font-weight:400;color:var(--ivory);letter-spacing:.01em;line-height:1.15}
         .id-role{margin-top:6px;font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
 
@@ -194,6 +195,7 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
         .id-soc a{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
             background:var(--charcoal-2);border:1px solid var(--hairline);color:var(--gold-light);font-size:11px;text-decoration:none}
 
+        .id-footer img{width:72px;height:72px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:2px solid var(--gold);display:block}
         .id-footer{
             margin-top:20px;padding:16px 24px calc(18px + env(safe-area-inset-bottom));
             display:flex;align-items:center;justify-content:space-between;gap:12px;
