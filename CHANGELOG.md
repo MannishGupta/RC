@@ -1,5 +1,24 @@
 # Fusion Resource Centre — Changelog
 
+## 20261003.05 — Incorporate verified upgrade list
+
+Ships remaining verified items from the consolidated RC upgrade list onto the 20261003.04 baseline.
+
+### Vehicle inventory
+- **VehicleCatalog now loaded** from `tab_cartags.php`, `index.php`, and `MasterDirectory` (class existed but was never required)
+- OEM logo on vehicle card headers; decorative white-circle artefact removed
+- Fallback chain: local assets → simple-icons → VehicleCatalog domains → Google favicons
+
+### Already present from prior sessions (confirmed on GitHub)
+- Layout shell (`rc-app-shell` + footer inside main)
+- Alpine sidebar failure safety banner
+- Optimizer: lightweight multi-tenant (skip WebP per-tenant in sweep), bank/locations orphan refs
+- Blood report tenant bootstrap + clinical framing + media_serve photos
+- Devanagari font load, theme contrast locks
+- TenantTombstone for deleted tenants
+
+# Fusion Resource Centre — Changelog
+
 ## 20261003.04 — GitHub audit + layout + blood report
 
 ### Audit (github.com/MannishGupta/RC)

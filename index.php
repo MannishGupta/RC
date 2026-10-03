@@ -166,6 +166,7 @@ define('BASE_PATH', __DIR__);
  */
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 if (is_file(BASE_PATH . '/app/TenantTombstone.php')) { require_once BASE_PATH . '/app/TenantTombstone.php'; }
+if (is_file(BASE_PATH . '/app/VehicleCatalog.php')) { require_once BASE_PATH . '/app/VehicleCatalog.php'; }
 if (class_exists('HostPolicy') && !HostPolicy::isHostAllowed((string)($_SERVER['HTTP_HOST'] ?? ''))) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');

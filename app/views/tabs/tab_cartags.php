@@ -23,6 +23,33 @@
 //    public by design — that's what a QR scan hits — but were hardened
 //    separately.
 if (!defined('BASE_PATH')) exit;
+if (is_file(BASE_PATH . '/app/VehicleCatalog.php')) {
+    require_once BASE_PATH . '/app/VehicleCatalog.php';
+}
+if (is_file(BASE_PATH . '/app/MasterDirectory.php')) {
+    require_once BASE_PATH . '/app/MasterDirectory.php';
+}
+
+/** Resolve OEM logo URL for a make/model string. */
+function rc_cartag_logo(string $makeModel): string {
+    $try = trim($makeModel);
+    if ($try === '') return '';
+    if (class_exists('VehicleCatalog')) {
+        $u = VehicleCatalog::getVehicleLogo($try);
+        if (is_string($u) && $u !== '') return $u;
+        $first = trim(explode(' ', $try)[0] ?? '');
+        if ($first !== '' && $first !== $try) {
+            $u = VehicleCatalog::getVehicleLogo($first);
+            if (is_string($u) && $u !== '') return $u;
+        }
+    }
+    if (class_exists('MasterDirectory')) {
+        $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', explode(' ', $try)[0] ?? $try) ?? '');
+        $u = MasterDirectory::logoUrl('', 'oems', $slug);
+        if (is_string($u) && $u !== '') return $u;
+    }
+    return '';
+}
 ?>
 <style>/* cartag-modal-overflow-fix */
 [x-show="modalOpen"] {
@@ -148,6 +175,15 @@ foreach ($carTags as &$_t) {
         'PUC'       => VehicleRegistry::validity((string)($_reg['pucc_upto'] ?? '')),
         'Fitness'   => VehicleRegistry::validity((string)($_reg['fitness_upto'] ?? '')),
     ] : [];
+    // OEM logo — VehicleCatalog was built but never called from this tab
+    $_make = trim((string)($_t['make_model'] ?? $_t['manufacturer'] ?? $_t['make'] ?? ''));
+    if ($_make === '' && !empty($_reg['maker_model'])) {
+        $_make = trim((string)$_reg['maker_model']);
+    }
+    $_t['oem_logo'] = ($_make !== '' && function_exists('rc_cartag_logo')) ? rc_cartag_logo($_make) : '';
+    if ($_t['oem_logo'] === '' && $_make !== '' && class_exists('VehicleCatalog')) {
+        $_t['oem_logo'] = (string)VehicleCatalog::getVehicleLogo($_make);
+    }
 }
 unset($_t);
 
@@ -214,10 +250,15 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden group hover:border-blue-300 hover:shadow-md transition-all flex flex-col">
 
                         <div class="bg-gradient-to-r from-slate-800 to-slate-700 px-5 pt-5 pb-8 relative overflow-hidden">
-                            <div class="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-white/5"></div>
                             <div class="flex items-start justify-between relative">
-                                <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                    <i class="fa-solid fa-car text-white/80 text-sm"></i>
+                                <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center shrink-0 border border-white/20 overflow-hidden p-1.5">
+                                    <template x-if="t.oem_logo">
+                                        <img :src="t.oem_logo" alt="" class="max-h-8 max-w-full object-contain" width="36" height="32" loading="lazy"
+                                             @error="$el.style.display='none'; $el.nextElementSibling && ($el.nextElementSibling.style.display='flex')">
+                                    </template>
+                                    <span class="w-full h-full items-center justify-center text-slate-500" :style="t.oem_logo ? 'display:none' : 'display:flex'">
+                                        <i class="fa-solid fa-car text-sm"></i>
+                                    </span>
                                 </div>
                                 <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
                                     <button @click.stop="showQr(t)" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition text-xs" title="QR Code">

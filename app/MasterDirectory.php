@@ -102,6 +102,15 @@ final class MasterDirectory
         $domain = strtolower(trim($domain));
         $slug = strtolower(trim($slug));
         $base = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
+        if (($kind === 'oems' || $kind === 'vehicle_oems') && class_exists('VehicleCatalog') === false) {
+            $vc = $base . '/VehicleCatalog.php';
+            if (!is_file($vc)) {
+                $vc = $base . '/app/VehicleCatalog.php';
+            }
+            if (is_file($vc)) {
+                require_once $vc;
+            }
+        }
         if ($kind === 'banks' && $slug !== '' && is_file($base . '/assets/logos/banks/' . $slug . '.svg')) {
             $out[] = '/assets/logos/banks/' . rawurlencode($slug) . '.svg';
         }
@@ -112,7 +121,17 @@ final class MasterDirectory
         if ($domain !== '') {
             $out[] = 'https://www.google.com/s2/favicons?domain=' . rawurlencode($domain) . '&sz=128';
         }
-        return array_values(array_unique($out));
+        // VehicleCatalog: make-name resolution when domain/slug incomplete
+        if (($kind === 'oems' || $kind === 'vehicle_oems') && class_exists('VehicleCatalog')) {
+            $make = $slug !== '' ? $slug : $domain;
+            if ($make !== '') {
+                $logo = VehicleCatalog::getVehicleLogo($make);
+                if (is_string($logo) && $logo !== '') {
+                    array_unshift($out, $logo);
+                }
+            }
+        }
+        return array_values(array_unique(array_filter($out)));
     }
 
     public static function options(string $kind): array
