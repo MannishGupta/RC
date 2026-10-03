@@ -1,11 +1,11 @@
 # Changelog
 
-## 20261003.10 — Screenshot follow-up
+## 20261003.11 — Real bank & OEM logos
 
-- Nav labels synced: Fleet Asset Registry, Shared Locations, Treasury & Banking Ledger
-- Bank cards: 72×72 logo under Reference ID; domain favicon fallback for Indian banks
-- QR capped 120×120
-- Locations: stronger media_serve/images fallbacks for logos
-- Theme: Sys|Light|Dark|Res segmented control
-- Page title Shared Locations (not Enterprise Premises Registry)
+- Local monogram SVGs (letter badges) demoted to last fallback
+- Bank logos resolve from masters domain → Clearbit → Google favicon
+- `bankLogoFor()` + improved name matching (ICICI Bank → icici)
+- Vehicle cards link `oem_logo` to resolved manufacturer (make/model parse)
+- VehicleCatalog prefers Clearbit domain marks over simple-icons glyphs
+- Client `rcLogoCascade` walks candidate list on image error
 

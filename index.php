@@ -2114,24 +2114,88 @@ if (file_exists($dashboardFile)) {
     if (!empty($viewData['jsData']['bank']) && is_array($viewData['jsData']['bank']) && class_exists('MasterDirectory')) {
         foreach ($viewData['jsData']['bank'] as &$_brow) {
             if (!is_array($_brow)) continue;
-            if (!empty($_brow['bank_logo']) || !empty($_brow['logo_url'])) continue;
-            $bn = (string)($_brow['bank_name'] ?? $_brow['bank'] ?? '');
+            $bn = trim((string)($_brow['bank_name'] ?? $_brow['bank'] ?? ''));
             if ($bn === '') continue;
+            // Always re-resolve so monogram SVGs are not sticky preferred marks
+            $logo = method_exists('MasterDirectory', 'bankLogoFor')
+                ? MasterDirectory::bankLogoFor($bn)
+                : '';
+            if ($logo === '') {
+                $found = MasterDirectory::findBank($bn);
+                $dom = is_array($found) ? (string)($found['domain_name'] ?? '') : MasterDirectory::guessBankDomain($bn);
+                $slug = is_array($found) ? (string)($found['slug'] ?? '') : '';
+                $cands = MasterDirectory::logoCandidates($dom, 'banks', $slug);
+                $logo = $cands[0] ?? '';
+            }
+            $_brow['bank_logo'] = $logo;
             $found = MasterDirectory::findBank($bn);
-            if (!$found) {
-                $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $bn) ?? '');
-                $cands = MasterDirectory::logoCandidates('', 'banks', $slug);
-                $_brow['bank_logo'] = $cands[0] ?? '';
-            } else {
-                $cands = MasterDirectory::logoCandidates(
+            if ($found) {
+                $_brow['bank_slug'] = (string)($found['slug'] ?? '');
+                $_brow['bank_domain'] = (string)($found['domain_name'] ?? '');
+                $_brow['bank_logo_candidates'] = MasterDirectory::logoCandidates(
                     (string)($found['domain_name'] ?? ''),
                     'banks',
                     (string)($found['slug'] ?? '')
                 );
-                $_brow['bank_logo'] = $cands[0] ?? '';
+            } else {
+                $dom = MasterDirectory::guessBankDomain($bn);
+                $_brow['bank_domain'] = $dom;
+                $_brow['bank_logo_candidates'] = MasterDirectory::logoCandidates($dom, 'banks', '');
             }
         }
         unset($_brow);
+    }
+    // Vehicle OEM logos linked to manufacturer / make
+    if (!empty($viewData['jsData']['cartags']) && is_array($viewData['jsData']['cartags'])) {
+        if (is_file(BASE_PATH . '/app/VehicleCatalog.php')) {
+            require_once BASE_PATH . '/app/VehicleCatalog.php';
+        }
+        foreach ($viewData['jsData']['cartags'] as &$_crow) {
+            if (!is_array($_crow)) continue;
+            $make = trim((string)($_crow['manufacturer'] ?? $_crow['make'] ?? ''));
+            if ($make === '') {
+                $mm = trim((string)($_crow['make_model'] ?? $_crow['model'] ?? ''));
+                // "Maruti Suzuki Swift VXI" → try resolve progressively
+                if ($mm !== '' && class_exists('VehicleCatalog')) {
+                    $parts = preg_split('/\s+/', $mm) ?: [];
+                    for ($n = min(3, count($parts)); $n >= 1; $n--) {
+                        $try = implode(' ', array_slice($parts, 0, $n));
+                        $key = VehicleCatalog::resolveMake($try);
+                        if ($key) { $make = $key; break; }
+                    }
+                    if ($make === '' && $parts) {
+                        $make = $parts[0];
+                    }
+                }
+            }
+            if ($make === '') continue;
+            if (class_exists('VehicleCatalog')) {
+                $key = VehicleCatalog::resolveMake($make) ?: $make;
+                $_crow['manufacturer'] = $key;
+                $_crow['make'] = $key;
+                $_crow['oem_logo'] = VehicleCatalog::getVehicleLogo($key);
+            }
+            if (empty($_crow['oem_logo']) && class_exists('MasterDirectory') && method_exists('MasterDirectory', 'oemLogoFor')) {
+                $_crow['oem_logo'] = MasterDirectory::oemLogoFor($make);
+            }
+            if (class_exists('MasterDirectory')) {
+                $oem = MasterDirectory::findOem($make);
+                if ($oem) {
+                    $_crow['oem_slug'] = (string)($oem['slug'] ?? '');
+                    $_crow['oem_domain'] = (string)($oem['domain_name'] ?? '');
+                    $cands = MasterDirectory::logoCandidates(
+                        (string)($oem['domain_name'] ?? ''),
+                        'oems',
+                        (string)($oem['slug'] ?? '')
+                    );
+                    if (!empty($cands[0])) {
+                        $_crow['oem_logo'] = $cands[0];
+                    }
+                    $_crow['oem_logo_candidates'] = $cands;
+                }
+            }
+        }
+        unset($_crow);
     }
     require $dashboardFile;
 } else {

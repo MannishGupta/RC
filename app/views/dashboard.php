@@ -1307,8 +1307,10 @@ html[data-theme="reserve"] .rc-theme-seg__btn.is-active{background:#b45309;color
                                                 <div class="font-mono text-sm font-bold text-slate-700 truncate" x-text="i.slug || i.id || '-'"></div>
                                             </div>
                                             <div class="w-[72px] h-[72px] rounded-xl border border-slate-200 bg-white p-2 flex items-center justify-center overflow-hidden shadow-sm shrink-0" title="Bank logo">
-                                                <template x-if="i.bank_logo">
-                                                    <img :src="i.bank_logo" alt="" width="72" height="72" class="max-w-full max-h-full object-contain" loading="lazy" @error="$el.style.display='none'">
+                                                <template x-if="i.bank_logo || (i.bank_logo_candidates && i.bank_logo_candidates.length)">
+                                                    <img :src="i.bank_logo || (i.bank_logo_candidates && i.bank_logo_candidates[0])" alt="" width="72" height="72" class="max-w-full max-h-full object-contain" loading="lazy"
+                                                         :data-cands="JSON.stringify(i.bank_logo_candidates || [])"
+                                                         @error="window.rcLogoCascade && window.rcLogoCascade($el)">
                                                 </template>
                                                 <span class="text-slate-300 text-2xl" x-show="!i.bank_logo"><i class="fa-solid fa-building-columns"></i></span>
                                             </div>

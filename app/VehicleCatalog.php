@@ -397,36 +397,8 @@ final class VehicleCatalog
             }
         }
 
-        // 2) Public CDN candidates (best-effort; browser will 404 → onerror can swap)
-        // simple-icons via jsDelivr (works for many global brands)
-        $si = [
-            'maruti-suzuki' => null, // often missing — skip
-            'hyundai' => 'hyundai',
-            'tata' => null,
-            'mahindra' => null,
-            'toyota' => 'toyota',
-            'honda' => 'honda',
-            'bmw' => 'bmw',
-            'mercedes-benz' => 'mercedes',
-            'audi' => 'audi',
-            'volkswagen' => 'volkswagen',
-            'kia' => 'kia',
-            'nissan' => 'nissan',
-            'volvo' => 'volvo',
-            'jaguar' => 'jaguar',
-            'land-rover' => 'landrover',
-            'lexus' => 'lexus',
-            'skoda' => 'skoda',
-            'renault' => 'renault',
-            'mg' => null,
-            'byd' => null,
-            'citroen' => 'citroen',
-        ];
-        if (!empty($si[$slug])) {
-            return 'https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/' . $si[$slug] . '.svg';
-        }
-
-        // Clearbit logo API (domain-based; many OEM domains resolve)
+        // 2) Domain → real brand mark (Clearbit then Google). Avoid simple-icons
+        // (monochrome glyphs often look "unlinked" / wrong brand on dark UI).
         $domains = [
             'maruti-suzuki' => 'marutisuzuki.com',
             'hyundai' => 'hyundai.com',
@@ -438,20 +410,29 @@ final class VehicleCatalog
             'mercedes-benz' => 'mercedes-benz.co.in',
             'audi' => 'audi.co.in',
             'volkswagen' => 'volkswagen.co.in',
-            'kia' => 'kia.com/in',
+            'kia' => 'kia.com',
             'nissan' => 'nissan.co.in',
             'volvo' => 'volvocars.com',
             'jaguar' => 'jaguar.in',
             'land-rover' => 'landrover.in',
             'lexus' => 'lexusindia.co.in',
-            'skoda' => 'skoda.co.in',
+            'skoda' => 'skoda-auto.co.in',
             'renault' => 'renault.co.in',
             'mg' => 'mgmotor.co.in',
             'byd' => 'byd.com',
             'citroen' => 'citroen.in',
+            'force' => 'forcemotors.com',
+            'isuzu' => 'isuzu.in',
+            'jeep' => 'jeep-india.com',
+            'porsche' => 'porsche.com',
+            'mini' => 'mini.in',
+            'ashok-leyland' => 'ashokleyland.com',
+            'eicher' => 'eicher.in',
         ];
         if (!empty($domains[$slug])) {
-            return 'https://www.google.com/s2/favicons?domain=' . rawurlencode($domains[$slug]) . '&sz=128';
+            $d = $domains[$slug];
+            // Prefer Clearbit full-color mark; UI onerror can fall back to Google
+            return 'https://logo.clearbit.com/' . rawurlencode($d);
         }
 
         // 3) Generic
