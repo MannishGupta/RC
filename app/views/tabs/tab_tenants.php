@@ -816,3 +816,8 @@ function closeEdit(){
     <p class="mt-2 mb-0 text-xs text-slate-400">Storage is self-healing: required folders and seed JSON are provisioned automatically at <code>0775</code> with no migration prompts.</p>
   </div>
 </div>
+
+<?php
+$_mm = __DIR__ . '/../partials/modules_matrix.php';
+if (is_file($_mm)) { require $_mm; }
+?>

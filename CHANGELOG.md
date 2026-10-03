@@ -1,10 +1,9 @@
 # Changelog
 
-## 20261003.12 — Logo proxy + location media
+## 20261003.13 — Super Admin matrix + monitor cleanup
 
-- New `logo_proxy.php`: server fetches Google/DuckDuckGo/Clearbit, caches 30 days under `data/cache/logos/`
-- Bank + OEM logo URLs use same-origin proxy (no browser Clearbit block)
-- `media_serve` searches more folders (media/locations, uploads, assets/locations)
-- Location images: multi-step fallback (media_serve → /images → webp → jpg)
-- Vehicle header logo shell + cascade; hide broken-image glyphs
+- Restored **Module matrix** on Tenant Setup (enable/disable modules per tenant)
+- Monitor: single System Optimizer entry (link to `?tab=opt`) — removed duplicate full panel
+- Permissions probe uses **tenant DATA_PATH** only (no legacy `/images`, `/docs`, root `/data`)
+- Fixed `$_lib` undefined variable + stripos(null) warnings in library audit
 

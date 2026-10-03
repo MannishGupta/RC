@@ -352,59 +352,66 @@ $diagnostics['env']['Webfont files'] = $h((string) count($seenFonts));
 
 // 3. Directory Permissions — all paths the app must write at runtime
 // Live Tracking writes policy / state / violations / daily history under data/runners/
-$dirs = [
-    'data',
-    'data/sessions',
-    'data/logs',
-    'data/runners',
-    'images',
-    'docs',
-    'status/data',
+// Tenant-isolated paths only (no legacy root /data, /images, /docs)
+$_dataRoot = defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data');
+$_permChecks = [
+    'data' => $_dataRoot,
+    'data/sessions' => $_dataRoot . '/sessions',
+    'data/logs' => $_dataRoot . '/logs',
+    'data/runners' => $_dataRoot . '/runners',
+    'data/media/images' => $_dataRoot . '/media/images',
+    'data/media/docs' => $_dataRoot . '/media/docs',
+    'data/config' => $_dataRoot . '/config',
+    'data/cache/logos' => $_dataRoot . '/cache/logos',
 ];
-foreach ($dirs as $dir) {
-    $path = BASE_PATH . '/' . $dir;
-    // Auto-create mandated folders when missing (so Monitor can re-check after refresh)
-    if (!file_exists($path) && in_array($dir, ['data/runners', 'data/sessions', 'data/logs', 'status/data'], true)) {
+foreach ($_permChecks as $label => $path) {
+    if (!is_dir($path)) {
         @mkdir($path, 0775, true);
     }
-    if (!file_exists($path)) {
-        $diagnostics['perms'][$dir] = '<span class="text-rose-500 font-bold">Missing</span>';
+    if (!is_dir($path)) {
+        $diagnostics['perms'][$label] = '<span class="text-rose-500 font-bold">Missing</span>';
     } elseif (!is_writable($path)) {
-        $diagnostics['perms'][$dir] = '<span class="text-amber-500 font-bold">Read-Only</span>'
-            . ' <span class="text-[10px] text-slate-400 font-normal">(chmod 775 or IIS write ACL)</span>';
+        $diagnostics['perms'][$label] = '<span class="text-amber-500 font-bold">Read-Only</span>'
+            . ' <span class="text-[10px] text-slate-400 font-normal">(chmod 775 or IIS Modify)</span>';
     } else {
-        $diagnostics['perms'][$dir] = '<span class="text-emerald-600 font-bold">Writable</span>';
+        $diagnostics['perms'][$label] = '<span class="text-emerald-600 font-bold">Writable</span>';
     }
 }
-// Spot-check critical runner JSON files (create empty shells if folder is writable)
 $runnerFiles = [
-    'data/runners/policy_settings.json',
-    'data/runners/runners_state.json',
-    'data/runners/location_violations_log.json',
+    'runners/policy_settings.json',
+    'runners/runners_state.json',
+    'runners/location_violations_log.json',
+    'config/modules.json',
 ];
 foreach ($runnerFiles as $rel) {
-    $path = BASE_PATH . '/' . $rel;
-    if (!file_exists($path)) {
-        $parent = dirname($path);
-        if (is_dir($parent) && is_writable($parent)) {
-            $seed = ($rel === 'data/runners/policy_settings.json')
-                ? json_encode([
-                    'master_tracking_email' => 'admin.logistics@company.com',
-                    'working_hours' => ['start' => '09:00', 'end' => '19:00', 'timezone' => 'Asia/Kolkata'],
-                    'mandatory_designations' => ['Driver', 'Office Runner'],
-                    'mandatory_departments' => ['Logistics', 'Operations', 'Administration'],
-                    'heartbeat_timeout_minutes' => 10,
-                ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                : '[]';
-            @file_put_contents($path, $seed !== false ? $seed : '[]');
-        }
+    $path = $_dataRoot . '/' . $rel;
+    $parent = dirname($path);
+    if (!is_dir($parent)) {
+        @mkdir($parent, 0775, true);
     }
-    if (!file_exists($path)) {
-        $diagnostics['perms'][$rel] = '<span class="text-rose-500 font-bold">Missing</span>';
+    if (!is_file($path) && is_dir($parent) && is_writable($parent)) {
+        if (str_ends_with($rel, 'policy_settings.json')) {
+            $seed = json_encode([
+                'master_tracking_email' => 'admin.logistics@company.com',
+                'working_hours' => ['start' => '09:00', 'end' => '19:00', 'timezone' => 'Asia/Kolkata'],
+                'mandatory_designations' => ['Driver', 'Office Runner'],
+                'mandatory_departments' => ['Logistics', 'Operations', 'Administration'],
+                'heartbeat_timeout_minutes' => 10,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        } elseif (str_ends_with($rel, 'modules.json')) {
+            $seed = '{}';
+        } else {
+            $seed = '[]';
+        }
+        @file_put_contents($path, $seed);
+    }
+    $label = 'data/' . $rel;
+    if (!is_file($path)) {
+        $diagnostics['perms'][$label] = '<span class="text-rose-500 font-bold">Missing</span>';
     } elseif (!is_writable($path)) {
-        $diagnostics['perms'][$rel] = '<span class="text-amber-500 font-bold">Read-Only</span>';
+        $diagnostics['perms'][$label] = '<span class="text-amber-500 font-bold">Read-Only</span>';
     } else {
-        $diagnostics['perms'][$rel] = '<span class="text-emerald-600 font-bold">Writable</span>';
+        $diagnostics['perms'][$label] = '<span class="text-emerald-600 font-bold">Writable</span>';
     }
 }
 
@@ -511,18 +518,21 @@ if (file_exists($logFile)) {
 ?>
 
 
+<!-- Full System Optimizer UI lives only on ?tab=opt — single entry point -->
 <section class="mb-6 max-w-4xl" id="platform-optimization">
-  <div class="mb-3">
-    <div class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Maintenance</div>
-    <h2 class="text-lg font-extrabold text-slate-800">Platform Optimization Suite</h2>
-    <p class="text-xs text-slate-500">Runs integrity checks and optimisers. Nested under Infrastructure Telemetry so field operators have one diagnostics home.</p>
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
+    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100 shrink-0">
+      <i class="fa-solid fa-wrench"></i>
+    </div>
+    <div class="min-w-0 flex-1">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Maintenance</div>
+      <h2 class="text-base font-extrabold text-slate-800 m-0">System Optimizer</h2>
+      <p class="text-xs text-slate-500 mt-0.5">Schema normalisation, media cleanup, and JSON integrity — open the dedicated workspace.</p>
+    </div>
+    <a href="?tab=opt" class="shrink-0 px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition flex items-center gap-2">
+      Open optimiser <i class="fa-solid fa-arrow-right text-[10px]"></i>
+    </a>
   </div>
-  <?php
-    $optPanelCompact = false;
-    if (is_file(__DIR__ . '/../partials/optimizer_panel.php')) {
-        require __DIR__ . '/../partials/optimizer_panel.php';
-    }
-  ?>
 </section>
 <div class="w-full space-y-6">
     <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-800">
@@ -794,22 +804,7 @@ if (file_exists($logFile)) {
     }
     </script>
 
-    <!-- The System Optimizer panel intentionally lives ONLY on the Optimise
-         tab. It previously rendered here too — same panel, same action —
-         which made it look like two different tools and meant a destructive
-         operation had two entry points. One tool, one place. -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100 shrink-0">
-            <i class="fa-solid fa-wrench"></i>
-        </div>
-        <div class="min-w-0 flex-1">
-            <h3 class="text-sm font-bold text-slate-800">System Optimizer &amp; Cleanup</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Schema normalisation, slug migration and the server cleanup scanner.</p>
-        </div>
-        <a href="?tab=opt" class="shrink-0 px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition flex items-center gap-2">
-            Open <i class="fa-solid fa-arrow-right text-[10px]"></i>
-        </a>
-    </div>
+<!-- single optimizer entry is above (#platform-optimization) -->
 
     <!-- ── Third-party library audit ───────────────────────────────────────
          Installed versions are parsed from the actual <script>/<link> tags in
@@ -861,26 +856,37 @@ if (file_exists($logFile)) {
     $_libs = [];
     foreach ($_libDefs as $_d) {
         $_found = [];
-        if (preg_match_all($_d['rx'], $_libSrc, $_m)) {
-            $_found = !empty($_m[1]) ? array_values(array_unique(array_filter($_m[1]))) : ['(unversioned)'];
+        if (!empty($_d['rx']) && is_string($_libSrc) && $_libSrc !== '') {
+            if (preg_match_all($_d['rx'], $_libSrc, $_m)) {
+                $_found = !empty($_m[1]) ? array_values(array_unique(array_filter($_m[1]))) : ['(unversioned)'];
+            }
+        }
         // Self-hosted fallback: parse version from vendor file when URL regex misses
-        if ($_lib['key'] === 'font-awesome' || $_lib['name'] === 'Font Awesome') {
+        $_libName = (string)($_d['name'] ?? '');
+        $_libKey = (string)($_d['key'] ?? '');
+        if (($_libKey === 'font-awesome' || stripos($_libName, 'Font Awesome') !== false)
+            && function_exists('rc_parse_vendor_version')) {
             $v = rc_parse_vendor_version(BASE_PATH . '/assets/vendor/fontawesome.min.css', 'fontawesome');
-            if ($v !== '') { $_found = [$v]; }
+            if (is_string($v) && $v !== '') {
+                $_found = [$v];
+            }
         }
-        if ($_lib['key'] === 'alpinejs' || stripos($_lib['name'], 'Alpine') !== false) {
+        if (($_libKey === 'alpinejs' || stripos($_libName, 'Alpine') !== false)
+            && function_exists('rc_parse_vendor_version')) {
             $v = rc_parse_vendor_version(BASE_PATH . '/assets/vendor/alpine.min.js', 'alpine');
-            if ($v !== '') { $_found = [$v]; }
+            if (is_string($v) && $v !== '') {
+                $_found = [$v];
+            }
         }
-
+        if (empty($_found)) {
+            continue;
         }
-        if (empty($_found)) continue;
         $_libs[] = [
-            'name'      => $_d['name'],
+            'name'      => $_libName,
             'installed' => implode(', ', $_found),
             'multiple'  => count($_found) > 1,
-            'src'       => $_d['src'],
-            'pkg'       => $_d['pkg'],
+            'src'       => $_d['src'] ?? '',
+            'pkg'       => $_d['pkg'] ?? '',
         ];
     }
     ?>
