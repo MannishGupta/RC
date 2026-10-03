@@ -804,7 +804,8 @@ $DASHBOARD_STATE = [
 
     </script>
     
-    <link rel="stylesheet" href="/assets/dashboard.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>">
+    <link rel="stylesheet" href="/assets/dashboard.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>
+    <link rel="stylesheet" href="/assets/rc-layout-lock.css?v=20261003.04">">
 
     <link rel="stylesheet" href="/assets/a11y.css?v=20260928.07">
     <link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
@@ -812,7 +813,7 @@ $DASHBOARD_STATE = [
     <script src="assets/a11y-tooltip.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
 </head>
 
-<body x-data="dashboardApp" 
+<body class="rc-app-shell" x-data="dashboardApp" 
       @company-updated.window="company = JSON.parse(JSON.stringify($event.detail))" 
       @keydown.window.cmd.k.prevent="$refs.searchInput.focus()"
       @delete-record.window="deleteItem($event.detail.id, $event.detail.ns)"
@@ -1368,6 +1369,17 @@ $DASHBOARD_STATE = [
                 </template>
             </div>
         </div>
+
+        <footer class="no-print shrink-0 border-t border-slate-200/80 px-4 py-2.5 text-center text-[11px] text-slate-500" role="contentinfo">
+          <span>© <?= date('Y') ?> <?= htmlspecialchars((string)($viewData['company']['name'] ?? 'Organization'), ENT_QUOTES, 'UTF-8') ?></span>
+          <span class="mx-1.5 opacity-50" aria-hidden="true">·</span>
+          <span>Developed by <strong class="font-semibold text-slate-600">Arthsathi Limited</strong></span>
+          <span class="mx-1.5 opacity-50" aria-hidden="true">·</span>
+          <a href="?tab=terms" class="underline hover:text-blue-600">Terms &amp; Privacy</a>
+          <span class="mx-1.5 opacity-50" aria-hidden="true">·</span>
+          <span class="tabular-nums opacity-80">Build <?= htmlspecialchars(defined('APP_VERSION') ? (string)APP_VERSION : (is_file(BASE_PATH.'/VERSION') ? trim((string)file_get_contents(BASE_PATH.'/VERSION')) : ''), ENT_QUOTES, 'UTF-8') ?></span>
+        </footer>
+
     </main>
 
     <!-- ═══════════════════════════════════════════════════════════
