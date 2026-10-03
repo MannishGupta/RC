@@ -5,6 +5,20 @@ if (!defined('BASE_PATH')) {
 }
 $isAdminLoc = !empty($isAdmin);
 ?>
+<style>
+/* Location logos: always sit on light plate so dark/reserve themes stay readable */
+.rc-loc-logo-shell {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,.06);
+}
+html[data-theme="dark"] .rc-loc-logo-shell,
+html[data-theme="reserve"] .rc-loc-logo-shell {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+.rc-loc-logo { max-height: 100%; max-width: 100%; object-fit: contain; }
+</style>
 <script>
 window.rcMediaUrl = window.rcMediaUrl || function (name) {
   if (!name) return '';
@@ -48,8 +62,8 @@ window.rcMediaOnError = window.rcMediaOnError || function (el) {
 
   <div class="flex flex-wrap items-center gap-2" x-show="(filteredList||[]).some(i => i.logo || i.photo)">
     <template x-for="i in (filteredList||[]).filter(i => i.logo || i.photo)" :key="'lg-'+(i.id||i.slug||i.name)">
-      <div class="h-11 w-11 rounded-lg border border-slate-200 bg-white p-1 flex items-center justify-center overflow-hidden shadow-sm" :title="i.name">
-        <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($event.target)" alt="" class="max-h-full max-w-full object-contain bg-slate-100 rounded" loading="lazy"
+      <div class="rc-loc-logo-shell h-12 w-12 rounded-lg p-1.5 flex items-center justify-center overflow-hidden" :title="i.name">
+        <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($event.target)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy"
              @error="$el.style.display='none'">
       </div>
     </template>
@@ -69,7 +83,7 @@ window.rcMediaOnError = window.rcMediaOnError || function (el) {
         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-3 min-h-[3.75rem]">
           <div class="w-14 h-14 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
             <template x-if="i.logo || i.photo">
-              <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($event.target)" alt="" class="w-full h-full object-contain p-1 bg-slate-50" loading="lazy"
+              <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($event.target)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy"
                    @error="$el.replaceWith(Object.assign(document.createElement('i'),{className:'fa-solid fa-building text-slate-300 text-lg'}))">
             </template>
             <template x-if="!(i.logo || i.photo)">

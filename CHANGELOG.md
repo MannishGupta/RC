@@ -1,3 +1,12 @@
+# Changelog
+
+## 20261003.07 — Cartags plate header, bank logos, location logos, load
+
+- **Vehicle tags:** registration number in dark header — large, bold, centered after OEM logo; logo always on **white tile** (black SVG/PNG OEMs stay visible in dark UI)
+- **Treasury:** bank brand logo **72×72** under Reference ID (smaller than UPI QR); logos from MasterDirectory
+- **Locations:** logo shells forced white in all themes so marks stay visible
+- Bank QR path still prefers static `qr_image` via paint helper
+
 # Fusion Resource Centre — Changelog
 
 ## 20261003.05 — Incorporate verified upgrade list

@@ -249,26 +249,33 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
                 <template x-for="t in tags" :key="t.id">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden group hover:border-blue-300 hover:shadow-md transition-all flex flex-col">
 
-                        <div class="bg-gradient-to-r from-slate-800 to-slate-700 px-5 pt-5 pb-8 relative overflow-hidden">
-                            <div class="flex items-start justify-between relative">
-                                <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center shrink-0 border border-white/20 overflow-hidden p-1.5">
+                        <div class="bg-gradient-to-r from-slate-900 to-slate-700 px-4 pt-4 pb-10 relative overflow-hidden">
+                            <div class="flex items-center gap-3 relative">
+                                <!-- OEM logo always on white tile so black SVGs stay visible -->
+                                <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-md overflow-hidden p-1.5 ring-1 ring-white/30">
                                     <template x-if="t.oem_logo">
-                                        <img :src="t.oem_logo" alt="" class="max-h-8 max-w-full object-contain" width="36" height="32" loading="lazy"
+                                        <img :src="t.oem_logo" alt="" class="max-h-9 max-w-full object-contain" width="40" height="36" loading="lazy"
                                              @error="$el.style.display='none'; $el.nextElementSibling && ($el.nextElementSibling.style.display='flex')">
                                     </template>
                                     <span class="w-full h-full items-center justify-center text-slate-500" :style="t.oem_logo ? 'display:none' : 'display:flex'">
-                                        <i class="fa-solid fa-car text-sm"></i>
+                                        <i class="fa-solid fa-car text-base"></i>
                                     </span>
                                 </div>
-                                <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
-                                    <button @click.stop="showQr(t)" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition text-xs" title="QR Code">
+                                <!-- Plate number: dominant, centered in remaining header -->
+                                <div class="flex-1 min-w-0 text-center px-1">
+                                    <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-0.5">Registration</div>
+                                    <div class="font-black text-white text-xl sm:text-2xl leading-tight font-mono tracking-wider truncate drop-shadow"
+                                         x-text="t._pretty || t.registration_number || t.plate || '—'"></div>
+                                </div>
+                                <div class="flex gap-1.5 shrink-0 opacity-80 group-hover:opacity-100 transition">
+                                    <button type="button" @click.stop="showQr(t)" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition text-xs" title="QR Code">
                                         <i class="fa-solid fa-qrcode"></i>
                                     </button>
                                     <?php if ($isAdmin): ?>
-                                    <button @click.stop="editTag(t)" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition text-xs" title="Edit">
+                                    <button type="button" @click.stop="editTag(t)" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition text-xs" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
-                                    <button @click.stop="removeTag(t)" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-red-500/60 text-white/80 hover:text-white flex items-center justify-center transition text-xs" title="Delete">
+                                    <button type="button" @click.stop="removeTag(t)" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-red-500/70 text-white flex items-center justify-center transition text-xs" title="Delete">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                     <?php endif; ?>
@@ -278,12 +285,9 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
 
                         <div class="-mt-5 mx-4 bg-white rounded-xl border border-slate-100 shadow-sm px-4 pt-4 pb-4 flex-1 flex flex-col gap-3">
                             <div>
-                                <h3 class="font-black text-slate-800 text-lg leading-tight font-mono tracking-wide" x-text="t._pretty || t.registration_number || '—'"></h3>
-
-                                <div class="text-xs text-slate-600 mt-1" x-show="t.make_model || t.colour">
-                                    <span class="font-semibold" x-text="t.make_model"></span><span
-                                        x-show="t.make_model && t.colour" class="text-slate-300"> · </span><span x-text="t.colour"></span>
-                                </div>
+                                <h3 class="font-bold text-slate-800 text-base leading-tight" x-show="t.make_model || t.colour">
+                                    <span x-text="t.make_model || ''"></span><span x-show="t.make_model && t.colour" class="text-slate-300"> · </span><span class="text-slate-600 font-medium" x-text="t.colour || ''"></span>
+                                </h3>
                                 <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                     <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-mono">#<span x-text="t.tag_id || t.id"></span></span>
                                     <span x-show="t._legacy" class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Not imported</span>

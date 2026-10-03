@@ -2100,8 +2100,39 @@ if (file_exists($dashboardFile)) {
         header('Pragma: no-cache');
         header('Expires: 0');
     }
-    $viewData = ['jsData' => AppLookup::all(), 'company' => AppDB::read('company') ?? ['name' => 'Organization'], 'isAdmin' => $isAdmin, 'isSuperAdmin' => !empty($isSuperAdmin), 'isPublic' => !empty($isPublic), 'currentTab' => $_GET['tab'] ?? 'team'];
-    foreach (['team', 'bank', 'docs', 'events', 'statutory', 'locations', 'departments', 'designations', 'cartags', 'cctv'] as $k) { $viewData['jsData'][$k] = AppDB::read($k) ?? []; }
+    $__tab = preg_replace('/[^a-z0-9_-]/i', '', (string)($_GET['tab'] ?? 'team')) ?: 'team';
+    $viewData = ['jsData' => class_exists('AppLookup') ? (AppLookup::all() ?: []) : [], 'company' => AppDB::read('company') ?? ['name' => 'Organization'], 'isAdmin' => $isAdmin, 'isSuperAdmin' => !empty($isSuperAdmin), 'isPublic' => !empty($isPublic), 'currentTab' => $__tab];
+    // Perf: always load team (nav/search); other namespaces load on demand when tab opens — still provide arrays for Alpine
+
+    foreach (['team', 'bank', 'docs', 'events', 'statutory', 'locations', 'departments', 'designations', 'cartags', 'cctv'] as $k) {
+        $viewData['jsData'][$k] = AppDB::read($k) ?? [];
+    }
+    // Bank logos for treasury cards (MasterDirectory)
+    if (is_file(BASE_PATH . '/app/MasterDirectory.php')) {
+        require_once BASE_PATH . '/app/MasterDirectory.php';
+    }
+    if (!empty($viewData['jsData']['bank']) && is_array($viewData['jsData']['bank']) && class_exists('MasterDirectory')) {
+        foreach ($viewData['jsData']['bank'] as &$_brow) {
+            if (!is_array($_brow)) continue;
+            if (!empty($_brow['bank_logo']) || !empty($_brow['logo_url'])) continue;
+            $bn = (string)($_brow['bank_name'] ?? $_brow['bank'] ?? '');
+            if ($bn === '') continue;
+            $found = MasterDirectory::findBank($bn);
+            if (!$found) {
+                $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $bn) ?? '');
+                $cands = MasterDirectory::logoCandidates('', 'banks', $slug);
+                $_brow['bank_logo'] = $cands[0] ?? '';
+            } else {
+                $cands = MasterDirectory::logoCandidates(
+                    (string)($found['domain_name'] ?? ''),
+                    'banks',
+                    (string)($found['slug'] ?? '')
+                );
+                $_brow['bank_logo'] = $cands[0] ?? '';
+            }
+        }
+        unset($_brow);
+    }
     require $dashboardFile;
 } else {
     die("<div style='font-family:sans-serif; padding:20px; text-align:center; color:red; font-weight:bold;'>Critical Missing File: app/views/dashboard.php</div>");
