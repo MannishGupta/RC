@@ -1,4 +1,4 @@
-<?php // Version: 20261003.16
+<?php // Version: 20261003.17
 declare(strict_types=1);
 /**
  * Email signature generator — dual layouts:
@@ -117,22 +117,25 @@ $_validUrl = static function ($v): string {
     return preg_match('~^https?://~i', $v) ? $v : '';
 };
 
-/** Real brand SVG data-URIs (email clients that allow data: images) + absolute PNG fallbacks via simple-icons CDN style shapes */
-$socialSvg = static function (string $network): string {
-    // Minimal official-ish monochrome brand marks as inline SVG data URIs
-    $svgs = [
-        'linkedin' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#0A66C2"/><path fill="#fff" d="M6.36 9.5H8.7v7.64H6.36V9.5zM7.53 5.4a1.36 1.36 0 110 2.72 1.36 1.36 0 010-2.72zM10.3 9.5h2.24v1.04h.03c.31-.59 1.07-1.21 2.2-1.21 2.35 0 2.78 1.55 2.78 3.56v4.25h-2.34v-3.77c0-.9-.02-2.05-1.25-2.05-1.25 0-1.44.98-1.44 1.99v3.83H10.3V9.5z"/></svg>',
-        'twitter'  => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#000"/><path fill="#fff" d="M13.6 10.77L19.05 4.5h-1.29l-4.74 5.45L9.24 4.5H4.5l5.72 8.23L4.5 19.5h1.29l5-5.75 4 5.75H19.5l-5.9-8.73zm-1.77 2.03l-.58-.82L6.25 5.5h1.98l3.72 5.24.58.82 4.84 6.82h-1.98l-4.55-6.58z"/></svg>',
-        'instagram'=> '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><defs><linearGradient id="g" x1="0" y1="24" x2="24" y2="0"><stop stop-color="#f58529"/><stop offset=".5" stop-color="#dd2a7b"/><stop offset="1" stop-color="#515bd4"/></linearGradient></defs><rect width="24" height="24" rx="6" fill="url(#g)"/><rect x="6" y="6" width="12" height="12" rx="4" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="16.4" cy="7.6" r="1" fill="#fff"/></svg>',
-        'facebook' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#1877F2"/><path fill="#fff" d="M15.1 8.5h-1.3c-.5 0-.8.2-.8.7v1.1H15l-.2 2h-1.8V18h-2.2v-5.7H9.5v-2h1.3V9c0-1.5.9-2.5 2.5-2.5.5 0 1.1.1 1.6.2v1.3z"/></svg>',
-        'youtube'  => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#FF0000"/><path fill="#fff" d="M10 8.5l5.5 3.5L10 15.5v-7z"/></svg>',
-        'whatsapp' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="4" fill="#25D366"/><path fill="#fff" d="M12 5.5a6.2 6.2 0 00-5.3 9.4L5.5 18.5l3.7-1.1A6.2 6.2 0 1012 5.5zm3.5 8.7c-.15.42-.87.8-1.22.85-.31.05-.7.07-1.13-.07-.26-.08-.6-.2-1.03-.4-1.81-.78-3-2.62-3.09-2.74-.09-.12-.74-1-.74-1.9 0-.9.47-1.34.64-1.52.17-.18.37-.23.5-.23h.36c.11 0 .27-.04.42.32.15.37.52 1.27.57 1.36.05.09.08.2.02.32-.07.13-.1.21-.2.32-.1.11-.21.25-.3.33-.1.09-.2.19-.09.37.11.18.5.83 1.07 1.34.74.66 1.36.87 1.55.96.19.09.3.08.41-.05.11-.13.47-.55.6-.74.13-.19.26-.16.43-.09.18.06 1.12.53 1.31.63.19.1.32.14.37.22.05.08.05.46-.1.88z"/></svg>',
-    ];
-    $raw = $svgs[$network] ?? '';
-    if ($raw === '') {
+/**
+ * Social icons for email: iOS/Gmail reject data:image/svg+xml (become file attachments).
+ * Use same-origin PNG via social_icon.php (GD) with absolute HTTPS URL.
+ * Fallback: coloured HTML badge (no image) if icon URL empty.
+ */
+$socialIconUrl = static function (string $network) use ($baseUrl): string {
+    $network = preg_replace('/[^a-z]/', '', strtolower($network)) ?? '';
+    if ($network === '' || $network === 'x') {
+        $network = $network === 'x' ? 'twitter' : $network;
+    }
+    if ($network === '') {
         return '';
     }
-    return 'data:image/svg+xml;base64,' . base64_encode($raw);
+    $staticRel = '/assets/icons/social/' . $network . '.png';
+    $_bp = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
+    if (is_file($_bp . $staticRel)) {
+        return $baseUrl . $staticRel;
+    }
+    return $baseUrl . '/social_icon.php?n=' . rawurlencode($network) . '&s=36';
 };
 
 $socialMeta = [
@@ -164,34 +167,45 @@ foreach ($order as $_k) {
         'url'   => $_v,
         'label' => $_label,
         'color' => $_col,
-        'icon'  => $socialSvg($_k),
+        'icon'  => $socialIconUrl($_k),
         'key'   => $_k,
     ];
 }
 
 $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-/** Social icon row — real SVG data-URI images with spacing */
+/** Social icon row — hosted PNG (absolute URL); HTML badge fallback (iOS-safe) */
 $socialRowHtml = static function (array $socials) use ($e): string {
     if ($socials === []) {
         return '';
     }
-    $cells = '';
+    // Nested table keeps icons horizontal in Apple Mail / Outlook
+    $inner = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>';
     foreach ($socials as $s) {
         $icon = (string)($s['icon'] ?? '');
+        $label = (string)($s['label'] ?? '');
+        $short = [
+            'LinkedIn' => 'in', 'X' => 'X', 'Instagram' => 'ig',
+            'Facebook' => 'f', 'YouTube' => 'YT', 'WhatsApp' => 'wa',
+        ];
+        $badge = $short[$label] ?? mb_substr($label, 0, 2);
+        $inner .= '<td style="padding:0 6px 0 0;vertical-align:middle;">';
+        $inner .= '<a href="' . $e($s['url']) . '" style="text-decoration:none;border:0;">';
         if ($icon !== '') {
-            $cells .= '<a href="' . $e($s['url']) . '" style="display:inline-block;margin:0 6px 0 0;text-decoration:none;border:0;">'
-                . '<img src="' . $e($icon) . '" width="18" height="18" alt="' . $e($s['label']) . '" '
-                . 'style="display:inline-block;border:0;width:18px;height:18px;" />'
-                . '</a>';
+            // Hosted PNG — works when mail client loads remote images
+            $inner .= '<img src="' . $e($icon) . '" width="20" height="20" alt="' . $e($label) . '" '
+                . 'style="display:block;width:20px;height:20px;border:0;border-radius:4px;" />';
         } else {
-            $cells .= '<a href="' . $e($s['url']) . '" style="display:inline-block;margin:0 6px 0 0;padding:2px 5px;'
-                . 'background:#' . $e($s['color']) . ';color:#fff;font-size:9px;font-family:Arial,sans-serif;'
-                . 'font-weight:bold;text-decoration:none;border-radius:3px;">' . $e($s['label']) . '</a>';
+            $inner .= '<span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;'
+                . 'background:#' . $e($s['color']) . ';color:#ffffff;font-family:Arial,Helvetica,sans-serif;'
+                . 'font-size:9px;font-weight:bold;border-radius:4px;">' . $e($badge) . '</span>';
         }
+        $inner .= '</a></td>';
     }
-    return '<tr><td style="padding:6px 0 2px;line-height:18px;text-align:left;">' . $cells . '</td></tr>';
+    $inner .= '</tr></table>';
+    return '<tr><td style="padding:8px 0 2px;text-align:left;">' . $inner . '</td></tr>';
 };
+
 
 /**
  * Full signature — new messages
@@ -380,7 +394,7 @@ $sigPageUrl = $baseUrl . '/cards/signature.php?slug=' . rawurlencode($slug);
   <div class="hint">
     <strong>Two signatures:</strong> use <em>New messages</em> for full detail;
     use <em>Replies &amp; forwards</em> for a short line under quoted mail.
-    Images use absolute URLs so Outlook/Gmail can load them (enable “download pictures” if needed).
+    Social icons are hosted PNGs (not SVG attachments). On iPhone Mail, tap “Load Remote Content” / download pictures once so icons appear.
   </div>
 
   <div class="tabs" role="tablist">

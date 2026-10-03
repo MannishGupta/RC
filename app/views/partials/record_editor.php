@@ -1,5 +1,5 @@
 <?php
-// Version: 1.4 — Executive record editor: photo preview/upload, social links, polished layout
+// Version: 1.5 — Executive record editor + locations image restore: photo preview/upload, social links, polished layout
 if (!defined('BASE_PATH')) {
     exit;
 }
@@ -616,11 +616,30 @@ if (!defined('BASE_PATH')) {
             <div class="rc-ed-section-title"><i class="fa-solid fa-building"></i> Facility identity</div>
             <div class="rc-ed-grid">
               <label class="span-2"><span class="rc-ed-lbl">Facility name</span><input type="text" class="rc-ed-input" x-model="form.name" placeholder="Head office · Regional hub"></label>
-              <label class="span-2"><span class="rc-ed-lbl">Site logo / image</span>
-                <input type="file" accept="image/*" class="rc-ed-input" @change="onPhotoPick($event, 'logo')">
-                <span class="rc-ed-hint">Shown on premises cards and title bar · JPG/PNG/WebP</span>
-                <div x-show="form.logo || form._logoPreview" style="margin-top:0.5rem">
-                  <img :src="form._logoPreview || (form.logo ? ('media_serve.php?f=' + encodeURIComponent(String(form.logo).replace(/^.*[\\\/]/,''))) : '')" alt="" style="height:48px;width:auto;max-width:160px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;background:#fff;padding:4px">
+                            <label class="span-2"><span class="rc-ed-lbl">Site logo / image</span>
+                <div class="rc-ed-photo" style="margin-top:0.35rem">
+                  <div class="rc-ed-avatar" style="width:72px;height:72px;border-radius:12px;overflow:hidden;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <template x-if="form._logoPreview || form.logo || form.photo">
+                      <img :src="form._logoPreview || (form.logo || form.photo ? ('media_serve.php?f=' + encodeURIComponent(String(form.logo || form.photo).replace(/^.*[\\/]/,''))) : '')" alt="" style="width:100%;height:100%;object-fit:contain;background:#fff" @error="$el.style.display='none'">
+                    </template>
+                    <template x-if="!(form._logoPreview || form.logo || form.photo)">
+                      <i class="fa-solid fa-image" style="color:#94a3b8;font-size:1.25rem"></i>
+                    </template>
+                  </div>
+                  <div class="rc-ed-photo-meta">
+                    <label class="rc-ed-file" style="display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;padding:0.45rem 0.85rem;border-radius:0.5rem;background:#0f172a;color:#fff;font-size:0.8rem;font-weight:700">
+                      <i class="fa-solid fa-upload"></i>
+                      <span x-text="photoFileName || (form.logo || form.photo ? 'Replace image' : 'Upload image')"></span>
+                      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/*" @change="onPhotoPick($event, 'logo')">
+                    </label>
+                    <button type="button" class="rc-ed-btn-ghost" style="margin-left:0.35rem"
+                      x-show="form._logoPreview || form.logo || form.photo || photoFile"
+                      @click="clearLocationImage()">Clear image</button>
+                    <span class="rc-ed-hint" style="display:block;margin-top:0.4rem">Shown on Shared Locations cards · JPG / PNG / WebP · saved with Commit</span>
+                    <input type="text" class="rc-ed-input" style="margin-top:0.4rem" x-model="form.logo"
+                      @input="form.photo = form.logo; form._logoPreview = ''"
+                      placeholder="Or type existing filename e.g. head-office.webp">
+                  </div>
                 </div>
               </label>
               <label class="span-2"><span class="rc-ed-lbl">Street address</span><input type="text" class="rc-ed-input" x-model="form.address" placeholder="Plot / street / landmark"></label>
@@ -1352,6 +1371,10 @@ if (!defined('BASE_PATH')) {
             fd.append('payload', JSON.stringify(payloadObj));
             fd.append('csrf_token', csrf);
             fd.append('photo', this.photoFile, this.photoFile.name);
+            if (this.type === 'locations') {
+              fd.append('logo', this.photoFile, this.photoFile.name);
+            }
+
             res = await fetch('index.php', {
               method: 'POST',
               headers: { 'X-CSRF-Token': csrf, 'Accept': 'application/json' },
