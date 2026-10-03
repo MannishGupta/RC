@@ -43,8 +43,10 @@ usort($teamContacts, static function ($a, $b) {
 });
 ?>
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="reserve">
 <head>
+<?php if (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_theme_head.php')) { require BASE_PATH . '/app/views/partials/rc_theme_head.php'; } ?>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1220">

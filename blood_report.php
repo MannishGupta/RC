@@ -12,8 +12,18 @@ $base = __DIR__;
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $base);
 }
-if (is_file($base . '/tenant_bootstrap.php')) {
-    require_once $base . '/tenant_bootstrap.php';
+// BUG FIX: checked for tenant_bootstrap.php at BASE_PATH root, which never
+// exists there -- the real file lives at app/tenant_bootstrap.php, exactly
+// where every other correctly-wired standalone entry point in this app
+// requires it from (cards/signature.php, vehicle-tags/index.php,
+// janam_patri.php, tools/diagnostics.php, and others, all fixed in an
+// earlier audit pass for this identical mistake). is_file() on the wrong
+// path always returned false, silently falling through to app/bootstrap.php
+// alone -- which never resolves DATA_PATH per tenant, so it fell straight
+// to the hardcoded BASE_PATH/data default. On a multi-tenant deployment
+// this file was reading the wrong tenant's team data on every request.
+if (is_file($base . '/app/tenant_bootstrap.php')) {
+    require_once $base . '/app/tenant_bootstrap.php';
 } elseif (is_file($base . '/app/bootstrap.php')) {
     require_once $base . '/app/bootstrap.php';
 }
@@ -158,29 +168,24 @@ function bg_can_donate_to(string $donor, string $recipient): bool {
         };
     }
     // Exact matrix from standard chart (donor columns × recipient rows)
+    // CODE QUALITY FIX: this table was previously assigned twice -- a first
+    // block immediately overwritten by a second before anything ever read
+    // it, pure dead code. Verified both held the exact same sets (only
+    // reordered, which in_array() doesn't care about), so this was never a
+    // logic bug -- the actually-used table was and is correct, checked
+    // directly against the standard ABO+Rh donor compatibility chart for
+    // all 8 types. Removed the dead first block so a future edit to one
+    // table can't silently drift from the other while both look live.
     static $ok = null;
     if ($ok === null) {
         $ok = [
-            'O-'  => ['O-', 'O+', 'B-', 'B+', 'A-', 'A+', 'AB-', 'AB+'],
-            'O+'  => ['O+', 'B+', 'A+', 'AB+'],
-            'B-'  => ['B-', 'B+', 'AB-', 'AB+'],
-            'B+'  => ['B+', 'AB+'],
+            'O-'  => ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+            'O+'  => ['O+', 'A+', 'B+', 'AB+'],
             'A-'  => ['A-', 'A+', 'AB-', 'AB+'],
             'A+'  => ['A+', 'AB+'],
+            'B-'  => ['B-', 'B+', 'AB-', 'AB+'],
+            'B+'  => ['B+', 'AB+'],
             'AB-' => ['AB-', 'AB+'],
-            'AB+' => ['AB+'],
-        ];
-        // Invert: for each donor, set of recipients — build from recipient perspective of image:
-        // Image: recipient rows, donor columns — checkmark means that donor can give to that recipient
-        // So O- donor can give to all recipients; AB+ donor only to AB+ recipient
-        $ok = [
-            'O-'  => ['AB+', 'AB-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-'],
-            'O+'  => ['AB+', 'A+', 'B+', 'O+'],
-            'B-'  => ['AB+', 'AB-', 'B+', 'B-'],
-            'B+'  => ['AB+', 'B+'],
-            'A-'  => ['AB+', 'AB-', 'A+', 'A-'],
-            'A+'  => ['AB+', 'A+'],
-            'AB-' => ['AB+', 'AB-'],
             'AB+' => ['AB+'],
         ];
     }

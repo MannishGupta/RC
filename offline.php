@@ -22,8 +22,10 @@ $company = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
 $orgName = (string)($company['name'] ?? 'Directory');
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="reserve">
 <head>
+<?php if (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_theme_head.php')) { require BASE_PATH . '/app/views/partials/rc_theme_head.php'; } ?>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">

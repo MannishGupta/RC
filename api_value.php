@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Value Pack API — attendance, visits, assets, expiry, audit, backup meta, analytics.
  * POST/GET action via index-compatible session. Include from index or call standalone.
- * Version: 260921.50
+ * Version: 20260929.20
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', str_replace('\\', '/', dirname(__FILE__)));
@@ -59,49 +59,45 @@ function vp_id(string $prefix): string
     return $prefix . '-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(2)), 0, 4);
 }
 
-// Public endpoints (no auth)
+// Public endpoints (no auth) — ONLY explicitly public locations (no "all" fallback)
 if ($action === 'public_locations') {
     $locs = [];
-    $path = BASE_PATH . '/data/locations.json';
+    $dataRoot = defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data');
+    $path = $dataRoot . '/locations.json';
     if (!is_file($path)) {
-        $path = BASE_PATH . '/data/location.json';
+        $path = $dataRoot . '/location.json';
     }
-    if (is_file($path)) {
-        $raw = json_decode((string)@file_get_contents($path), true);
-        if (is_array($raw)) {
-            foreach ($raw as $L) {
-                if (!is_array($L)) {
-                    continue;
-                }
-                if (!empty($L['public']) || !empty($L['show_public']) || !empty($L['is_public'])) {
-                    $locs[] = [
-                        'name' => $L['name'] ?? $L['title'] ?? '',
-                        'address' => $L['address'] ?? $L['full_address'] ?? '',
-                        'lat' => $L['lat'] ?? $L['latitude'] ?? null,
-                        'lng' => $L['lng'] ?? $L['longitude'] ?? null,
-                        'phone' => $L['phone'] ?? '',
-                    ];
-                }
-            }
+    // Prefer AppDB when available (tenant-correct path)
+    $raw = null;
+    if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
+        $try = AppDB::read('locations');
+        if (is_array($try)) {
+            $raw = $try;
         }
     }
-    // Fallback: expose all if none flagged public (client can lock later)
-    if (!$locs && is_file($path)) {
-        $raw = json_decode((string)@file_get_contents($path), true);
-        if (is_array($raw)) {
-            foreach (array_slice($raw, 0, 20) as $L) {
-                if (!is_array($L)) {
-                    continue;
-                }
-                $locs[] = [
-                    'name' => $L['name'] ?? '',
-                    'address' => $L['address'] ?? '',
-                    'lat' => $L['lat'] ?? null,
-                    'lng' => $L['lng'] ?? null,
-                    'phone' => $L['phone'] ?? '',
-                ];
-            }
+    if ($raw === null && is_file($path)) {
+        $decoded = json_decode((string)@file_get_contents($path), true);
+        $raw = is_array($decoded) ? $decoded : [];
+    }
+    if (!is_array($raw)) {
+        $raw = [];
+    }
+    foreach ($raw as $L) {
+        if (!is_array($L)) {
+            continue;
         }
+        // Strict: only rows explicitly flagged public
+        $isPublic = !empty($L['public']) || !empty($L['show_public']) || !empty($L['is_public']);
+        if (!$isPublic) {
+            continue;
+        }
+        $locs[] = [
+            'name' => htmlspecialchars(strip_tags((string)($L['name'] ?? $L['title'] ?? '')), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            'address' => htmlspecialchars(strip_tags((string)($L['address'] ?? $L['full_address'] ?? '')), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            'lat' => isset($L['lat']) ? (float)$L['lat'] : (isset($L['latitude']) ? (float)$L['latitude'] : null),
+            'lng' => isset($L['lng']) ? (float)$L['lng'] : (isset($L['longitude']) ? (float)$L['longitude'] : null),
+            // Phone omitted from public payload by default (privacy)
+        ];
     }
     vp_json(['status' => 'ok', 'locations' => $locs]);
 }
@@ -111,6 +107,55 @@ if ($action === 'card_hit') {
     if ($slug === '') {
         vp_json(['status' => 'error', 'message' => 'slug required'], 400);
     }
+    // Verify slug exists in team directory (prevent arbitrary analytics inflation)
+    $exists = false;
+    if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
+        $team = AppDB::read('team');
+        if (is_array($team)) {
+            foreach ($team as $m) {
+                if (!is_array($m)) {
+                    continue;
+                }
+                $s = (string)($m['slug'] ?? $m['id'] ?? '');
+                if ($s !== '' && strcasecmp($s, $slug) === 0) {
+                    $exists = true;
+                    break;
+                }
+            }
+        }
+    }
+    if (!$exists) {
+        $teamPath = (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/team.json';
+        if (is_file($teamPath)) {
+            $team = json_decode((string)@file_get_contents($teamPath), true);
+            if (is_array($team)) {
+                foreach ($team as $m) {
+                    if (!is_array($m)) {
+                        continue;
+                    }
+                    $s = (string)($m['slug'] ?? $m['id'] ?? '');
+                    if ($s !== '' && strcasecmp($s, $slug) === 0) {
+                        $exists = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (!$exists) {
+        vp_json(['status' => 'error', 'message' => 'unknown slug'], 404);
+    }
+    // Light rate limit: same slug from same session at most once per 10s
+    $rlKey = '_card_hit_' . $slug;
+    $now = time();
+    $last = (int)($_SESSION[$rlKey] ?? 0);
+    if ($last > 0 && ($now - $last) < 10) {
+        $stats = ValueStore::read('card_analytics', []);
+        $opens = (int)(($stats[$slug]['opens'] ?? 0));
+        vp_json(['status' => 'ok', 'opens' => $opens, 'throttled' => true]);
+    }
+    $_SESSION[$rlKey] = $now;
+
     $stats = ValueStore::read('card_analytics', []);
     if (!is_array($stats)) {
         $stats = [];

@@ -1,6 +1,6 @@
 <?php
 /**
- * Version: 20260929.16
+ * Version: 20261002.19 — public share: no import / directory
  * Gochar transits · Ashtakavarga strength · interpretive blurbs · prior tabs
  * A4 portrait print layout · 15mm margins · dedicated print action
  * Janam Patri & Kundli Milan — North Indian · Delhi Baniya gotra-aware
@@ -26,6 +26,57 @@ define('JP_STORAGE', defined('JANAM_DATA_PATH') ? JANAM_DATA_PATH : (DATA_PATH .
 
 if (!is_dir(JP_STORAGE)) {
     @mkdir(JP_STORAGE, 0775, true);
+}
+
+// Session for admin vs public (shared patri links must not expose import / all profiles)
+if (is_file(BASE_PATH . '/app/bootstrap.php')) {
+    require_once BASE_PATH . '/app/bootstrap.php';
+}
+if (class_exists('AppAuth')) {
+    AppAuth::initSession();
+} elseif (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_start();
+}
+
+/** Company Admin / Super Admin may manage profiles, import, and delete. */
+function jp_can_manage(): bool {
+    $u = (string)($_SESSION['user'] ?? '');
+    $true = (string)($_SESSION['true_role'] ?? '');
+    if (in_array($u, ['admin', 'super_admin'], true)) {
+        return true;
+    }
+    if (in_array($true, ['admin', 'super_admin'], true)) {
+        return true;
+    }
+    return false;
+}
+
+function jp_require_manage(string $context = 'manage Janam profiles'): void {
+    if (jp_can_manage()) {
+        return;
+    }
+    $wantsJson = (str_contains((string)($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')
+        || isset($_GET['action']) || isset($_POST['action']));
+    if ($wantsJson) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Sign in as Company Admin to ' . $context . '.',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    http_response_code(403);
+    header('Content-Type: text/html; charset=utf-8');
+    $msg = htmlspecialchars('Sign in as Company Admin to ' . $context . '.', ENT_QUOTES, 'UTF-8');
+    echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        . '<title>Access limited</title></head><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:2rem auto;padding:1rem">'
+        . '<h1 style="font-size:1.25rem">Access limited</h1>'
+        . '<p>' . $msg . '</p>'
+        . '<p class="meta">Shared Janam Patri links only open that person&rsquo;s chart (print / language). '
+        . 'They do not include import or the full profile directory.</p>'
+        . '<p><a href="./">Resource Centre home</a></p></body></html>';
+    exit;
 }
 
 
@@ -1443,6 +1494,10 @@ function jp_print_masthead(string $title, string $subtitle = ''): void {
 }
 function jp_print_footer_block(): void {
     echo '<div class="jp-print-footer" aria-hidden="true">';
+    if (class_exists(\App\Rc\Domain\Astro\Disclaimer::class, false) || class_exists('App\Rc\Domain\Astro\Disclaimer')) {
+        echo '<p class="jp-disclaimer-line">' . jp_h(\App\Rc\Domain\Astro\Disclaimer::text(jp_is_hi() ? 'hi' : 'en')) . '</p>';
+    }
+
     echo jp_h(jp_t([
         'This Janam Patri is an indicative algorithmic chart (Lahiri-style approximations). Not priest-certified. Site developer: Arthsathi Limited.',
         'यह जन्म पत्री संकेतात्मक एल्गोरिद्मिक कुंडली है। पौरोहित्य प्रमाणित नहीं। साइट डेवलपर: Arthsathi Limited।',
@@ -2385,22 +2440,43 @@ body.jp-vedic .meta{color:#78716c}
 CSS;
 }
 
-function jp_header(string $title): void {
+function jp_header(string $title, array $seo = []): void {
     $cur = (string)($_GET['view'] ?? 'home');
-    echo '<!DOCTYPE html><html lang="' . (jp_is_hi() ? 'hi' : 'en') . '-IN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    echo '<!DOCTYPE html><html lang="' . (jp_is_hi() ? 'hi' : 'en') . '-IN" data-theme="reserve"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    if (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_report_assets.php')) { require BASE_PATH . '/app/views/partials/rc_report_assets.php'; }
+    elseif (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_theme_head.php')) { require BASE_PATH . '/app/views/partials/rc_theme_head.php'; }
     $base = class_exists('SeoShare') ? SeoShare::baseUrl() : '';
-    $pageUrl = $base . '/janam_patri.php?view=' . rawurlencode($cur);
+    $pageUrl = (string)($seo['url'] ?? ($base . '/janam_patri.php?view=' . rawurlencode($cur)));
+    $desc = (string)($seo['description'] ?? 'North Indian Janam Patri and Kundli Milan. Indicative charts for Lagna and Navamsha, Ashtakoot Guna Milan, and Baniya gotra-aware match guidance.');
+    $img = (string)($seo['image'] ?? '');
+    if ($img === '' || !preg_match('#^https?://#i', $img)) {
+        $b = $base !== '' ? $base : (( (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http') . '://' . (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
+        $img = rtrim($b, '/') . '/tools/og_card.php?' . http_build_query([
+            'name' => (string)($seo['name'] ?? $title),
+            'role' => (string)($seo['role'] ?? 'Janam Patri · Kundli'),
+            'company' => (string)($seo['site_name'] ?? 'Arthsathi · Resource Centre'),
+            'kind' => 'Janam Patri',
+        ]);
+    }
+    $robots = (string)($seo['robots'] ?? (!empty($seo['index']) ? 'index, follow' : 'noindex, follow'));
     if (class_exists('SeoShare')) {
         echo SeoShare::tags([
             'title' => $title . ' · Janam Patri',
-            'description' => 'North Indian Janam Patri and Kundli Milan. Indicative charts for Lagna and Navamsha, Ashtakoot Guna Milan, and Baniya gotra-aware match guidance.',
+            'description' => $desc,
             'url' => $pageUrl,
-            'type' => 'website',
-            'robots' => 'noindex, follow',
-            'site_name' => 'Janam Patri · Resource Centre',
+            'image' => $img,
+            'type' => (string)($seo['type'] ?? 'profile'),
+            'robots' => $robots,
+            'site_name' => (string)($seo['site_name'] ?? 'Janam Patri · Resource Centre'),
         ]);
     } else {
         echo '<title>' . jp_h($title) . ' · Janam Patri</title>';
+        if ($desc !== '') echo '<meta name="description" content="' . jp_h($desc) . '">';
+        if ($img !== '') {
+            echo '<meta property="og:image" content="' . jp_h($img) . '">';
+            echo '<meta name="twitter:card" content="summary_large_image">';
+            echo '<meta name="twitter:image" content="' . jp_h($img) . '">';
+        }
     }
     echo '<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">';
     jp_css();
@@ -2408,7 +2484,7 @@ function jp_header(string $title): void {
     if (function_exists('jp_print_css')) { jp_print_css(); }
     if (function_exists('jp_report_chrome_css')) { jp_report_chrome_css(); }
     echo '<link rel="stylesheet" href="/assets/contrast-lock.css?v=20260929.06">
-</head><body class="jp-vedic">';
+</head><body class="rc-report-body jp-vedic">';
     echo '<header class="app no-print"><div class="wrap" style="padding-top:0.75rem;padding-bottom:0.5rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem">';
     echo '<div><h1 style="margin:0;color:#fef3c7">🕉️ ' . jp_h(jp_t(['Janam Patri & Kundli Milan', 'जन्म पत्री एवं कुंडली मिलान'])) . '</h1>';
     echo '<p style="margin:0.25rem 0 0;color:#fde68a;font-size:0.85rem">' . jp_h(jp_t(['North Indian · Baniya gotra-aware · Resource Centre', 'उत्तर भारतीय · बनिया गोत्र सजग · संसाधन केंद्र'])) . '</p></div>';
@@ -2433,9 +2509,12 @@ function jp_footer(): void {
     echo jp_disclaimer();
     echo '<p class="footer-note">' . jp_h(jp_t(['Data stored in local data/janam JSON. Same-gotra alliances flagged per Baniya tradition.','डेटा स्थानीय data/janam JSON में संचित। समान गोत्र मिलान पर बनिया परंपरा अनुसार चेतावनी।'])) . '</p>';
     echo '<nav class="dock no-print" aria-label="Quick actions">';
-    echo '<a class="pri" href="?view=match&lang=' . jp_lang() . '">' . jp_h(jp_t(['Milan','मिलान'])) . '</a>';
-    echo '<a href="?view=import&lang=' . jp_lang() . '">' . jp_h(jp_t(['Import','आयात'])) . '</a>';
-    echo '<a href="?view=history&lang=' . jp_lang() . '">' . jp_h(jp_t(['History','इतिहास'])) . '</a';
+    if (jp_can_manage()) {
+        echo '<a class="pri" href="?view=match&lang=' . jp_lang() . '">' . jp_h(jp_t(['Milan','मिलान'])) . '</a>';
+        echo '<a href="?view=import&lang=' . jp_lang() . '">' . jp_h(jp_t(['Import','आयात'])) . '</a>';
+        echo '<a href="?view=history&lang=' . jp_lang() . '">' . jp_h(jp_t(['History','इतिहास'])) . '</a>';
+        echo '<a href="?view=home&lang=' . jp_lang() . '">' . jp_h(jp_t(['Profiles','प्रोफ़ाइल'])) . '</a>';
+    }
     echo '<button type="button" onclick="window.print()">' . jp_h(jp_t(['Print','प्रिंट'])) . '</button>';
     echo '</nav></div></body></html>';
 }
@@ -2520,11 +2599,13 @@ function jp_save_profile(array $in): array {
 // ── API ────────────────────────────────────────────────────────────────────
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
 if ($action === 'api_save_profile' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    jp_require_manage('save profiles');
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(jp_save_profile($_POST), JSON_UNESCAPED_UNICODE);
     exit;
 }
 if ($action === 'api_import_team' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    jp_require_manage('import from Team');
     header('Content-Type: application/json; charset=utf-8');
     $raw = file_get_contents('php://input');
     $body = json_decode($raw ?: '[]', true);
@@ -2631,6 +2712,7 @@ if ($action === 'api_import_team' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POS
 }
 
 if ($action === 'api_delete_profiles' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    jp_require_manage('delete profiles');
     header('Content-Type: application/json; charset=utf-8');
     $raw = file_get_contents('php://input');
     $body = json_decode($raw ?: '[]', true);
@@ -2669,6 +2751,18 @@ if ($action === 'api_delete_profiles' && ($_SERVER['REQUEST_METHOD'] ?? '') === 
 
 $profiles = jp_load_profiles();
 $view = (string)($_GET['view'] ?? 'home');
+
+// Public / visitor: only single-chart patri (or query-driven chart) — no directory / import
+if (!jp_can_manage()) {
+    $pubOk = in_array($view, ['patri', 'home'], true); // home only if forced into single chart below
+    if (in_array($view, ['import', 'new', 'edit', 'milan', 'history', 'match', 'logs'], true)) {
+        jp_require_manage('use ' . $view);
+    }
+    if ($view === 'home' && !isset($_GET['name']) && !isset($_GET['dob']) && !isset($_GET['slug']) && !isset($_GET['id'])) {
+        jp_require_manage('open the profile directory');
+    }
+}
+
 // Live preview: query params can open patri without saving first
 if ($view === 'home' && (isset($_GET['name']) || isset($_GET['dob']) || isset($_GET['slug']))) {
     if (isset($_GET['preview']) || (string)($_GET['nosave'] ?? '') === '1' || !isset($_GET['edit'])) {
@@ -3122,7 +3216,30 @@ if ($view === 'patri') {
     [$moonWest, $moonGlyph] = jp_zodiac($moonIdx);
     $lagnaRashi = jp_rashi_loc($lagnaIdx);
     $moonRashi = jp_rashi_loc($moonIdx);
-    jp_header(jp_t(['Janam Patri — ', 'जन्म पत्री — ']) . (string)$p['name']);
+    $_seoBase = class_exists('SeoShare') ? SeoShare::baseUrl() : '';
+    $_seoUrl = $_seoBase . '/janam_patri.php?view=patri&id=' . rawurlencode((string)($p['id'] ?? ''));
+    if (!empty($_GET['slug'])) {
+        $_seoUrl .= '&slug=' . rawurlencode((string)$_GET['slug']);
+    }
+    $_seoImg = '';
+    $_photo = trim((string)($p['photo'] ?? ''));
+    if ($_photo !== '') {
+        $_seoImg = (str_starts_with($_photo, 'http') ? $_photo : ($_seoBase . '/images/' . rawurlencode(basename($_photo))));
+    } else {
+        $_seoImg = rtrim((string)$_seoBase, '/') . '/tools/og_card.php?' . http_build_query([
+            'name' => (string)($p['name'] ?? 'Janam Patri'),
+            'role' => 'Janam Patri · Kundli',
+            'company' => 'Resource Centre',
+            'kind' => jp_is_hi() ? 'जन्म पत्री' : 'Janam Patri',
+        ]);
+    }
+    jp_header(jp_t(['Janam Patri — ', 'जन्म पत्री — ']) . (string)$p['name'], [
+        'url' => $_seoUrl,
+        'image' => $_seoImg,
+        'description' => (string)($p['name'] ?? '') . ' — North Indian Janam Patri (Lagna, Navamsha, dasha). Indicative only.',
+        'index' => true,
+        'type' => 'profile',
+    ]);
     $patriTab = strtolower(trim((string)($_GET['tab'] ?? 'kundli')));
     if (!in_array($patriTab, ['kundli', 'dasha', 'sade', 'gochar', 'varga', 'strength', 'doshas'], true)) {
         $patriTab = 'kundli';
@@ -3456,7 +3573,11 @@ if ($view === 'match') {
 // Home
 jp_header(jp_t(['Profiles', 'प्रोफ़ाइल']));
 echo '<div class="card"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:center">';
-echo '<h2 style="margin:0">&#128193; ' . jp_h(jp_t(['Saved profiles', 'सहेजी प्रोफ़ाइलें'])) . '</h2><div class="no-print"><a class="btn" href="?view=new&lang=' . jp_lang() . '">+ ' . jp_h(jp_t(['New', 'नई'])) . '</a> <a class="btn secondary" href="?view=import&lang=' . jp_lang() . '">' . jp_h(jp_t(['Import from Team', 'टीम से आयात'])) . '</a></div></div>';
+echo '<h2 style="margin:0">&#128193; ' . jp_h(jp_t(['Saved profiles', 'सहेजी प्रोफ़ाइलें'])) . '</h2>';
+if (jp_can_manage()) {
+    echo '<div class="no-print"><a class="btn" href="?view=new&lang=' . jp_lang() . '">+ ' . jp_h(jp_t(['New', 'नई'])) . '</a> <a class="btn secondary" href="?view=import&lang=' . jp_lang() . '">' . jp_h(jp_t(['Import from Team', 'टीम से आयात'])) . '</a></div>';
+}
+echo '</div>';
 if (!$profiles) {
     echo '<p class="meta" style="margin-top:1rem">No profiles yet. Create one or import from Team Directory.</p>';
 } else {

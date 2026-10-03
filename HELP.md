@@ -80,3 +80,7 @@ See **LAUNCH.md** for the full go-live checklist.
 ## Protect tenant data
 Never overwrite `tenants/*/data/` from a code ZIP. See DEPLOY.md.
 
+
+## Engineering
+- Refactor roadmap (ROI path): [docs/REFACTOR_ROADMAP.md](docs/REFACTOR_ROADMAP.md)
+

@@ -83,8 +83,8 @@ set_exception_handler(function (\Throwable $e): void {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Server error: ' . $e->getMessage(),
-                'logs' => ['CRITICAL: ' . $e->getMessage()],
+                'message' => 'An unexpected server error occurred. The issue has been logged.',
+                'logs' => ['CRITICAL: An unexpected server error occurred.'],
             ], JSON_UNESCAPED_UNICODE);
             return;
         }
@@ -165,6 +165,7 @@ define('BASE_PATH', __DIR__);
  * Single-site (no tenants/): still uses BASE_PATH/data.
  */
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
+if (is_file(BASE_PATH . '/app/TenantTombstone.php')) { require_once BASE_PATH . '/app/TenantTombstone.php'; }
 if (class_exists('HostPolicy') && !HostPolicy::isHostAllowed((string)($_SERVER['HTTP_HOST'] ?? ''))) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');
@@ -246,10 +247,28 @@ if (!function_exists('rc_require_once')) {
 }
 
 rc_require_once(BASE_PATH . '/app/bootstrap.php', true);
+// Defensive request routing (Phase-1)
+$action = class_exists('RcRequest') ? RcRequest::action('dashboard') : (string)($_GET['action'] ?? $_POST['action'] ?? 'dashboard');
+
 if (class_exists('AppLocale')) { AppLocale::boot(); }
 
 AppAuth::setSecureHeaders();
 AppAuth::initSession();
+
+/* Cache policy: public cards brief cache; signed-in UI no-store */
+if (class_exists('RcCachePolicy', false)) {
+    RcCachePolicy::applyForRequest();
+} elseif (class_exists('RcPublicCache')) {
+    $__hasUser = !empty($_SESSION['user']) && (string)$_SESSION['user'] !== 'public';
+    $__isCard = !empty($_GET['card']) || !empty($_GET['slug']);
+    if (!$__hasUser && $__isCard) {
+        RcPublicCache::sendCardHeaders(180);
+    } elseif ($__hasUser) {
+        RcPublicCache::sendNoStore();
+    }
+    unset($__hasUser, $__isCard);
+}
+
 
 /* RC_ACTION_BOOT: never leave $action undefined for error handlers / partial includes */
 if (!isset($action) || !is_string($action)) {
@@ -401,6 +420,9 @@ if (!empty($rawSlug)) {
 
 /** Human-readable size for the docs list. */
 function self_format_bytes(int $b): string {
+    if (class_exists(\App\Rc\Support\Bytes::class, false) || class_exists('App\Rc\Support\Bytes')) {
+        return \App\Rc\Support\Bytes::format($b);
+    }
     if ($b <= 0) return '';
     $u = ['B','KB','MB','GB']; $i = 0;
     while ($b >= 1024 && $i < count($u) - 1) { $b /= 1024; $i++; }
@@ -408,7 +430,13 @@ function self_format_bytes(int $b): string {
 }
 
 function sendJson($data, bool $cacheable = true) {
-    if (ob_get_length()) ob_clean();
+    if (class_exists(\App\Rc\Http\JsonResponse::class, false) || class_exists('App\Rc\Http\JsonResponse')) {
+        \App\Rc\Http\JsonResponse::send($data, $cacheable);
+    }
+    // Fallback if Rc layer missing on disk
+    if (ob_get_length()) {
+        @ob_clean();
+    }
     $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if ($json === false) {
         $json = '{"status":"error","message":"JSON encode failed"}';
@@ -417,7 +445,6 @@ function sendJson($data, bool $cacheable = true) {
     $etag = '"' . hash('sha256', $json) . '"';
     if ($cacheable) {
         $inm = trim((string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? ''));
-        // Allow weak validators and multiple etags
         if ($inm !== '' && (hash_equals($etag, $inm) || str_contains($inm, trim($etag, '"')))) {
             http_response_code(304);
             header('ETag: ' . $etag);
@@ -430,6 +457,7 @@ function sendJson($data, bool $cacheable = true) {
         header('Cache-Control: no-store');
     }
     header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
     header('Vary: Accept-Encoding, Cookie');
     echo $json;
     exit;
@@ -440,57 +468,12 @@ function sendJson($data, bool $cacheable = true) {
  * Returns filename (relative to images/) or null.
  */
 function generateBankQrPng(array $bank): ?string {
-    $upi = trim((string)($bank['upi_id'] ?? $bank['upi'] ?? ''));
-    if ($upi === '') {
-        return null;
+    if (class_exists(\App\Rc\Domain\Bank\UpiQr::class, false) || class_exists('App\Rc\Domain\Bank\UpiQr')) {
+        return \App\Rc\Domain\Bank\UpiQr::generatePng($bank);
     }
-    $holder = trim((string)($bank['holder_name'] ?? $bank['account_holder'] ?? ''));
-    $payload = 'upi://pay?pa=' . rawurlencode($upi)
-             . ($holder !== '' ? '&pn=' . rawurlencode($holder) : '')
-             . '&cu=INR';
-    $id = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($bank['id'] ?? $bank['slug'] ?? uniqid('b')));
-    if ($id === '') {
-        $id = uniqid('b');
-    }
-    $fname = 'bank-qr-' . $id . '.png';
-    $imgDir = defined('IMG_PATH') ? IMG_PATH : ((defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/images');
-    if (!is_dir($imgDir)) {
-        @mkdir($imgDir, 0755, true);
-    }
-    $path = $imgDir . DIRECTORY_SEPARATOR . $fname;
-    $url = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&ecc=M&data=' . rawurlencode($payload);
-    $bin = false;
-    if (function_exists('curl_init')) {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => true,
-        ]);
-        $bin = curl_exec($ch);
-        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($code >= 400) {
-            $bin = false;
-        }
-    }
-    if ($bin === false && filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
-        $ctx = stream_context_create(['http' => ['timeout' => 20], 'ssl' => ['verify_peer' => true]]);
-        $bin = @file_get_contents($url, false, $ctx);
-    }
-    if ($bin === false || !is_string($bin) || strlen($bin) < 64) {
-        return null;
-    }
-    // Basic PNG signature check
-    if (substr($bin, 0, 8) !== "\x89PNG\r\n\x1a\n") {
-        return null;
-    }
-    if (@file_put_contents($path, $bin) === false) {
-        return null;
-    }
-    return $fname;
+    return null;
 }
+
 
 
 
@@ -1019,6 +1002,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (in_array($tenantId, ['map', 'default', 'tenants'], true)) {
             sendJson(['status' => 'error', 'message' => 'Reserved tenant id.']);
         }
+        // Intentional re-provision clears tombstone so folder may return
+        if (class_exists('TenantTombstone')) {
+            TenantTombstone::clear($tenantId);
+        }
         $tenantsDir = BASE_PATH . '/tenants';
         $tenantRoot = $tenantsDir . '/' . $tenantId;
         $dataPath = $tenantRoot . '/data';
@@ -1273,6 +1260,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             else @unlink($file->getPathname());
         }
         @rmdir($tenantRoot);
+        if (class_exists('TenantTombstone')) { TenantTombstone::mark($tenantId, (string)($_SESSION['user'] ?? 'super_admin')); }
+        // Remove ghost folders on next optimise; hide from lists immediately
         sendJson(['status' => 'success', 'tenant_id' => $tenantId, 'message' => 'Tenant removed from map and disk.']);
     }
 
@@ -1483,7 +1472,7 @@ return " . var_export($_merged, true) . ";
             http_response_code(200); // keep JSON contract for UI
             sendJson([
                 'status' => 'error',
-                'message' => 'Optimizer error: ' . $e->getMessage(),
+                'message' => 'Optimizer error. Details were logged for the administrator.',
                 'logs' => ['ERROR: ' . $e->getMessage()],
             ]);
         }
@@ -1591,90 +1580,67 @@ return " . var_export($_merged, true) . ";
             http_response_code(400); sendJson(['status' => 'error', 'message' => 'Invalid JSON payload structure.']);
         }
 
-        // ── Universal field normalization ─────────────────────────────────────
-        if (!empty($newData['name'])) {
-            $newData['name'] = mb_convert_case(mb_strtolower(trim((string)$newData['name']), 'UTF-8'), MB_CASE_TITLE, 'UTF-8');
-        }
-
-        if (!empty($newData['email'])) {
-            $newData['email'] = strtolower(trim((string)$newData['email']));
-        }
-
-        if ($ns === 'team' && !empty($newData['phone']) && class_exists('AppSlug')) {
-            $newData['phone'] = AppSlug::normalizePhone((string)$newData['phone']);
-        }
-
-        // Birth coordinates: one Google-style "lat, lng" field and/or separate lat/lng.
-        if ($ns === 'team') {
-            $normCoord = static function ($v, float $min, float $max) {
-                if ($v === null || $v === '') return null;
-                if (!is_numeric($v)) return null;
-                $n = (float) $v;
-                if ($n < $min) $n = $min;
-                if ($n > $max) $n = $max;
-                return round($n, 6);
-            };
-            $geo = trim((string)($newData['birth_geo'] ?? $newData['geo'] ?? ''));
-            if ($geo !== '' && preg_match('/(-?\d+(?:\.\d+)?)\s*[,\s]+\s*(-?\d+(?:\.\d+)?)/', $geo, $gm)) {
-                $newData['birth_lat'] = $gm[1];
-                $newData['birth_lng'] = $gm[2];
+        // ── Field prep (Phase 8 SavePrep) ─────────────────────────────────────
+        if (class_exists(\App\Rc\Http\Handlers\SavePrep::class, false) || class_exists('App\Rc\Http\Handlers\SavePrep')) {
+            $prep = \App\Rc\Http\Handlers\SavePrep::prepare($ns, is_array($newData) ? $newData : [], $id, $isEdit);
+            $newData = $prep['data'];
+            if (!empty($prep['error'])) {
+                sendJson(['status' => 'error', 'message' => $prep['error']]);
             }
-            $latIn = $newData['birth_lat'] ?? $newData['lat'] ?? null;
-            $lngIn = $newData['birth_lng'] ?? $newData['lng'] ?? null;
-            $lat = $normCoord($latIn, -90.0, 90.0);
-            $lng = $normCoord($lngIn, -180.0, 180.0);
-            if ($lat !== null && $lng !== null) {
-                $newData['birth_lat'] = $lat;
-                $newData['birth_lng'] = $lng;
-                $newData['lat'] = $lat;
-                $newData['lng'] = $lng;
-                $newData['birth_geo'] = $lat . ', ' . $lng;
-            } elseif ($lat !== null) {
-                $newData['birth_lat'] = $lat;
-                $newData['lat'] = $lat;
-            } elseif ($lng !== null) {
-                $newData['birth_lng'] = $lng;
-                $newData['lng'] = $lng;
-            } else {
-                unset($newData['birth_lat'], $newData['birth_lng'], $newData['lat'], $newData['lng'], $newData['birth_geo']);
+        } else {
+            // Fallback if Rc Handlers missing on disk
+            if (!empty($newData['name'])) {
+                $newData['name'] = mb_convert_case(mb_strtolower(trim((string)$newData['name']), 'UTF-8'), MB_CASE_TITLE, 'UTF-8');
             }
-        }
-
-        if ($ns === 'company' && (empty($newData['name']) || strlen(trim((string)$newData['name'])) < 2)) {
-            sendJson(['status' => 'error', 'message' => 'Organization Name is required.']);
-        }
-
-        if (isset($newData['slug'])) {
-            $newData['slug'] = preg_replace('/[^a-z0-9\-]+/', '', strtolower(trim(basename(str_replace('\\', '/', (string)$newData['slug'])))));
-            if ($newData['slug'] !== '') {
-                $existing = AppDB::read($ns);
-                if (is_array($existing) && $ns !== 'company') {
-                    foreach ($existing as $row) {
-                        if (($row['slug'] ?? '') === $newData['slug'] && (string)($row['id'] ?? '') !== (string)$id) {
-                            sendJson(['status' => 'error', 'message' => 'Duplicate ID/Slug detected.']);
+            if (!empty($newData['email'])) {
+                $newData['email'] = strtolower(trim((string)$newData['email']));
+            }
+            if ($ns === 'team' && !empty($newData['phone']) && class_exists('AppSlug')) {
+                $newData['phone'] = AppSlug::normalizePhone((string)$newData['phone']);
+            }
+            if ($ns === 'team' && (class_exists(\App\Rc\Domain\Team\RecordNormalize::class, false) || class_exists('App\Rc\Domain\Team\RecordNormalize'))) {
+                $newData = \App\Rc\Domain\Team\RecordNormalize::apply($newData);
+            }
+            if ($ns === 'bank' && (class_exists(\App\Rc\Domain\Bank\RecordNormalize::class, false) || class_exists('App\Rc\Domain\Bank\RecordNormalize'))) {
+                $newData = \App\Rc\Domain\Bank\RecordNormalize::apply($newData);
+            }
+            if ($ns === 'company' && (empty($newData['name']) || strlen(trim((string)$newData['name'])) < 2)) {
+                sendJson(['status' => 'error', 'message' => 'Organization Name is required.']);
+            }
+            if (isset($newData['slug'])) {
+                $newData['slug'] = preg_replace('/[^a-z0-9\-]+/', '', strtolower(trim(basename(str_replace('\\', '/', (string)$newData['slug'])))));
+                if ($newData['slug'] !== '') {
+                    $existing = AppDB::read($ns);
+                    if (is_array($existing) && $ns !== 'company') {
+                        foreach ($existing as $row) {
+                            if (($row['slug'] ?? '') === $newData['slug'] && (string)($row['id'] ?? '') !== (string)$id) {
+                                sendJson(['status' => 'error', 'message' => 'Duplicate ID/Slug detected.']);
+                            }
                         }
                     }
                 }
             }
-        }
-
-        // ── Auto-generate slug (team only, create mode) ───────────────────────
-        if ($ns === 'team' && !$isEdit && class_exists('AppSlug')) {
-            if (!empty($newData['phone'])) {
-                $newData['phone'] = AppSlug::normalizePhone((string)$newData['phone']);
+            if ($ns === 'team' && !$isEdit && class_exists('AppSlug')) {
+                if (!empty($newData['phone'])) {
+                    $newData['phone'] = AppSlug::normalizePhone((string)$newData['phone']);
+                }
+                if (empty($newData['slug'])) {
+                    $newData['slug'] = AppSlug::generate(
+                        (string)($newData['name']  ?? ''),
+                        (string)($newData['dob']   ?? ''),
+                        (string)($newData['phone'] ?? '')
+                    );
+                }
+                $newData['slug'] = preg_replace('/[^a-z0-9\-]+/', '', strtolower(trim(basename(str_replace('\\', '/', (string)$newData['slug'])))));
             }
-            if (empty($newData['slug'])) {
-                $newData['slug'] = AppSlug::generate(
-                    (string)($newData['name']  ?? ''),
-                    (string)($newData['dob']   ?? ''),
-                    (string)($newData['phone'] ?? '')
-                );
-            }
-            $newData['slug'] = preg_replace('/[^a-z0-9\-]+/', '', strtolower(trim(basename(str_replace('\\', '/', (string)$newData['slug'])))));
         }
 
         if (!empty($_FILES)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            // Map alternate client field names onto canonical keys
+            if (!empty($_FILES['team_photo']['name']) && empty($_FILES['photo']['name'])) {
+                $_FILES['photo'] = $_FILES['team_photo'];
+            }
             foreach (['logo', 'favicon', 'cover', 'photo', 'doc_file'] as $field) {
 
                 if (empty($_FILES[$field]['name'])) continue;
@@ -1690,17 +1656,9 @@ return " . var_export($_merged, true) . ";
                 $upErr = (int)($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE);
                 if ($upErr !== UPLOAD_ERR_OK) {
                     finfo_close($finfo);
-                    $iniMax = ini_get('upload_max_filesize');
-                    $msg = match ($upErr) {
-                        UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE =>
-                            "File is too large. This server accepts up to {$iniMax} per file. "
-                            . "Compress the document, or add it as an External URL instead.",
-                        UPLOAD_ERR_PARTIAL    => 'Upload was interrupted. Please try again.',
-                        UPLOAD_ERR_NO_TMP_DIR => 'Server has no temporary upload folder configured. Contact your host.',
-                        UPLOAD_ERR_CANT_WRITE => 'Server could not write the uploaded file to disk.',
-                        UPLOAD_ERR_EXTENSION  => 'A server extension blocked this upload.',
-                        default               => "Upload failed (error {$upErr}).",
-                    };
+                    $msg = (class_exists(\App\Rc\Support\UploadErrors::class, false) || class_exists('App\Rc\Support\UploadErrors'))
+                        ? \App\Rc\Support\UploadErrors::message($upErr)
+                        : ('Upload failed (error ' . $upErr . ').');
                     if (class_exists('AppLog')) AppLog::error('Upload failed', ['field' => $field, 'code' => $upErr]);
                     sendJson(['status' => 'error', 'message' => $msg]);
                 }
@@ -1731,21 +1689,31 @@ return " . var_export($_merged, true) . ";
                         $filename = preg_replace('/[^a-z0-9]/i', '_', strtolower((string)($newData['slug'] ?? 'file'))) . '_' . str_replace('.', '', uniqid('', true)) . '.' . $ext;
                     }
 
-                    $destDir = (strpos($field, 'doc') !== false) ? DOC_PATH : IMG_PATH;
-
+                    $destDir = (class_exists(\App\Rc\Support\UploadDest::class, false) || class_exists('App\Rc\Support\UploadDest'))
+                        ? \App\Rc\Support\UploadDest::forField((string)$field)
+                        : ((strpos($field, 'doc') !== false) ? DOC_PATH : IMG_PATH);
+                    if (!is_dir($destDir)) {
+                        @mkdir($destDir, 0775, true);
+                    }
                     // A non-writable destination was also silent before: the
                     // move simply returned false and the save reported success.
                     if (!is_dir($destDir) || !is_writable($destDir)) {
                         finfo_close($finfo);
                         if (class_exists('AppLog')) AppLog::error('Upload destination not writable', ['dir' => $destDir]);
-                        sendJson(['status' => 'error', 'message' => 'Server cannot write to the ' . basename($destDir) . ' folder. Check its permissions.']);
+                        sendJson(['status' => 'error', 'message' => 'Server cannot write to the media folder (' . str_replace('\\', '/', (string)$destDir) . '). Grant write ACL / chmod 775.']);
                     }
 
-                    if (move_uploaded_file($tmp, $destDir . '/' . $filename)) {
+                    $destPath = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $destDir), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
+                    if (move_uploaded_file($tmp, $destPath)) {
+                        @chmod($destPath, 0664);
                         $newData[$field] = $filename;
                         if ($ns === 'locations' && in_array($field, ['photo', 'logo'], true)) {
                             $newData['logo'] = $filename;
                             $newData['photo'] = $filename;
+                        }
+                        if ($ns === 'events' && $field === 'photo') {
+                            $newData['photo'] = $filename;
+                            $newData['image'] = $filename;
                         }
                         if ($ns === 'docs') {
                             $newData['file_type'] = strtoupper($ext === 'pdf' ? 'PDF' : $ext);
@@ -2052,7 +2020,7 @@ return " . var_export($_merged, true) . ";
                 AppLog::error('Import exception', ['error' => $e->getMessage()]);
             }
             http_response_code(500);
-            sendJson(['status' => 'error', 'message' => 'Import failed: ' . $e->getMessage()]);
+            sendJson(['status' => 'error', 'message' => 'Import failed. Details were logged.']);
         }
     }
 

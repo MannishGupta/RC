@@ -14,12 +14,6 @@ if (!defined('BASE_PATH')) {
     define('BASE_PATH', $base);
 }
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-if (is_file(BASE_PATH . '/app/PathJail.php')) require_once BASE_PATH . '/app/PathJail.php';
-if (is_file(BASE_PATH . '/app/HostPolicy.php')) require_once BASE_PATH . '/app/HostPolicy.php';
-if (class_exists('HostPolicy') && !HostPolicy::isHostAllowed((string)($_SERVER['HTTP_HOST'] ?? ''))) {
-    http_response_code(403); echo 'Forbidden'; exit;
-}
-
 if (!defined('DATA_PATH')) {
     define('DATA_PATH', BASE_PATH . '/data');
 }
@@ -45,8 +39,26 @@ $legacy = BASE_PATH . '/images';
 if (is_dir($legacy)) {
     $searchDirs[] = $legacy;
 }
+foreach ([
+    (defined('DATA_PATH') ? DATA_PATH : '') . '/images',
+    (defined('DATA_PATH') ? DATA_PATH : '') . '/media',
+    (defined('DATA_PATH') ? DATA_PATH : '') . '/media/logos',
+    (defined('DATA_PATH') ? DATA_PATH : '') . '/locations',
+] as $extra) {
+    if ($extra !== '' && is_dir($extra) && !in_array($extra, $searchDirs, true)) {
+        $searchDirs[] = $extra;
+    }
+}
 
 $resolved = null;
+
+$mediaType = strtolower(trim((string)($_GET['t'] ?? 'img')));
+if ($mediaType === 'doc' || $mediaType === 'docs') {
+    $docPath = defined('DOC_PATH') ? DOC_PATH : (DATA_PATH . '/media/docs');
+    if (is_dir($docPath)) {
+        array_unshift($searchDirs, $docPath);
+    }
+}
 foreach ($searchDirs as $dir) {
     $candidate = $dir . DIRECTORY_SEPARATOR . $f;
     if (is_file($candidate) && is_readable($candidate)) {
@@ -85,21 +97,6 @@ if ($resolved === null) {
     echo 'Not found';
     exit;
 }
-if (class_exists('PathJail')) {
-    $jailed = PathJail::resolve($resolved, defined('DATA_PATH') ? DATA_PATH : null);
-    if ($jailed === null) {
-        // also allow BASE_PATH/images legacy
-        $jailed = PathJail::resolve($resolved, BASE_PATH);
-    }
-    if ($jailed === null) {
-        http_response_code(403);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'Forbidden path';
-        exit;
-    }
-    $resolved = $jailed;
-}
-
 
 $real = realpath($resolved);
 $allowed = false;
@@ -124,7 +121,7 @@ $map = [
     'jpeg' => 'image/jpeg',
     'png'  => 'image/png',
     'gif'  => 'image/gif',
-    'svg'  => 'application/octet-stream',
+    'svg'  => 'image/svg+xml',
     'ico'  => 'image/x-icon',
     'bmp'  => 'image/bmp',
     'avif' => 'image/avif',
@@ -146,13 +143,10 @@ if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim((string)$_SERVER['HTTP_IF_NONE
 }
 
 header('Content-Type: ' . $map[$ext]);
-if (in_array($ext, ['svg', 'svgz', 'html', 'htm', 'xml'], true)) {
-    header('Content-Disposition: attachment; filename="' . rawurlencode(basename($file)) . '"');
-    header("Content-Security-Policy: default-src 'none'");
-}
-
 header('Content-Length: ' . (string)$size);
 header('Cache-Control: public, max-age=604800, immutable');
+header('Access-Control-Allow-Origin: *');
+header('Cross-Origin-Resource-Policy: cross-origin');
 header('ETag: ' . $etag);
 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
 header('X-Content-Type-Options: nosniff');
@@ -162,6 +156,10 @@ if ($fp) {
     fpassthru($fp);
     fclose($fp);
 } else {
-    readfile($real);
+    if (!headers_sent()) {
+    header('Cache-Control: public, max-age=86400, stale-while-revalidate=604800');
+    header('X-Content-Type-Options: nosniff');
+}
+readfile($real);
 }
 exit;
