@@ -266,8 +266,10 @@ if ($selected !== null) {
 header('Content-Type: text/html; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 ?><!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="reserve">
 <head>
+<?php if (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_theme_head.php')) { require BASE_PATH . '/app/views/partials/rc_theme_head.php'; } ?>
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

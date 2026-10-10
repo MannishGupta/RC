@@ -40,7 +40,7 @@ class SystemDataOptimizer
     /**
      * @return array{status:string,logs:list<string>,skipped?:bool,message?:string}
      */
-    public static function run(bool $force = false): array
+    public static function run(bool $force = false, bool $lightweight = false): array
     {
         self::$logs = [];
 
@@ -55,27 +55,19 @@ class SystemDataOptimizer
         }
 
         try {
-            self::log('Optimizer started' . ($force ? ' (forced)' : '') . '.');
+            self::log('Optimizer started' . ($force ? ' (forced)' : '') . ($lightweight ? ' [lightweight]' : '') . '.');
 
             self::phaseEnsureDirs();
             self::phaseGenerateTemplates(); // create missing namespace JSON files, never touch existing ones
             // Legacy root migration retired (images/, docs/, storage/janam, dispatch/data no longer used)
             self::phaseNormalizeCompany();
-            self::phaseNormalizeList('team', self::teamSchema());
-            self::phaseNormalizeList('bank', self::bankSchema());
-            self::phaseNormalizeList('docs', self::docsSchema());
-            self::phaseNormalizeList('events', self::eventsSchema());
-            self::phaseNormalizeList('locations', self::locationsSchema());
-            self::phaseNormalizeList('departments', self::departmentsSchema());
-            self::phaseNormalizeList('designations', self::designationsSchema());
-            self::phaseNormalizeList('statutory', self::statutorySchema());
-            self::phaseNormalizeList('cartags', self::cartagsSchema());
-            if (method_exists(__CLASS__, 'cctvSchema')) {
-                self::phaseNormalizeList('cctv', self::cctvSchema());
-            } else {
-                self::phaseNormalizeList('cctv', ['id' => '', 'name' => '', 'url' => '', 'location' => '']);
+            // Dynamic: every *.json entity under data/ (plus known schemas), not a hardcoded list
+            foreach (self::discoverNormalizeTargets() as $ns => $schema) {
+                if ($ns === 'company') {
+                    continue; // handled above
+                }
+                self::phaseNormalizeList($ns, $schema);
             }
-            self::phaseNormalizeList('leads', ['id' => '', 'name' => '', 'phone' => '', 'email' => '', 'company' => '', 'status' => '']);
 
             self::phaseTeamPhonesAndNames();
             self::phaseMigrateTeamSlugs();
@@ -83,7 +75,12 @@ class SystemDataOptimizer
             self::phaseTrimSessions();
             self::phaseTrimLogs();
             self::phaseOrphanMedia();
-            self::phaseConvertImagesWebp();
+            // BUG FIX: the likely actual cause of the HTTP 500 this was
+            if (!$lightweight) {
+                self::phaseConvertImagesWebp();
+            } else {
+                self::log('WebP convert skipped (multi-tenant sweep — run per-tenant optimise to convert images for a specific tenant).');
+            }
             self::phaseRebuildDataCache();
             self::phasePublicTeamAndHealth();
             self::phaseLogRotateAndBackupHint();
@@ -387,18 +384,19 @@ class SystemDataOptimizer
     private static function phaseEnsureDirs(): void
     {
         $data = self::dataRoot();
+        // BUG FIX: IMG_PATH/DOC_PATH/SESSION_PATH/etc. are constants fixed once
         $dirs = [
             $data,
-            defined('IMG_PATH') ? IMG_PATH : ($data . '/media/images'),
-            defined('DOC_PATH') ? DOC_PATH : ($data . '/media/documents'),
-            defined('SESSION_PATH') ? SESSION_PATH : ($data . '/sessions'),
-            defined('LOG_PATH') ? LOG_PATH : ($data . '/logs'),
-            defined('BACKUP_PATH') ? BACKUP_PATH : ($data . '/backups'),
-            defined('DISPATCH_DATA_PATH') ? DISPATCH_DATA_PATH : ($data . '/dispatch'),
-            defined('JANAM_DATA_PATH') ? JANAM_DATA_PATH : ($data . '/janam'),
-            defined('VALUE_DATA_PATH') ? VALUE_DATA_PATH : ($data . '/value'),
-            defined('RUNNERS_DATA_PATH') ? RUNNERS_DATA_PATH : ($data . '/runners'),
-            defined('CONFIG_DATA_PATH') ? CONFIG_DATA_PATH : ($data . '/config'),
+            $data . '/media/images',
+            $data . '/media/documents',
+            $data . '/sessions',
+            $data . '/logs',
+            $data . '/backups',
+            $data . '/dispatch',
+            $data . '/janam',
+            $data . '/value',
+            $data . '/runners',
+            $data . '/config',
             $data . '/media',
             $data . '/tmp',
         ];
@@ -566,10 +564,10 @@ class SystemDataOptimizer
                     'application PHP (app/, cards/, index.php)',
                 ],
             ],
-            'optimize_namespaces' => [
-                'team', 'company', 'bank', 'docs', 'events', 'locations',
-                'departments', 'designations', 'statutory', 'cartags',
-            ],
+            'optimize_namespaces' => array_values(array_unique(array_merge(
+                ['company'],
+                array_keys(self::discoverNormalizeTargets())
+            ))),
         ];
     }
 
@@ -983,9 +981,8 @@ class SystemDataOptimizer
 
     private static function phaseTrimSessions(): void
     {
-        $dir = defined('SESSION_PATH')
-            ? SESSION_PATH
-            : ((defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/sessions');
+        // BUG FIX: same issue as phaseEnsureDirs above -- SESSION_PATH is
+        $dir = self::dataRoot() . '/sessions';
         if (!is_dir($dir)) {
             return;
         }
@@ -1032,7 +1029,7 @@ class SystemDataOptimizer
 
 
     /**
-     * Convert legacy JPEG/PNG/GIF still images under media/images to WebP.
+     * Optimise all still images under media/images (JPEG/PNG/GIF/WebP) — downscale + WebP, never skip large files.
      * Updates team/company references when the filename changes.
      * Requires GD imagewebp. Safe no-op when GD/WebP missing.
      */
@@ -1060,9 +1057,10 @@ class SystemDataOptimizer
         $skipped = 0;
         $failed = 0;
         $map = [];
-        $maxPerRun = 25;          // hard cap per optimise pass
-        $maxBytes = 6 * 1048576;  // skip originals larger than 6 MB
-        $maxEdge = 1600;          // downscale long edge before encode
+        // Cap work per pass; never skip permanently — next run continues
+        $maxPerRun = 20;
+        $targetBytes = 450000;
+        $maxEdge = 1600;
 
         $files = @scandir($imgDir) ?: [];
         foreach ($files as $f) {
@@ -1070,15 +1068,15 @@ class SystemDataOptimizer
                 $skipped++;
                 continue;
             }
-            if ($f === '.' || $f === '..') {
+            if ($f === '.' || $f === '..' || str_contains($f, '.opt-tmp.')) {
                 continue;
             }
-            $full = $imgDir . '/' . $f;
+            $full = $imgDir . DIRECTORY_SEPARATOR . $f;
             if (!is_file($full)) {
                 continue;
             }
             $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'], true)) {
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
                 $skipped++;
                 continue;
             }
@@ -1086,92 +1084,71 @@ class SystemDataOptimizer
                 $skipped++;
                 continue;
             }
-            $base = pathinfo($f, PATHINFO_FILENAME);
-            $destName = $base . '.webp';
-            $dest = $imgDir . '/' . $destName;
-            if (is_file($dest) && @filemtime($dest) >= @filemtime($full)) {
-                $map[$f] = $destName;
-                $skipped++;
-                continue;
-            }
+
             $sz = (int) @filesize($full);
-            if ($sz > $maxBytes) {
-                self::log("WebP skip large file ({$sz} bytes): {$f}");
+            $info = @getimagesize($full);
+            $edge = 0;
+            if (is_array($info) && !empty($info[0]) && !empty($info[1])) {
+                $edge = max((int) $info[0], (int) $info[1]);
+                // Extreme rasters: still process but with a tighter edge to avoid OOM
+                if (((int)$info[0] * (int)$info[1]) > 40000000) {
+                    $edgeCap = 1200;
+                } else {
+                    $edgeCap = $maxEdge;
+                }
+            } else {
+                $edgeCap = $maxEdge;
+            }
+            if ($ext === 'webp' && $sz > 0 && $sz <= $targetBytes && $edge > 0 && $edge <= $maxEdge) {
+                $skipped++;
+                continue;
+            }
+            if ($ext === 'webp' && $sz > 0 && $sz <= $targetBytes && $edge === 0) {
                 $skipped++;
                 continue;
             }
 
-            // Probe dimensions without fully decoding when possible
-            $info = @getimagesize($full);
-            if (is_array($info) && !empty($info[0]) && !empty($info[1])) {
-                $px = (int)$info[0] * (int)$info[1];
-                // ~48MP at truecolor ≈ heavy RAM; skip extreme rasters
-                if ($px > 25000000) {
-                    self::log("WebP skip huge dimensions {$info[0]}x{$info[1]}: {$f}");
-                    $skipped++;
-                    continue;
-                }
+            // Abort image phase early if free memory is critically low
+            $memLimit = self::parseIniBytes((string)ini_get('memory_limit'));
+            $memUsed = memory_get_usage(true);
+            if ($memLimit > 0 && ($memLimit - $memUsed) < 16 * 1048576) {
+                self::log('Image optimise paused — low memory (' . round($memUsed/1048576,1) . 'M used). Re-run to continue.');
+                break;
             }
 
-            $src = null;
-            if ($ext === 'jpg' || $ext === 'jpeg') {
-                $src = @imagecreatefromjpeg($full);
-            } elseif ($ext === 'png') {
-                $src = @imagecreatefrompng($full);
-                if ($src) {
-                    @imagepalettetotruecolor($src);
-                    @imagealphablending($src, true);
-                    @imagesavealpha($src, true);
-                }
-            } elseif ($ext === 'gif') {
-                $src = @imagecreatefromgif($full);
-            }
-            if (!$src) {
+            try {
+                $result = self::optimizeImageFile($full, [
+                    'max_edge' => $edgeCap,
+                    'quality' => 80,
+                    'prefer_webp' => true,
+                    'max_bytes' => $targetBytes,
+                ]);
+            } catch (\Throwable $ie) {
                 $failed++;
+                self::log('Image optimise exception on ' . $f . ': ' . $ie->getMessage());
                 if (function_exists('gc_collect_cycles')) {
                     gc_collect_cycles();
                 }
                 continue;
             }
-
-            // Downscale large images before WebP encode
-            $w = imagesx($src);
-            $h = imagesy($src);
-            if ($w > 0 && $h > 0 && max($w, $h) > $maxEdge) {
-                $scale = $maxEdge / max($w, $h);
-                $nw = max(1, (int) round($w * $scale));
-                $nh = max(1, (int) round($h * $scale));
-                $dst = imagecreatetruecolor($nw, $nh);
-                if ($dst) {
-                    imagealphablending($dst, false);
-                    imagesavealpha($dst, true);
-                    $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
-                    imagefilledrectangle($dst, 0, 0, $nw, $nh, $transparent);
-                    imagealphablending($dst, true);
-                    imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
-                    imagedestroy($src);
-                    $src = $dst;
-                }
-            }
-
-            $ok = @imagewebp($src, $dest, 80);
-            imagedestroy($src);
-            $src = null;
-            if (function_exists('gc_collect_cycles')) {
-                gc_collect_cycles();
-            }
-
-            if ($ok && is_file($dest)) {
+            if (!empty($result['ok'])) {
                 $converted++;
-                $map[$f] = $destName;
-                $oSz = (int) @filesize($full);
-                $nSz = (int) @filesize($dest);
-                if ($nSz > 0 && $nSz <= (int) ($oSz * 1.05)) {
-                    @unlink($full);
+                if (($result['name'] ?? '') !== '' && ($result['name'] ?? '') !== $f) {
+                    $map[$f] = $result['name'];
                 }
+                self::log(sprintf(
+                    'Image optimised: %s → %s (%d → %d bytes)',
+                    $f,
+                    $result['name'] ?? $f,
+                    (int) ($result['bytes_before'] ?? 0),
+                    (int) ($result['bytes_after'] ?? 0)
+                ));
             } else {
                 $failed++;
-                @unlink($dest);
+                self::log('Image optimise failed (' . ($result['message'] ?? '?') . '): ' . $f);
+            }
+            if (function_exists('gc_collect_cycles')) {
+                gc_collect_cycles();
             }
         }
 
@@ -1218,7 +1195,7 @@ class SystemDataOptimizer
             }
         }
 
-        self::log("WebP convert: converted={$converted}, skipped={$skipped}, failed={$failed}, refs_updated={$rewritten} (max {$maxPerRun}/run)");
+        self::log("Image optimise: converted={$converted}, skipped={$skipped}, failed={$failed}, refs_updated={$rewritten} (max {$maxPerRun}/run, includes large WebP)");
         if ($prevMem !== false && $prevMem !== '') {
             @ini_set('memory_limit', (string)$prevMem);
         }
@@ -1289,6 +1266,274 @@ class SystemDataOptimizer
     // ── Schemas ───────────────────────────────────────────────────────────
 
     /** @return array<string,mixed> */
+
+    /**
+     * Discover JSON entity files under data/ and pair with known schemas.
+     * Unknown list-shaped files get a minimal id/name schema so they are still normalised.
+     * @return array<string, array<string,mixed>>
+     */
+
+    private static function parseIniBytes(string $val): int
+    {
+        $val = trim($val);
+        if ($val === '' || $val === '-1') {
+            return 0; // unlimited
+        }
+        if (!preg_match('/^(\d+)\s*([KMG])?$/i', $val, $m)) {
+            return (int) $val;
+        }
+        $n = (int) $m[1];
+        $u = strtoupper($m[2] ?? '');
+        if ($u === 'G') {
+            return $n * 1073741824;
+        }
+        if ($u === 'M') {
+            return $n * 1048576;
+        }
+        if ($u === 'K') {
+            return $n * 1024;
+        }
+        return $n;
+    }
+
+    private static function discoverNormalizeTargets(): array
+    {
+        $known = [
+            'team' => self::teamSchema(),
+            'bank' => self::bankSchema(),
+            'docs' => self::docsSchema(),
+            'events' => self::eventsSchema(),
+            'locations' => self::locationsSchema(),
+            'departments' => self::departmentsSchema(),
+            'designations' => self::designationsSchema(),
+            'statutory' => self::statutorySchema(),
+            'cartags' => self::cartagsSchema(),
+            'cctv' => method_exists(__CLASS__, 'cctvSchema')
+                ? self::cctvSchema()
+                : ['id' => '', 'name' => '', 'url' => '', 'location' => ''],
+            'leads' => ['id' => '', 'name' => '', 'phone' => '', 'email' => '', 'company' => '', 'status' => ''],
+        ];
+        // Skip internal / non-entity stores
+        $skip = [
+            'map', 'analytics', 'team_index', 'team_public', 'optimizer_last_run',
+            'card_analytics', 'audit_log', 'attendance', 'assets', 'visits',
+            'roles', 'geofences', 'runners_state', 'policy_settings', 'settings',
+        ];
+        $root = self::dataRoot();
+        $found = $known;
+        if (is_dir($root)) {
+            foreach (@scandir($root) ?: [] as $f) {
+                if ($f === '.' || $f === '..' || !str_ends_with(strtolower($f), '.json')) {
+                    continue;
+                }
+                $ns = substr($f, 0, -5);
+                if ($ns === '' || isset($found[$ns]) || in_array($ns, $skip, true)) {
+                    continue;
+                }
+                if (str_starts_with($ns, '_') || str_starts_with($ns, '.')) {
+                    continue;
+                }
+                $path = $root . '/' . $f;
+                $raw = @file_get_contents($path);
+                $data = is_string($raw) ? json_decode($raw, true) : null;
+                if (!is_array($data)) {
+                    continue;
+                }
+                // List of records → minimal schema from first row keys
+                $sample = null;
+                if (array_is_list($data) && isset($data[0]) && is_array($data[0])) {
+                    $sample = $data[0];
+                } elseif (!array_is_list($data) && isset($data['id'])) {
+                    $sample = $data;
+                }
+                if ($sample === null) {
+                    continue;
+                }
+                $schema = ['id' => ''];
+                foreach (array_keys($sample) as $k) {
+                    if (!is_string($k) || $k === '') {
+                        continue;
+                    }
+                    $schema[$k] = is_bool($sample[$k] ?? null) ? false : (is_int($sample[$k] ?? null) ? 0 : '');
+                }
+                $found[$ns] = $schema;
+            }
+        }
+        return $found;
+    }
+
+    /**
+     * Optimise a single image on disk (upload / save path).
+     * Always processes JPEG/PNG/GIF/WebP — never skips by file size.
+     * Downscales long edge, re-encodes WebP (or JPEG fallback), replaces source when smaller/equal.
+     *
+     * @param array{max_edge?:int,quality?:int,prefer_webp?:bool,max_bytes?:int} $opts
+     * @return array{ok:bool,path:string,name:string,bytes_before:int,bytes_after:int,message?:string}
+     */
+    public static function optimizeImageFile(string $path, array $opts = []): array
+    {
+        $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        $before = is_file($path) ? (int) @filesize($path) : 0;
+        $name = basename($path);
+        $empty = ['ok' => false, 'path' => $path, 'name' => $name, 'bytes_before' => $before, 'bytes_after' => $before];
+
+        if (!is_file($path) || !is_readable($path)) {
+            return $empty + ['message' => 'not_found'];
+        }
+        if (!function_exists('imagecreatetruecolor')) {
+            return $empty + ['message' => 'gd_missing'];
+        }
+
+        $maxEdge = (int) ($opts['max_edge'] ?? 1600);
+        $quality = (int) ($opts['quality'] ?? 80);
+        $preferWebp = (bool) ($opts['prefer_webp'] ?? true);
+        $maxBytes = (int) ($opts['max_bytes'] ?? 450000); // target ~450 KB when possible
+        if ($maxEdge < 320) {
+            $maxEdge = 320;
+        }
+        if ($quality < 40) {
+            $quality = 40;
+        }
+        if ($quality > 95) {
+            $quality = 95;
+        }
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            return $empty + ['message' => 'unsupported_ext'];
+        }
+
+        $info = @getimagesize($path);
+        if (!is_array($info) || empty($info[0]) || empty($info[1])) {
+            return $empty + ['message' => 'bad_image'];
+        }
+
+        $src = null;
+        if ($ext === 'jpg' || $ext === 'jpeg') {
+            $src = @imagecreatefromjpeg($path);
+            if ($src && function_exists('exif_read_data')) {
+                $exif = @exif_read_data($path);
+                if (!empty($exif['Orientation'])) {
+                    switch ((int) $exif['Orientation']) {
+                        case 3: $src = imagerotate($src, 180, 0); break;
+                        case 6: $src = imagerotate($src, -90, 0); break;
+                        case 8: $src = imagerotate($src, 90, 0); break;
+                    }
+                }
+            }
+        } elseif ($ext === 'png') {
+            $src = @imagecreatefrompng($path);
+            if ($src) {
+                @imagepalettetotruecolor($src);
+                @imagealphablending($src, true);
+                @imagesavealpha($src, true);
+            }
+        } elseif ($ext === 'gif') {
+            $src = @imagecreatefromgif($path);
+        } elseif ($ext === 'webp' && function_exists('imagecreatefromwebp')) {
+            $src = @imagecreatefromwebp($path);
+        }
+        if (!$src) {
+            return $empty + ['message' => 'decode_failed'];
+        }
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+        if ($w < 1 || $h < 1) {
+            imagedestroy($src);
+            return $empty + ['message' => 'zero_dim'];
+        }
+
+        // Downscale if over max edge OR file already over target bytes
+        $needScale = max($w, $h) > $maxEdge || $before > $maxBytes;
+        if ($needScale && max($w, $h) > $maxEdge) {
+            $scale = $maxEdge / max($w, $h);
+            $nw = max(1, (int) round($w * $scale));
+            $nh = max(1, (int) round($h * $scale));
+            $dst = imagecreatetruecolor($nw, $nh);
+            if ($dst) {
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+                imagefilledrectangle($dst, 0, 0, $nw, $nh, $transparent);
+                imagealphablending($dst, true);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+                imagedestroy($src);
+                $src = $dst;
+                $w = $nw;
+                $h = $nh;
+            }
+        } elseif ($needScale && $before > $maxBytes && max($w, $h) > 800) {
+            // Still large on disk but under maxEdge — mild shrink to cut bytes
+            $scale = 0.85;
+            $nw = max(1, (int) round($w * $scale));
+            $nh = max(1, (int) round($h * $scale));
+            $dst = imagecreatetruecolor($nw, $nh);
+            if ($dst) {
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+                imagedestroy($src);
+                $src = $dst;
+            }
+        }
+
+        $dir = dirname($path);
+        $base = pathinfo($path, PATHINFO_FILENAME);
+        $useWebp = $preferWebp && function_exists('imagewebp');
+        $outExt = $useWebp ? 'webp' : (($ext === 'png') ? 'png' : 'jpg');
+        $tmpOut = $dir . DIRECTORY_SEPARATOR . $base . '.opt-tmp.' . $outExt;
+
+        $ok = false;
+        if ($outExt === 'webp') {
+            $ok = @imagewebp($src, $tmpOut, $quality);
+        } elseif ($outExt === 'png') {
+            $ok = @imagepng($src, $tmpOut, 6);
+        } else {
+            $ok = @imagejpeg($src, $tmpOut, $quality);
+        }
+        imagedestroy($src);
+
+        if (!$ok || !is_file($tmpOut)) {
+            @unlink($tmpOut);
+            return $empty + ['message' => 'encode_failed'];
+        }
+
+        $after = (int) @filesize($tmpOut);
+        // If still above target, re-encode once at lower quality
+        if ($after > $maxBytes && $outExt === 'webp' && $quality > 55) {
+            $src2 = @imagecreatefromwebp($tmpOut);
+            if ($src2) {
+                $q2 = max(50, $quality - 15);
+                @imagewebp($src2, $tmpOut, $q2);
+                imagedestroy($src2);
+                $after = (int) @filesize($tmpOut);
+            }
+        }
+
+        $finalName = $base . '.' . $outExt;
+        $finalPath = $dir . DIRECTORY_SEPARATOR . $finalName;
+
+        // Replace: write optimised; remove original if different name
+        if (!@rename($tmpOut, $finalPath)) {
+            @copy($tmpOut, $finalPath);
+            @unlink($tmpOut);
+        }
+        if (is_file($finalPath) && realpath($path) && realpath($path) !== realpath($finalPath)) {
+            @unlink($path);
+        }
+        @chmod($finalPath, 0664);
+
+        return [
+            'ok' => true,
+            'path' => $finalPath,
+            'name' => $finalName,
+            'bytes_before' => $before,
+            'bytes_after' => is_file($finalPath) ? (int) filesize($finalPath) : $after,
+            'message' => 'optimised',
+        ];
+    }
+
     private static function teamSchema(): array
     {
         return [
@@ -1303,9 +1548,18 @@ class SystemDataOptimizer
     /** @return array<string,mixed> */
     private static function bankSchema(): array
     {
+        // 'qr_image' added to match the live schema in app/bootstrap.php,
+        // which already includes it -- this copy had drifted out of sync.
+        // Not a functional bug on its own: phaseNormalizeList's
+        // array_merge($schema, $row) keeps any key already present in the
+        // real record regardless of whether it's listed here, so qr_image
+        // was never actually stripped by normalisation. Fixed anyway so
+        // this schema accurately documents every field bank records hold,
+        // rather than silently relying on merge behaviour a future reader
+        // wouldn't know to check.
         return [
             'id' => '', 'slug' => '', 'bank_name' => '', 'holder_name' => '',
-            'acc_no' => '', 'ifsc' => '', 'branch' => '', 'upi_id' => '',
+            'acc_no' => '', 'ifsc' => '', 'branch' => '', 'upi_id' => '', 'qr_image' => '',
         ];
     }
 
@@ -1385,10 +1639,21 @@ class SystemDataOptimizer
             if (!$v || !is_string($v)) {
                 return;
             }
-            if (str_starts_with($v, 'http://') || str_starts_with($v, 'https://')) {
-                return;
+            // media_serve.php?f=name.jpg (how the app itself addresses
+            // stored media) -- the filename is the f= parameter, not the
+            // path segment, so basename() of the raw string would register
+            // "media_serve.php?f=name.jpg" and miss the real file.
+            if (preg_match('~[?&]f=([^&#]+)~', $v, $mm)) {
+                $v = rawurldecode($mm[1]);
+            } elseif (str_starts_with($v, 'http://') || str_starts_with($v, 'https://')) {
+                return; // genuinely external: nothing on disk to protect
             }
-            $ref[strtolower(basename($v))] = true;
+            // Drop any cache-buster / fragment before taking the filename.
+            $v = (string) strtok($v, '?#');
+            $base = strtolower(basename(str_replace('\\', '/', $v)));
+            if ($base !== '') {
+                $ref[$base] = true;
+            }
         };
 
         $company = AppDB::read('company');
@@ -1397,7 +1662,12 @@ class SystemDataOptimizer
                 $add($company[$k] ?? '');
             }
         }
-        foreach (['team', 'docs', 'cartags'] as $ns) {
+        // BUG FIX: 'bank' and 'locations' both store a filename directly
+        $nsList = ['team', 'docs', 'cartags', 'bank', 'locations', 'events',
+                   'leads', 'statutory', 'departments', 'designations', 'cctv'];
+        $keys = ['photo', 'image', 'doc_file', 'logo', 'cover', 'favicon',
+                 'qr_image', 'banner', 'avatar'];
+        foreach ($nsList as $ns) {
             $rows = AppDB::read($ns);
             if (!is_array($rows)) {
                 continue;
@@ -1406,8 +1676,29 @@ class SystemDataOptimizer
                 if (!is_array($row)) {
                     continue;
                 }
-                foreach (['photo', 'doc_file', 'logo', 'cover'] as $k) {
+                foreach ($keys as $k) {
                     $add($row[$k] ?? '');
+                }
+            }
+        }
+        // Optional Delivery Status module keeps its own projects.json
+        // outside AppDB, and its cards read 'image'/'photo' from
+        // /images/ (see app/bootstrap.php, project JSON-LD). If it's
+        // installed, its references must count too.
+        foreach ([BASE_PATH . '/status/data/projects.json', BASE_PATH . '/status/projects.json'] as $pf) {
+            if (!is_file($pf)) {
+                continue;
+            }
+            $pj = json_decode((string) @file_get_contents($pf), true);
+            if (!is_array($pj)) {
+                continue;
+            }
+            foreach ($pj as $proj) {
+                if (!is_array($proj)) {
+                    continue;
+                }
+                foreach ($keys as $k) {
+                    $add($proj[$k] ?? '');
                 }
             }
         }
@@ -1513,7 +1804,12 @@ class SystemDataOptimizer
             if (function_exists('rc_storage_self_heal')) {
                 rc_storage_self_heal($path);
             }
-            $r = self::runForDataPath($path, $force);
+            // Full image optimise only for the active tenant data path; other
+            // tenants stay lightweight to avoid multi-tenant memory exhaustion.
+            $activeData = defined('DATA_PATH') ? rtrim(str_replace(["\\", "/"], DIRECTORY_SEPARATOR, (string)DATA_PATH), DIRECTORY_SEPARATOR) : '';
+            $thisData = rtrim(str_replace(["\\", "/"], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
+            $doImages = ($activeData !== '' && strcasecmp($activeData, $thisData) === 0);
+            $r = self::runForDataPath($path, $force, !$doImages);
             $results[] = [
                 'tenant' => $tid,
                 'path'   => $path,
@@ -1548,7 +1844,7 @@ class SystemDataOptimizer
     /**
      * @return array{status:string,logs:list<string>,message?:string}
      */
-    private static function runForDataPath(string $dataPath, bool $force = true): array
+    private static function runForDataPath(string $dataPath, bool $force = true, bool $lightweight = false): array
     {
         self::$logs = [];
         $prev = $GLOBALS['RC_OPT_DATA_PATH'] ?? null;
@@ -1562,28 +1858,24 @@ class SystemDataOptimizer
             // phaseMigrateDataLayout retired
 
             self::phaseNormalizeCompany();
-            self::phaseNormalizeList('team', self::teamSchema());
-            self::phaseNormalizeList('bank', self::bankSchema());
-            self::phaseNormalizeList('docs', self::docsSchema());
-            self::phaseNormalizeList('events', self::eventsSchema());
-            self::phaseNormalizeList('locations', self::locationsSchema());
-            self::phaseNormalizeList('departments', self::departmentsSchema());
-            self::phaseNormalizeList('designations', self::designationsSchema());
-            self::phaseNormalizeList('statutory', self::statutorySchema());
-            self::phaseNormalizeList('cartags', self::cartagsSchema());
-            if (method_exists(__CLASS__, 'cctvSchema')) {
-                self::phaseNormalizeList('cctv', self::cctvSchema());
-            } else {
-                self::phaseNormalizeList('cctv', ['id' => '', 'name' => '', 'url' => '', 'location' => '']);
+            // Dynamic: every *.json entity under data/ (plus known schemas), not a hardcoded list
+            foreach (self::discoverNormalizeTargets() as $ns => $schema) {
+                if ($ns === 'company') {
+                    continue; // handled above
+                }
+                self::phaseNormalizeList($ns, $schema);
             }
-            self::phaseNormalizeList('leads', ['id' => '', 'name' => '', 'phone' => '', 'email' => '', 'company' => '', 'status' => '']);
             self::phaseTeamPhonesAndNames();
             self::phaseMigrateTeamSlugs();
             self::phaseRebuildTeamIndex();
             self::phaseTrimSessions();
             self::phaseTrimLogs();
             self::phaseOrphanMedia();
-            self::phaseConvertImagesWebp();
+            if (!$lightweight) {
+                self::phaseConvertImagesWebp();
+            } else {
+                self::log('WebP convert skipped (multi-tenant lightweight pass).');
+            }
             self::phaseRebuildDataCache();
             self::phasePublicTeamAndHealth();
             self::phaseLogRotateAndBackupHint();

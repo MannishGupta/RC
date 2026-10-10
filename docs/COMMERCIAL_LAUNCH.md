@@ -1,51 +1,28 @@
-# Commercial launch checklist — RC 260925.01
+# Resource Centre — commercial launch record
 
-See also root **PACKAGE.md** for full package inventory.
+**Release:** 20261006.0 (06 Oct 2026)
 
-## Version
+## Canonical entry points
+| Surface | Path |
+|---------|------|
+| App | `index.php` → `app/views/dashboard.php` |
+| Login | `app/views/login.php` |
+| Health | `health.php` |
+| Print directory | `print_directory.php` → `tools/print_directory.php` |
+| Signatures | `cards/signature.php` + `cards/sig_img.php` |
+| Theme CSS | `assets/contrast-lock.css` (single controller) |
 
-- **Code:** `260925.01` (`yymmdd.xx`)
-- **Archive:** `RC-260925.01.zip`
-- **Developer:** Arthsathi Limited
+## Design rules (maintainers)
+- Prefer tokens/surfaces in `contrast-lock.css`; avoid new colour `!important` wars in modules.
+- Never display unresolved master codes (`desig_*`, `dept_*`, `loc_*`) as labels.
+- Tenant data stays under `tenants/{id}/data/` and is never committed.
+- Email clients need raster logos; SVG uploads should produce a PNG sidecar where possible.
 
-## Before go-live
+## GitHub
+- Workflows: safety check, optional Composer, Gitleaks, Dependabot.
+- See `.github/` after push; protect `main` with required **RC Safety Check**.
 
-1. **FTP** upload full package; **keep** `tenants/*/data/` intact (never replace with empty tree).
-2. **Permissions** `0775` (or IIS write ACL) on each tenant: `data/`, `sessions/`, `logs/`, `media/`, `runners/`.
-3. **DNS / SSL** for every public host; DocumentRoot = shared `rc` folder.
-4. **map.json** exact host → tenant id for fusionlimited, arthsathi, digisofts, etc.
-5. **Passwords** — change Super Admin / Co. Admin / Visitor after first login.
-6. **Google Maps API key** (if used) only in tenant-secure config — not in public JS repos.
-7. **Delete** `rc_diag.php` and any temporary probes from production.
-
-## Smoke tests
-
-| Check | Action |
-|-------|--------|
-| Login tiers | `blsbls` / `lifeisgood` / `alliswell` |
-| Team + print directory | `?tab=team` |
-| Bank | `?tab=bank` (cards, not “Missing UI”) |
-| Business card meta | View-source `?card=business&slug=…` → `og:title`, `og:image` |
-| WhatsApp scrape | Paste card URL in WhatsApp |
-| Janam import | Select All → Import Selected |
-| robots / sitemap | `/robots.php`, `/sitemap.php` |
-| Super Admin | Access Mode, Tenant Setup, Monitor only |
-| Cross-tenant | Each host shows its own team data |
-
-## SEO
-
-- Dashboard: AppSEO (tab meta, OG, Twitter, JSON-LD).
-- Public cards: SeoShare (`index,follow`).
-- Janam: `noindex,follow`.
-- track_share: full SSR meta.
-
-## Performance
-
-- Alpine deferred; SheetJS / QR on demand.
-- Non-blocking Font Awesome pattern on cards.
-- Prefer self-hosting FA/fonts later for CSP and offline.
-- Run **Lighthouse** on production hosts after deploy.
-
-## Branding
-
-Site Developer: **Arthsathi Limited**
+## Related docs
+- `docs/PRODUCTION_LAUNCH_CHECKLIST.md`
+- `docs/AUTH_ROTATION.md`
+- `docs/TENANT_QUICKSTART.md`

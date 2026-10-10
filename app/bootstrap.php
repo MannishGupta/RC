@@ -78,6 +78,12 @@ unset($_schemaFile);
 // India-first defaults (IST, en_IN)
 if (class_exists('AppLocale')) { AppLocale::boot(); }
 
+// Phase-1 modular layer (App\Rc\*) — strangler-compatible
+$_rcBoot = __DIR__ . '/Rc/bootstrap_rc.php';
+if (is_readable($_rcBoot)) { require_once $_rcBoot; }
+unset($_rcBoot);
+
+
 
 if (!class_exists('TenantPaths') && is_file(__DIR__ . '/TenantPaths.php')) { require_once __DIR__ . '/TenantPaths.php'; }
 class AppUtils {
@@ -90,22 +96,93 @@ class AppUtils {
     }
 
     public static function getBaseUrl() {
-        $protocol = ((string)($_SERVER['HTTPS'] ?? 'off') !== 'off') ? 'https' : 'http';
+        $https = (!empty($_SERVER['HTTPS']) && (string)$_SERVER['HTTPS'] !== 'off')
+            || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https')
+            || ((string)($_SERVER['SERVER_PORT'] ?? '') === '443');
+        $protocol = $https ? 'https' : 'http';
         $safeHost = preg_replace('/[^a-zA-Z0-9.:-]/', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
-        return $protocol . "://" . $safeHost;
+        return $protocol . '://' . $safeHost;
     }
 
     public static function getImagePath($f) {
         if (!$f) return null;
-        $f = basename((string)$f);
-        $p = IMG_PATH . DIRECTORY_SEPARATOR . $f;
-        return file_exists($p) ? "images/" . $f : null;
+        $f = basename(str_replace(array("\\", "\0"), array("/", ""), (string)$f));
+        if ($f === "" || $f === "." || $f === "..") {
+            return null;
+        }
+        $imgRoot = defined("IMG_PATH") ? IMG_PATH : (defined("DATA_PATH") ? DATA_PATH . "/media/images" : "");
+        $dirs = array();
+        if ($imgRoot !== "" && is_dir($imgRoot)) {
+            $dirs[] = $imgRoot;
+        }
+        $legacy = (defined("BASE_PATH") ? BASE_PATH : dirname(__DIR__)) . "/images";
+        if (is_dir($legacy)) {
+            $dirs[] = $legacy;
+        }
+        foreach ($dirs as $dir) {
+            $p = $dir . DIRECTORY_SEPARATOR . $f;
+            if (is_file($p)) {
+                return "images/" . $f;
+            }
+        }
+        $lower = strtolower($f);
+        foreach ($dirs as $dir) {
+            $list = @scandir($dir);
+            if (!is_array($list)) {
+                continue;
+            }
+            foreach ($list as $entry) {
+                if ($entry === "." || $entry === "..") {
+                    continue;
+                }
+                if (strtolower($entry) === $lower && is_file($dir . DIRECTORY_SEPARATOR . $entry)) {
+                    return "images/" . $entry;
+                }
+            }
+        }
+        return null;
     }
+
+    /**
+     * Canonical digital business / profile card URL for a team slug.
+     * Used by QR payloads, OG tags, share links — must land on ?card=business&slug=
+     * (never a bare /{slug} path, which 404s on this app).
+     */
+    public static function getCardUrl($slug, string $card = 'business'): string
+    {
+        $slug = self::sanitizeSlug((string)$slug);
+        $card = preg_replace('/[^a-z]/', '', strtolower($card)) ?: 'business';
+        if ($slug === '') {
+            return rtrim(self::getBaseUrl(), '/') . '/';
+        }
+        return rtrim(self::getBaseUrl(), '/') . '/?card=' . $card . '&slug=' . rawurlencode($slug);
+    }
+
     public static function getFullUrl($path) {
-        if (!$path) return "";
-        if (strpos((string)$path, 'http') === 0) return (string)$path;
-        $base = rtrim(self::getBaseUrl() . dirname((string)($_SERVER['PHP_SELF'] ?? '/')), '/');
-        return $base . '/' . ltrim((string)$path, '/');
+        if (!$path) return '';
+        $path = (string)$path;
+        if (strpos($path, 'http') === 0) {
+            return $path;
+        }
+        // Query-style paths: ?card=business&slug=x
+        if (isset($path[0]) && $path[0] === '?') {
+            return rtrim(self::getBaseUrl(), '/') . '/' . $path;
+        }
+        if (strpos($path, 'card=') !== false) {
+            return rtrim(self::getBaseUrl(), '/') . '/?' . ltrim($path, '?');
+        }
+        // Bare team slug → business card (QR / share target). Do NOT emit /{slug}.
+        $trim = ltrim($path, '/');
+        if ($trim !== '' && strpos($trim, '/') === false && preg_match('/^[a-z0-9][a-z0-9\-_]*$/i', $trim)) {
+            return self::getCardUrl($trim, 'business');
+        }
+        $script = (string)($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/');
+        $scriptDir = dirname($script);
+        if ($scriptDir === '\\' || $scriptDir === '.' || $scriptDir === '') {
+            $scriptDir = '/';
+        }
+        $base = rtrim(self::getBaseUrl() . ($scriptDir === '/' ? '' : $scriptDir), '/');
+        return $base . '/' . ltrim($path, '/');
     }
     public static function getDOB($d) {
         $dob = $d['dob'] ?? $d['birthday'] ?? $d['birth_date'] ?? '';
@@ -488,6 +565,10 @@ class AppAuth {
             ]);
 
             @session_start();
+            // Weekly mandatory sign-out: sessions started before last Sunday 00:00 IST are void
+            if (!empty($_SESSION['user']) && class_exists('AppAuth') && method_exists('AppAuth', 'enforceSundayMidnightIST')) {
+                AppAuth::enforceSundayMidnightIST();
+            }
         }
 
         if (empty($_SESSION['csrf_token'])) {
@@ -527,8 +608,8 @@ class AppAuth {
             "upgrade-insecure-requests",
             "img-src 'self' data: blob: https:",
             "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com",
-            "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sheetjs.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net",
+            "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sheetjs.com https://cdn.jsdelivr.net",
             "frame-src 'self' https://www.google.com https://maps.google.com https://www.google.co.in https://maps.googleapis.com",
             "child-src 'self' https://www.google.com https://maps.google.com blob:",
             "connect-src 'self' https://cdn.sheetjs.com https://api.open-meteo.com https://air-quality-api.open-meteo.com https://cdn.jsdelivr.net",
@@ -560,7 +641,47 @@ class AppAuth {
         return $_SESSION['csrf_token'] ?? '';
     }
 
-    public static function verify_csrf() {
+    
+        /**
+         * Force logout if session began before the most recent Sunday 00:00 Asia/Kolkata.
+         * Sets rc_session_started on first authenticated hit after login.
+         */
+        public static function enforceSundayMidnightIST(): void
+        {
+            try {
+                if (session_status() !== PHP_SESSION_ACTIVE) {
+                    return;
+                }
+                if (empty($_SESSION['user'])) {
+                    return;
+                }
+                $tz = new \DateTimeZone('Asia/Kolkata');
+                $now = new \DateTimeImmutable('now', $tz);
+                $dow = (int) $now->format('w'); // 0 = Sunday
+                $boundary = $now->setTime(0, 0, 0);
+                if ($dow !== 0) {
+                    $boundary = $boundary->modify('-' . $dow . ' days');
+                }
+                $boundaryTs = $boundary->getTimestamp();
+                if (empty($_SESSION['rc_session_started'])) {
+                    $_SESSION['rc_session_started'] = time();
+                    return;
+                }
+                $started = (int) $_SESSION['rc_session_started'];
+                if ($started < $boundaryTs) {
+                    $_SESSION = [];
+                    if (ini_get('session.use_cookies')) {
+                        $p = session_get_cookie_params();
+                        setcookie(session_name(), '', time() - 42000, $p['path'] ?? '/', $p['domain'] ?? '', !empty($p['secure']), !empty($p['httponly']));
+                    }
+                    @session_destroy();
+                }
+            } catch (\Throwable $e) {
+                // never break the request
+            }
+        }
+
+        public static function verify_csrf() {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') return;
 
         // JSON body often carries csrf_token without populating $_POST
@@ -1186,15 +1307,22 @@ class AppMedia {
      * uploads. On an IIS/Plesk host, .aspx is natively server-executable —
      * that gap was a real remote-code-execution path.
      */
-    public static function isDangerousUpload(string $filename, string $mime = ''): bool {
-        if (preg_match('/\.(php\d?|phtml|phar|pht|exe|sh|bat|cmd|cgi|pl|py|rb|js|jsp|jspx|asp|aspx|ascx|asmx|cer|config|htaccess|svg|svgz|html?|xhtml|xml|shtml|htm)(\.|$)/i', $filename)) {
+    public static function isDangerousUpload(string $filename, string $mime = '', bool $allowSvg = false): bool {
+        // SVG allowed only when caller will sanitise (logo/favicon/brand fields).
+        $extDeny = $allowSvg
+            ? '/\.(php\d?|phtml|phar|pht|exe|sh|bat|cmd|cgi|pl|py|rb|js|jsp|jspx|asp|aspx|ascx|asmx|cer|config|htaccess|html?|xhtml|shtml|htm)(\.|$)/i'
+            : '/\.(php\d?|phtml|phar|pht|exe|sh|bat|cmd|cgi|pl|py|rb|js|jsp|jspx|asp|aspx|ascx|asmx|cer|config|htaccess|svg|svgz|html?|xhtml|xml|shtml|htm)(\.|$)/i';
+        if (preg_match($extDeny, $filename)) {
+            return true;
+        }
+        if (!$allowSvg && preg_match('/\.(xml)(\.|$)/i', $filename)) {
             return true;
         }
         if ($mime !== '' && (
             stripos($mime, 'php') !== false
             || stripos($mime, 'executable') !== false
             || stripos($mime, 'x-msdownload') !== false
-            || stripos($mime, 'svg') !== false
+            || (!$allowSvg && stripos($mime, 'svg') !== false)
             || stripos($mime, 'html') !== false
             || stripos($mime, 'javascript') !== false
         )) {
@@ -1203,7 +1331,222 @@ class AppMedia {
         return false;
     }
 
+    /**
+     * Sanitize untrusted SVG: strip script/handlers/external refs.
+     * Returns cleaned SVG string, or '' if not a usable SVG.
+     */
+    /**
+     * Sanitize untrusted SVG: strip script/handlers/external refs.
+     * Returns cleaned SVG string, or '' if not a usable SVG.
+     *
+     *  - <style> blocks are KEPT. CorelDRAW, Inkscape and Illustrator export
+     *    fills as CSS classes (".fil0{fill:#B72928}") and gradients as
+     *    "fill:url(#id0)". An earlier version deleted the whole block whenever
+     *    it contained any url(...), which turned real logos into black
+     *    silhouettes. Same-document references (url(#id)) are safe and kept.
+     *  - The DOCTYPE is removed, but its internal subset is read first so
+     *    simple literal entities (Illustrator's <!ENTITY ns_svg "http://...">)
+     *    are expanded instead of leaving dangling &refs; that make the file
+     *    unparseable. Entities that are external, recursive or contain markup
+     *    are never expanded, and a file that still has an unresolved entity
+     *    afterwards is rejected rather than stored broken.
+     *  - The result must parse as well-formed XML (when DOM is available).
+     */
+    public static function sanitizeSvg(string $raw): string
+    {
+        if ($raw === '' || stripos($raw, '<svg') === false) {
+            return '';
+        }
+        $clean = (string) preg_replace('/^\xEF\xBB\xBF/', '', $raw);
+
+        // 1) DOCTYPE: harvest simple internal entities, then drop it entirely.
+        $doctype = '/<!DOCTYPE\b(?:[^>\[]|\[[^\]]*\])*>/is';
+        $entities = [];
+        if (preg_match($doctype, $clean, $dm)
+            && preg_match_all('/<!ENTITY\s+([A-Za-z_][\w.\-]*)\s+(?:"([^"]*)"|\'([^\']*)\')\s*>/i', $dm[0], $em, PREG_SET_ORDER)) {
+            foreach ($em as $e) {
+                $val = ($e[2] ?? '') !== '' ? $e[2] : ($e[3] ?? '');
+                if (strpbrk($val, '<&') === false) { // literal text only
+                    $entities[$e[1]] = $val;
+                }
+            }
+        }
+        $clean = (string) preg_replace($doctype, '', $clean);
+        $clean = (string) preg_replace('/<!ENTITY[^>]*>/is', '', $clean);
+        // Processing instructions other than the XML declaration (xml-stylesheet etc.)
+        $clean = (string) preg_replace('/<\?(?!xml\s)[^?]*\?>/i', '', $clean);
+        if ($entities !== []) {
+            $clean = (string) preg_replace_callback('/&([A-Za-z_][\w.\-]*);/', static function (array $m) use ($entities): string {
+                return array_key_exists($m[1], $entities)
+                    ? htmlspecialchars($entities[$m[1]], ENT_QUOTES | ENT_XML1, 'UTF-8')
+                    : $m[0];
+            }, $clean);
+        }
+        // Anything other than the five predefined entities is now unresolved.
+        if (preg_match('/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)[A-Za-z_][\w.\-]*;/', $clean)) {
+            return '';
+        }
+
+        // 2) Dangerous elements. Repeat until stable so a nested construct such as
+        //    <scr<script></script>ipt> cannot reassemble into a live tag.
+        do {
+            $before = $clean;
+            $clean = (string) preg_replace('#<(script|foreignObject|iframe|object|embed)\b[^>]*>.*?</\1\s*>#is', '', $clean);
+            $clean = (string) preg_replace('#<(script|foreignObject|iframe|object|embed)\b[^>]*/?>#is', '', $clean);
+        } while ($clean !== $before);
+
+        // 3) Off-document <use>, event handlers, script URLs, off-document hrefs.
+        $clean = (string) preg_replace('#<use\b[^>]*(?:xlink:)?href\s*=\s*["\']\s*(?:https?:)?//[^"\']*["\'][^>]*/?>#is', '', $clean);
+        $clean = (string) preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean);
+        // javascript:/vbscript: anywhere (href, xlink:href and SMIL values/from/to/by)
+        $clean = (string) preg_replace('/\b(?:javascript|vbscript)\s*:/i', 'blocked:', $clean);
+        $clean = (string) preg_replace('/\s(?:xlink:)?href\s*=\s*(["\'])\s*(?:data:text\/|https?:|\/\/)[^"\']*\1/i', ' data-removed="1"', $clean);
+
+        // 4) <style>: keep it, but remove @import and any off-document url().
+        $clean = (string) preg_replace_callback('#(<style\b[^>]*>)(.*?)(</style\s*>)#is', static function (array $m): string {
+            $css = preg_replace('/@import\s+(?:url\([^)]*\)|"[^"]*"|\'[^\']*\')(?:[^;{}\r\n]*;)?/i', '', $m[2]);
+            return $m[1] . ($css ?? $m[2]) . $m[3];
+        }, $clean);
+        // url() to anything but the same document, wherever it appears
+        // (style blocks, style="" attributes and fill/filter/mask attributes).
+        $clean = (string) preg_replace('/url\s*\(\s*[\'"]?\s*(?:https?:|\/\/|data:text)/i', 'url(about:blank#', $clean);
+
+        if (stripos($clean, '<svg') === false) {
+            return '';
+        }
+        // 5) Prefer well-formed XML, but many design-tool SVGs fail strict loadXML
+        // (namespaces, leftover entities). If scripts/handlers are already stripped
+        // and an <svg> root exists, accept the cleaned markup.
+        if (class_exists('DOMDocument')) {
+            $prev = libxml_use_internal_errors(true);
+            $doc = new DOMDocument();
+            $ok = @$doc->loadXML($clean, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+            libxml_clear_errors();
+            libxml_use_internal_errors($prev);
+            if ($ok && $doc->documentElement && strtolower((string)$doc->documentElement->localName) === 'svg') {
+                $out = $doc->saveXML($doc->documentElement);
+                return is_string($out) && $out !== '' ? $out : $clean;
+            }
+            // Fallback: still require a real <svg …> open tag, no residual script
+            if (stripos($clean, '<script') !== false) {
+                return '';
+            }
+        }
+        return $clean;
+    }
+
+    /**
+     * Per-field image upload guidance (hints + client accept list).
+     * Keep in sync with index.php optimise edge/quality/max_bytes.
+     */
+    public static function imageSpec(string $field): array
+    {
+        $field = strtolower(trim($field));
+        $hasSanitiser = method_exists(__CLASS__, 'sanitizeSvg');
+        $specs = [
+            // Standard product names (field keys unchanged: logo | favicon | cover | …)
+            'logo' => [
+                'label' => 'Primary logo',
+                'recommended' => '512×512 (or wider wordmark)',
+                'formats' => $hasSanitiser ? ['PNG', 'SVG', 'WebP'] : ['PNG', 'WebP'],
+                'maxKB' => 450,
+                'aspect' => 'flexible',
+                'allowSvg' => $hasSanitiser,
+                'used_for' => 'App chrome — sidebar, login, digital cards, print directory, headers',
+            ],
+            'favicon' => [
+                'label' => 'Site icon',
+                'recommended' => '512×512 square (or multi-size .ico)',
+                'formats' => $hasSanitiser ? ['SVG', 'PNG', 'JPG', 'WebP', 'ICO'] : ['PNG', 'JPG', 'WebP', 'ICO'],
+                'maxKB' => 450,
+                'aspect' => '1:1',
+                'allowSvg' => $hasSanitiser,
+                'allowIco' => true,
+                'used_for' => 'Browser tab and bookmarks (favicon); native .ico supported',
+            ],
+            'cover' => [
+                'label' => 'Social preview image',
+                'recommended' => '1200×630 (1.91:1)',
+                'formats' => ['PNG', 'JPG', 'WebP'],
+                'maxKB' => 600,
+                'aspect' => '1.91:1',
+                'allowSvg' => false,
+                'used_for' => 'Link previews on WhatsApp, LinkedIn and other apps (Open Graph); Organisation banner',
+            ],
+            'og' => [
+                'label' => 'Social preview image',
+                'recommended' => '1200×630 (1.91:1)',
+                'formats' => ['PNG', 'JPG', 'WebP'],
+                'maxKB' => 600,
+                'aspect' => '1.91:1',
+                'allowSvg' => false,
+                'used_for' => 'Link previews on WhatsApp, LinkedIn and other apps (Open Graph)',
+            ],
+            'photo' => [
+                'label' => 'Member photo',
+                'recommended' => '400×400 square',
+                'formats' => ['PNG', 'JPG', 'WebP'],
+                'maxKB' => 450,
+                'aspect' => '1:1',
+                'allowSvg' => false,
+                'used_for' => 'Team directory cards, print cards and public profile',
+            ],
+            'location_photo' => [
+                'label' => 'Location photo',
+                'recommended' => '800×600',
+                'formats' => $hasSanitiser ? ['PNG', 'JPG', 'WebP', 'SVG'] : ['PNG', 'JPG', 'WebP'],
+                'maxKB' => 450,
+                'aspect' => 'flexible',
+                'allowSvg' => $hasSanitiser,
+                'used_for' => 'Shared Locations directory and location detail',
+            ],
+            'brandlogo' => [
+                'label' => 'Master brand mark',
+                'recommended' => 'square SVG (or 512×512 PNG)',
+                'formats' => $hasSanitiser ? ['SVG', 'PNG', 'WebP'] : ['PNG', 'WebP'],
+                'maxKB' => 450,
+                'aspect' => '1:1',
+                'allowSvg' => $hasSanitiser,
+                'used_for' => 'Bank / vehicle OEM marks in registries (super-admin pack)',
+            ],
+        ];
+        $s = $specs[$field] ?? $specs['photo'];
+        $accept = [];
+        foreach ($s['formats'] as $fmt) {
+            $fmt = strtoupper((string) $fmt);
+            if ($fmt === 'PNG') {
+                $accept[] = 'image/png';
+                $accept[] = '.png';
+            } elseif ($fmt === 'JPG' || $fmt === 'JPEG') {
+                $accept[] = 'image/jpeg';
+                $accept[] = '.jpg';
+                $accept[] = '.jpeg';
+            } elseif ($fmt === 'WEBP') {
+                $accept[] = 'image/webp';
+                $accept[] = '.webp';
+            } elseif ($fmt === 'SVG') {
+                $accept[] = 'image/svg+xml';
+                $accept[] = '.svg';
+            } elseif ($fmt === 'ICO') {
+                $accept[] = 'image/x-icon';
+                $accept[] = 'image/vnd.microsoft.icon';
+                $accept[] = 'image/ico';
+                $accept[] = '.ico';
+            }
+        }
+        $s['accept'] = implode(',', array_unique($accept));
+        $fmtList = implode(', ', $s['formats']);
+        $hint = 'Recommended ' . $s['recommended'] . ' · ' . $fmtList . ' · ≤' . (int) $s['maxKB'] . ' KB';
+        if (!empty($s['allowSvg']) && in_array($field, ['logo', 'favicon', 'brandlogo'], true)) {
+            $hint .= ' · transparent background preferred';
+        }
+        // used_for is shown as its own line in image_upload.php
+        $s['hint'] = $hint;
+        return $s;
+    }
+
     public static function import($file, $slug, $usageType = 'general') {
+
         if (!is_writable(IMG_PATH)) return "ERROR_PERM";
         if ($file['error'] !== UPLOAD_ERR_OK) return "ERROR_UPLOAD_" . $file['error'];
         if ($file['size'] > 5 * 1024 * 1024) return "ERROR_FILE_TOO_LARGE";
@@ -1480,14 +1823,36 @@ class AppMedia {
         // never the face.
         $logoFile = !empty($company['logo']) ? IMG_PATH . DIRECTORY_SEPARATOR . basename((string)$company['logo']) : null;
         if ($logoFile && is_file($logoFile)) {
-            $li = @getimagesize($logoFile); $lSrc = null;
-            if ($li) {
-                $lSrc = match ($li['mime']) {
-                    'image/jpeg' => @imagecreatefromjpeg($logoFile),
-                    'image/png'  => @imagecreatefrompng($logoFile),
-                    'image/webp' => @imagecreatefromwebp($logoFile),
-                    default      => null,
-                };
+            $lSrc = null;
+            $logoExt = strtolower(pathinfo($logoFile, PATHINFO_EXTENSION));
+            // Never use SVG as og:image — rasterise via Imagick if available, else skip (brand card remains)
+            if (in_array($logoExt, ['svg', 'svgz'], true)) {
+                if (class_exists('Imagick')) {
+                    try {
+                        $im = new \Imagick();
+                        $im->setBackgroundColor(new \ImagickPixel('transparent'));
+                        $im->readImage($logoFile);
+                        $im->setImageFormat('png');
+                        $blob = $im->getImageBlob();
+                        $im->clear();
+                        $im->destroy();
+                        if (is_string($blob) && $blob !== '') {
+                            $lSrc = @imagecreatefromstring($blob) ?: null;
+                        }
+                    } catch (\Throwable $e) {
+                        $lSrc = null;
+                    }
+                }
+            } else {
+                $li = @getimagesize($logoFile);
+                if ($li) {
+                    $lSrc = match ($li['mime']) {
+                        'image/jpeg' => @imagecreatefromjpeg($logoFile),
+                        'image/png'  => @imagecreatefrompng($logoFile),
+                        'image/webp' => @imagecreatefromwebp($logoFile),
+                        default      => null,
+                    };
+                }
             }
             if ($lSrc) {
                 $lh = 34; $lw = (int)(imagesx($lSrc) * ($lh / max(1, imagesy($lSrc))));
@@ -1770,7 +2135,7 @@ class CardContext {
         $comp['favicon_url'] = AppUtils::getImagePath($comp['favicon'] ?? '');
         $comp['cover_url']   = AppUtils::getImagePath('cover.jpg');
 
-        return ['meta' => ['slug' => $s, 'url' => AppUtils::getFullUrl($s)], 'person' => $person, 'company' => $comp];
+        return ['meta' => ['slug' => $s, 'url' => AppUtils::getCardUrl($s, 'business')], 'person' => $person, 'company' => $comp];
     }
 }
 
@@ -1787,9 +2152,21 @@ if (!class_exists('AppLookup')) {
             $map = [];
             if (is_array($array)) {
                 foreach ($array as $item) {
-                    $key = $item[$keyField] ?? $item['slug'] ?? $item['code'] ?? null;
-                    if ($key) {
-                        $map[(string)$key] = $item[$valField] ?? $item['title'] ?? $item['name'] ?? '-';
+                    if (!is_array($item)) {
+                        continue;
+                    }
+                    $val = $item[$valField] ?? $item['title'] ?? $item['name'] ?? '-';
+                    $val = is_string($val) ? $val : (string)$val;
+                    // Index by preferred key AND id/slug/code so print and UI share one map
+                    $keys = [];
+                    foreach ([$keyField, 'id', 'slug', 'code'] as $kf) {
+                        $k = $item[$kf] ?? null;
+                        if ($k !== null && $k !== '') {
+                            $keys[(string)$k] = true;
+                        }
+                    }
+                    foreach (array_keys($keys) as $key) {
+                        $map[(string)$key] = $val;
                     }
                 }
             }
@@ -1800,6 +2177,22 @@ if (!class_exists('AppLookup')) {
 
 if (!class_exists('AppSEO')) {
     class AppSEO {
+        /** Plain-text meta description fallback for any public surface. */
+        public static function defaultDescription(?string $extra = null): string
+        {
+            $comp = class_exists('AppDB') ? AppDB::read('company') : [];
+            $name = trim((string)($comp['name'] ?? 'Resource Centre'));
+            if ($name === '') {
+                $name = 'Resource Centre';
+            }
+            $base = "Official corporate directory and portal for {$name}.";
+            $extra = trim((string) $extra);
+            if ($extra !== '') {
+                return mb_substr($extra . ' ' . $base, 0, 160);
+            }
+            return mb_substr($base, 0, 160);
+        }
+
         public static function generateTags($ctx = null, $isDashboard = false) {
             $comp = class_exists('AppDB') ? AppDB::read('company') : [];
             $compName = htmlspecialchars((string)($comp['name'] ?? 'Corporate Directory'), ENT_QUOTES);
@@ -2001,6 +2394,12 @@ if (!class_exists('AppSEO')) {
             }
             $img = htmlspecialchars((string)$img, ENT_QUOTES);
 
+            $descPlain = trim(html_entity_decode(strip_tags((string)$desc), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if ($descPlain === '') {
+                $descPlain = self::defaultDescription();
+            }
+            $desc = htmlspecialchars($descPlain, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
             $html  = "\n\n";
             $html .= "<title>{$title}</title>\n";
             $html .= "<link rel='canonical' href='{$url}'>\n";
@@ -2168,4 +2567,8 @@ if (!class_exists('AppSEO')) {
 
         }
     }
+}
+
+if (is_file(__DIR__ . '/logo_sig_png.php')) {
+    require_once __DIR__ . '/logo_sig_png.php';
 }

@@ -1,430 +1,1375 @@
-/**
- * RC CONTRAST LOCK — load LAST after app.css + a11y.css
- * Version: 20260928.07
- * Purpose: permanent high-contrast text vs backgrounds (light + dark).
- * Do not dilute these rules in feature CSS; extend this file only.
+/*
+ * ═══════════════════════════════════════════════════════════════════════════
+ * Resource Centre — GLOBAL THEME CONTROLLER (contrast-lock.css)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ROLE
+ *   Single source of truth for colour, type, and contrast across the app.
+ *   Loaded LAST on dashboard, login, and report shells so it wins over
+ *   Tailwind (app.css) and feature CSS without fighting module-by-module.
+ *
+ * STANDARD (design-token pattern, common in Fluent / Material / open design systems)
+ *   1. Tokens only change under html[data-theme="light|dark|reserve"].
+ *   2. Components consume tokens (var(--rc-*)), not raw hex — except semantic
+ *      status colours (success/danger tints) and forced inverse text (#fff on
+ *      accent / inverse surfaces).
+ *   3. Surface roles (opt-in classes) define readable pairings:
+ *        .rc-surface-default  → card + ink
+ *        .rc-surface-muted    → paper + ink
+ *        .rc-surface-inverse  → dark hero + light text  (alias: .rc-hero-dark)
+ *        .rc-surface-accent   → accent + white text
+ *   4. Scoped exceptions — never unscoped force-white / force-black:
+ *        Dashboard dark-utility guard: body:not(.nr-sacred):not(.jp-vedic)
+ *        Report controls:              body.nr-sacred / body.jp-vedic
+ *   5. Themes: set document.documentElement dataset.theme only (light|dark|reserve).
+ *
+ * DO NOT
+ *   - Add colour !important in tab_*.php inline styles or numerology.css for
+ *     “readability” — extend this file instead.
+ *   - Force white text globally; use .rc-surface-inverse / .rc-hero-dark.
+ *
+ * Version: Design System 2026.1 · Fluent 2 / WinUI 3 · 20261009.9
+ * ═══════════════════════════════════════════════════════════════════════════
  */
 
-/* ── Tokens (locked) ─────────────────────────────────────────── */
 :root,
-html[data-theme="light"],
-html:not([data-theme="dark"]):not(.dark) {
-  --rc-ink: #0f172a;
-  --rc-ink-soft: #1e293b;
-  --rc-ink-muted: #334155;
-  --rc-ink-faint: #475569;
-  --rc-paper: #f8fafc;
-  --rc-card: #ffffff;
-  --rc-border: #e2e8f0;
+html[data-theme="light"] {
+  --rc-ink: #201F1E;
+  --rc-ink-soft: #323130;
+  --rc-ink-muted: #605E5C;
+  --rc-ink-faint: #8A8886;
+  --rc-paper: #FAF9F8;
+  --rc-card: #FFFFFF;
+  --rc-border: #E1DFDD;
+  --rc-side-bg: #F3F2F1;
+  --rc-side-ink: #201F1E;
+  --rc-side-muted: #605E5C;
+  --rc-side-active-bg: #EFF6FC;
+  --rc-side-active-ink: #005A9E;
+  --rc-accent: #0078D4;
+  --rc-header-bg: #FFFFFF;
   color-scheme: light;
 }
 
 html[data-theme="dark"],
-html.dark {
-  --rc-ink: #f8fafc;
-  --rc-ink-soft: #e2e8f0;
-  --rc-ink-muted: #cbd5e1;
-  --rc-ink-faint: #94a3b8;
-  --rc-paper: #0b1220;
-  --rc-card: #111827;
-  --rc-border: #334155;
+html.dark:not([data-theme="reserve"]) {
+  --rc-ink: #F3F2F1;
+  --rc-ink-soft: #E1DFDD;
+  --rc-ink-muted: #C8C6C4;
+  --rc-ink-faint: #979593;
+  --rc-paper: #1B1A19;
+  --rc-card: #242322;
+  --rc-border: #3B3A39;
+  --rc-side-bg: #141312;
+  --rc-side-ink: #F3F2F1;
+  --rc-side-muted: #979593;
+  --rc-side-active-bg: #10344F;
+  --rc-side-active-ink: #CDE5FB;
+  --rc-accent: #4CA3EE;
+  --rc-header-bg: #201F1E;
   color-scheme: dark;
 }
 
-/* ── Base canvas ─────────────────────────────────────────────── */
-html[data-theme="light"] body,
-html:not([data-theme="dark"]):not(.dark) body {
+html[data-theme="reserve"] {
+  /* Warm executive Fluent — cream paper + blue accent */
+  --rc-ink: #1F1B16;
+  --rc-ink-soft: #3A322A;
+  --rc-ink-muted: #5C5248;
+  --rc-ink-faint: #8A7D6E;
+  --rc-paper: #F5F1EA;
+  --rc-card: #FFFFFF;
+  --rc-border: #E3DACE;
+  --rc-side-bg: #EFE7D9;
+  --rc-side-ink: #1F1B16;
+  --rc-side-muted: #6B5E4E;
+  --rc-side-active-bg: #6B4F2E;
+  --rc-side-active-ink: #FFF7ED;
+  --rc-accent: #0F6CBD;
+  --rc-header-bg: #FFFDF9;
+  color-scheme: light;
+}
+
+
+/* ─── Semantic aliases (stable API for new UI; map to Fluent tokens) ─── */
+:root,
+html[data-theme] {
+  --rc-color-text: var(--rc-ink);
+  --rc-color-text-secondary: var(--rc-ink-soft);
+  --rc-color-text-muted: var(--rc-ink-muted);
+  --rc-color-text-faint: var(--rc-ink-faint);
+  --rc-color-bg: var(--rc-paper);
+  --rc-color-surface: var(--rc-card);
+  --rc-color-border: var(--rc-border);
+  --rc-color-accent: var(--rc-accent);
+  --rc-color-on-accent: #ffffff;
+  --rc-color-on-inverse: #ffffff;
+  --rc-color-inverse-bg: #0f172a;
+  --rc-focus-ring: color-mix(in srgb, var(--rc-accent) 35%, transparent);
+}
+
+/* ─── WinUI 3 / Fluent 2 control tokens ─── */
+:root,
+html[data-theme] {
+  --winui-radius-sm: 4px;
+  --winui-radius-md: 8px;
+  --winui-radius-lg: 12px;
+  --winui-radius-xl: 16px;
+  --winui-control-h: 32px;
+  --winui-control-h-lg: 36px;
+  --winui-stroke: var(--rc-border);
+  --winui-elevation-1: 0 1px 2px rgba(0,0,0,.06), 0 0 1px rgba(0,0,0,.04);
+  --winui-elevation-2: 0 2px 8px rgba(0,0,0,.08), 0 0 1px rgba(0,0,0,.05);
+  --winui-elevation-3: 0 8px 24px rgba(0,0,0,.12), 0 0 1px rgba(0,0,0,.06);
+  --winui-accent-hover: color-mix(in srgb, var(--rc-accent) 88%, #000);
+  --winui-accent-pressed: color-mix(in srgb, var(--rc-accent) 76%, #000);
+  --winui-subtle-fill: color-mix(in srgb, var(--rc-ink) 4%, var(--rc-card));
+  --winui-subtle-fill-hover: color-mix(in srgb, var(--rc-ink) 7%, var(--rc-card));
+  --winui-subtle-fill-pressed: color-mix(in srgb, var(--rc-ink) 10%, var(--rc-card));
+  --winui-mica: color-mix(in srgb, var(--rc-paper) 92%, var(--rc-card));
+}
+html[data-theme="dark"],
+html.dark:not([data-theme="reserve"]) {
+  --winui-elevation-1: 0 1px 2px rgba(0,0,0,.35), 0 0 1px rgba(0,0,0,.25);
+  --winui-elevation-2: 0 2px 10px rgba(0,0,0,.45), 0 0 1px rgba(0,0,0,.3);
+  --winui-elevation-3: 0 12px 28px rgba(0,0,0,.55), 0 0 1px rgba(0,0,0,.35);
+  --winui-subtle-fill: color-mix(in srgb, #fff 6%, var(--rc-card));
+  --winui-subtle-fill-hover: color-mix(in srgb, #fff 9%, var(--rc-card));
+  --winui-subtle-fill-pressed: color-mix(in srgb, #fff 12%, var(--rc-card));
+}
+
+
+
+/* ─── Design System 2026 — extended semantic tokens ─── */
+:root,
+html[data-theme] {
+  --rc-space-1: 4px;
+  --rc-space-2: 8px;
+  --rc-space-3: 12px;
+  --rc-space-4: 16px;
+  --rc-space-5: 20px;
+  --rc-space-6: 24px;
+  --rc-space-8: 32px;
+  --rc-space-10: 40px;
+  --rc-text-xs: 11px;
+  --rc-text-sm: 12px;
+  --rc-text-md: 13px;
+  --rc-text-lg: 15px;
+  --rc-text-xl: 18px;
+  --rc-text-2xl: 22px;
+  --rc-text-3xl: 28px;
+  --rc-leading: 1.45;
+  --rc-success: #0F7B0F;
+  --rc-success-bg: color-mix(in srgb, #0F7B0F 12%, var(--rc-card));
+  --rc-warning: #9D5D00;
+  --rc-warning-bg: color-mix(in srgb, #F7630C 12%, var(--rc-card));
+  --rc-danger: #C42B1C;
+  --rc-danger-bg: color-mix(in srgb, #C42B1C 12%, var(--rc-card));
+  --rc-info: var(--rc-accent);
+  --rc-info-bg: color-mix(in srgb, var(--rc-accent) 12%, var(--rc-card));
+}
+html[data-theme="dark"],
+html.dark:not([data-theme="reserve"]) {
+  --rc-success: #6CCB5F;
+  --rc-warning: #FCE100;
+  --rc-danger: #FF99A4;
+}
+
+/* ─── Surface roles (prefer these over ad-hoc bg + text utilities) ─── */
+.rc-surface-default {
+  background: var(--rc-color-surface) !important;
+  color: var(--rc-color-text) !important;
+  border-color: var(--rc-color-border) !important;
+}
+.rc-surface-muted {
+  background: var(--rc-color-bg) !important;
+  color: var(--rc-color-text) !important;
+  border-color: var(--rc-color-border) !important;
+}
+.rc-surface-accent {
+  background: var(--rc-color-accent) !important;
+  color: var(--rc-color-on-accent) !important;
+  border-color: var(--rc-color-accent) !important;
+}
+.rc-surface-accent :is(h1,h2,h3,h4,p,span,a,label,li,td,th,div,button,i) {
+  color: var(--rc-color-on-accent) !important;
+}
+/* Inverse = dark panel + light text (Tenant Overview, metric heroes, etc.) */
+.rc-surface-inverse,
+.rc-hero-dark {
+  background: linear-gradient(135deg, #0f172a, #1e293b 55%, #1e1b4b) !important;
+  color: var(--rc-color-on-inverse) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+.rc-surface-inverse :is(h1,h2,h3,h4,p,span,div,td,th,a,label,li,.text-white),
+.rc-hero-dark :is(h1,h2,h3,h4,p,span,div,td,th,a,label,li,.text-white) {
+  color: var(--rc-color-on-inverse) !important;
+}
+.rc-surface-inverse :is(.text-slate-300,.text-slate-400,.rc-meta),
+.rc-hero-dark :is(.text-slate-300,.text-slate-400,.rc-meta) {
+  color: #cbd5e1 !important;
+}
+
+/* Form controls inherit theme text (avoid browser/UA washed defaults) */
+input:not([type="checkbox"]):not([type="radio"]),
+select, textarea {
+  color: var(--rc-color-text);
+  background-color: var(--rc-color-surface);
+  border-color: var(--rc-color-border);
+}
+
+/* Fluent type stack (keep Devanagari for Hindi numerology) */
+:root {
+  --rc-font: "Segoe UI Variable Text", "Segoe UI", "Aptos", "Inter",
+             "Noto Sans Devanagari", system-ui, -apple-system, Roboto, sans-serif;
+}
+html, body, button, input, select, textarea, .rc-main, main {
+  font-family: var(--rc-font) !important;
+}
+
+/* ═══ Base ═══ */
+html, body {
   color: var(--rc-ink) !important;
   background-color: var(--rc-paper) !important;
-  background-image: none !important;
 }
 
-html[data-theme="dark"] body,
-html.dark body {
+/* ═══ Main content area ═══ */
+main, .rc-main, #content-area, #rc-main-content, .main-scroll, .scroll-area {
   color: var(--rc-ink) !important;
   background-color: var(--rc-paper) !important;
 }
 
-/* Main content surfaces */
-html[data-theme="light"] main,
-html[data-theme="light"] .main-scroll,
-html[data-theme="light"] #content-area,
-html[data-theme="light"] .rc-main,
-html[data-theme="light"] #rc-main-content {
-  color: var(--rc-ink) !important;
-  background-color: transparent;
+/* Headings & body copy in main */
+main h1, main h2, main h3, main h4, main h5, main h6,
+main p, main span, main label, main li, main td, main th,
+.rc-main h1, .rc-main h2, .rc-main h3, .rc-main p, .rc-main span {
+  color: inherit;
 }
 
-html[data-theme="dark"] main,
-html[data-theme="dark"] .main-scroll,
-html[data-theme="dark"] #content-area,
-html[data-theme="dark"] .rc-main {
-  color: var(--rc-ink) !important;
+/* Kill washed-out / low-opacity titles */
+main .text-slate-300, main .text-slate-400, main .text-gray-300, main .text-gray-400,
+main .opacity-40, main .opacity-50, main .opacity-60,
+.rc-main .text-slate-300, .rc-main .text-slate-400 {
+  color: var(--rc-ink-muted) !important;
+  opacity: 1 !important;
 }
 
-/* Cards / panels on light */
-html[data-theme="light"] .bg-white,
-html[data-theme="light"] .bg-slate-50,
-html[data-theme="light"] .bg-slate-100,
-html[data-theme="light"] .bg-gray-50,
-html[data-theme="light"] .bg-gray-100,
-html[data-theme="light"] [class*="rounded"][class*="bg-white"],
-html[data-theme="light"] .rc-card,
-html[data-theme="light"] article.bg-white {
-  color: var(--rc-ink) !important;
-  background-color: var(--rc-card) !important;
-}
-
-/* Kill translucent glass that washes out type on light */
-html[data-theme="light"] .bg-white\/50,
-html[data-theme="light"] .bg-white\/60,
-html[data-theme="light"] .bg-white\/70,
-html[data-theme="light"] .bg-white\/80,
-html[data-theme="light"] .bg-slate-50\/50,
-html[data-theme="light"] .bg-slate-50\/80,
-html[data-theme="light"] [class*="backdrop-blur"] {
-  background-color: #ffffff !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+html[data-theme="light"] main .text-white:not([class*="bg-"]),
+html[data-theme="reserve"] main .text-white:not([class*="bg-"]) {
   color: var(--rc-ink) !important;
 }
 
-/* Light: never pure white / near-white text on paper */
-html[data-theme="light"] main .text-white:not([class*="bg-slate-9"]):not([class*="bg-gray-9"]):not([class*="bg-blue-"]):not([class*="bg-indigo-"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-amber-"]):not([class*="bg-black"]):not([class*="from-"]):not(.sidebar *):not(#rc-role-switch *):not([class*="bg-gradient"]),
-html[data-theme="light"] main .text-slate-50,
-html[data-theme="light"] main .text-slate-100,
-html[data-theme="light"] main .text-slate-200,
-html[data-theme="light"] #content-area .text-white:not([class*="bg-"]) {
-  color: var(--rc-ink) !important;
+/* ═══ Cards ═══ */
+.rc-vcard, .rc-card, article.rc-vcard,
+.bg-white, .bg-slate-50, .bg-slate-100,
+[class*="rounded-xl"], [class*="rounded-2xl"] {
+  /* only force card surface when it's a card-like surface — handled below */
 }
 
-html[data-theme="light"] main .text-slate-300,
-html[data-theme="light"] main .text-slate-400 {
+.rc-vcard,
+html[data-theme] .rc-vcard {
+  background: var(--rc-card) !important;
+  color: var(--rc-ink) !important;
+  border-color: var(--rc-border) !important;
+}
+
+.rc-vcard-name,
+.rc-vcard h3,
+.rc-vcard .rc-vcard-name {
+  color: var(--rc-ink) !important;
+  font-weight: 800 !important;
+}
+
+.rc-vcard-role,
+.rc-vcard-role button {
+  color: var(--rc-accent) !important;
+  font-weight: 700 !important;
+}
+
+.rc-vcard-line,
+.rc-vcard-line span,
+.rc-vcard-line a {
+  color: var(--rc-ink-soft) !important;
+}
+
+.rc-vcard-line i {
   color: var(--rc-ink-faint) !important;
 }
 
-html[data-theme="light"] .text-slate-500,
-html[data-theme="light"] .text-slate-600 {
+.rc-vcard-pill,
+.rc-vcard-foot .rc-vcard-pill,
+.rc-vcard-foot span {
+  background: var(--rc-paper) !important;
   color: var(--rc-ink-muted) !important;
+  border: 1px solid var(--rc-border) !important;
 }
 
-html[data-theme="light"] .text-slate-700,
-html[data-theme="light"] .text-slate-800,
-html[data-theme="light"] .text-slate-900,
-html[data-theme="light"] .text-gray-900,
-html[data-theme="light"] .text-black {
+html[data-theme="dark"] .rc-vcard-pill {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+html[data-theme="dark"] .rc-vcard {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme="dark"] .rc-vcard-name { color: #f8fafc !important; }
+html[data-theme="dark"] .rc-vcard-role,
+html[data-theme="dark"] .rc-vcard-role button { color: #6BB4F2 !important; }
+html[data-theme="dark"] .rc-vcard-line,
+html[data-theme="dark"] .rc-vcard-line span,
+html[data-theme="dark"] .rc-vcard-line a { color: #e2e8f0 !important; }
+
+html[data-theme="reserve"] .rc-vcard {
+  background: #ffffff !important;
+  border-color: #d6d3d1 !important;
+}
+html[data-theme="reserve"] .rc-vcard-name { color: #1c1917 !important; }
+html[data-theme="reserve"] .rc-vcard-role,
+html[data-theme="reserve"] .rc-vcard-role button { color: #9a3412 !important; }
+html[data-theme="reserve"] .rc-vcard-line,
+html[data-theme="reserve"] .rc-vcard-line span,
+html[data-theme="reserve"] .rc-vcard-line a { color: #292524 !important; }
+
+/* ═══ Page header / toolbar ═══ */
+.rc-page-title, header h1, .rc-main > header h1,
+[class*="page-title"], .toolbar-title {
   color: var(--rc-ink) !important;
-}
-
-/* Forms on light */
-html[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
-html[data-theme="light"] select,
-html[data-theme="light"] textarea {
-  color: #0f172a !important;
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-}
-html[data-theme="light"] input::placeholder,
-html[data-theme="light"] textarea::placeholder {
-  color: #64748b !important;
   opacity: 1 !important;
 }
 
-/* Dark mode: bright ink on dark paper */
-html[data-theme="dark"] .text-slate-900,
-html[data-theme="dark"] .text-slate-800,
-html[data-theme="dark"] .text-slate-700,
-html[data-theme="dark"] .text-gray-900,
-html[data-theme="dark"] .text-black {
-  color: #f1f5f9 !important;
+html[data-theme="light"] .rc-page-title,
+html[data-theme="light"] header .text-slate-900,
+html[data-theme="reserve"] .rc-page-title,
+html[data-theme="reserve"] header h1 {
+  color: #0f172a !important;
 }
 
-html[data-theme="dark"] .text-slate-600,
-html[data-theme="dark"] .text-slate-500,
-html[data-theme="dark"] .text-slate-400 {
-  color: #cbd5e1 !important;
-}
-
-html[data-theme="dark"] .text-slate-300,
-html[data-theme="dark"] .text-slate-200,
-html[data-theme="dark"] .text-slate-100,
-html[data-theme="dark"] .text-white {
+html[data-theme="dark"] .rc-page-title,
+html[data-theme="dark"] header h1 {
   color: #f8fafc !important;
 }
 
-html[data-theme="dark"] .bg-white,
-html[data-theme="dark"] .bg-slate-50,
-html[data-theme="dark"] .bg-slate-100 {
-  background-color: #1e293b !important;
+.rc-count-badge,
+span.rc-count-badge,
+[class*="count-badge"] {
+  background: #0f172a !important;
   color: #f8fafc !important;
-}
-
-html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
-html[data-theme="dark"] select,
-html[data-theme="dark"] textarea {
-  color: #f8fafc !important;
-  background-color: #0f172a !important;
-  border-color: #475569 !important;
-}
-
-/* Sidebar always dark high-contrast (independent of page theme) */
-aside.sidebar,
-#rc-sidebar,
-.sidebar {
-  background: #0b0f19 !important;
-  color: #f8fafc !important;
-}
-aside.sidebar a,
-aside.sidebar .sidebar-link,
-#rc-sidebar a,
-#rc-sidebar .sidebar-link,
-.sidebar a {
-  color: #e2e8f0 !important;
-}
-aside.sidebar a:hover,
-aside.sidebar .sidebar-link:hover,
-aside.sidebar a.active,
-aside.sidebar .sidebar-link.active,
-#rc-sidebar a:hover {
-  color: #ffffff !important;
-}
-aside.sidebar .section-label,
-#rc-sidebar .section-label {
-  color: #cbd5e1 !important;
+  border: 1px solid #334155 !important;
   opacity: 1 !important;
 }
-
-/* Role rail */
-#rc-role-switch {
-  background: #0f172a !important;
-  color: #e2e8f0 !important;
-}
-#rc-role-switch .rc-role-btn {
-  color: #e2e8f0 !important;
-}
-
-/* Headers / sticky bars on light */
-html[data-theme="light"] header,
-html[data-theme="light"] .sticky.bg-white,
-html[data-theme="light"] .sticky.bg-slate-50 {
-  color: #0f172a !important;
-  background-color: #ffffff !important;
-}
-
-/* Tables */
-html[data-theme="light"] table,
-html[data-theme="light"] th,
-html[data-theme="light"] td {
-  color: #0f172a !important;
-}
-html[data-theme="dark"] table,
-html[data-theme="dark"] th,
-html[data-theme="dark"] td {
-  color: #e2e8f0 !important;
-}
-
-/* Changelog / modals */
-html[data-theme="light"] [role="dialog"],
-html[data-theme="light"] .rc-ed-panel,
-html[data-theme="light"] #enterprise-editor-root .rc-ed-panel {
-  color: #0f172a !important;
-  background: #ffffff !important;
-}
-html[data-theme="dark"] [role="dialog"],
-html[data-theme="dark"] .rc-ed-panel {
-  color: #f8fafc !important;
-  background: #0f172a !important;
-}
-
-/* Numerology report — force legible paper when not print-dedicated */
-html[data-theme="light"] #report-container,
-html[data-theme="light"] #report-container.nr-manuscript,
-html[data-theme="light"] body.nr-sacred {
-  color: #0f172a !important;
-  background: #f1f5f9 !important;
-  background-image: none !important;
-}
-html[data-theme="light"] #report-container .nr-card,
-html[data-theme="light"] #report-container section.nr-card {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #e2e8f0 !important;
-  backdrop-filter: none !important;
-}
-html[data-theme="light"] #report-container p,
-html[data-theme="light"] #report-container li,
-html[data-theme="light"] #report-container td,
-html[data-theme="light"] #report-container th,
-html[data-theme="light"] #report-container h1,
-html[data-theme="light"] #report-container h2,
-html[data-theme="light"] #report-container h3,
-html[data-theme="light"] #report-container span:not(.nr-pill) {
-  color: #0f172a !important;
-  text-shadow: none !important;
-}
-
-html[data-theme="dark"] #report-container .nr-card {
-  background: rgba(15, 23, 42, 0.92) !important;
-  color: #f8fafc !important;
-}
-html[data-theme="dark"] #report-container p,
-html[data-theme="dark"] #report-container li,
-html[data-theme="dark"] #report-container h1,
-html[data-theme="dark"] #report-container h2,
-html[data-theme="dark"] #report-container h3 {
-  color: #f1f5f9 !important;
-}
-
-/* Buttons with solid dark fills keep white text */
-html[data-theme="light"] .bg-slate-900,
-html[data-theme="light"] .bg-slate-800,
-html[data-theme="light"] .bg-gray-900,
-html[data-theme="light"] .bg-black,
-html[data-theme="light"] .bg-blue-600,
-html[data-theme="light"] .bg-blue-700,
-html[data-theme="light"] .bg-indigo-600,
-html[data-theme="light"] .bg-emerald-600,
-html[data-theme="light"] .bg-rose-600 {
-  color: #ffffff !important;
-}
-
-/* Monitor / opt panels */
-html[data-theme="light"] .font-mono,
-html[data-theme="light"] pre,
-html[data-theme="light"] code {
-  color: #0f172a !important;
-}
-html[data-theme="dark"] .font-mono,
-html[data-theme="dark"] pre {
-  color: #e2e8f0 !important;
-}
-
-/* Print always black on white */
-@media print {
-  html, body, main, .nr-card, #report-container, #report-container * {
-    color: #000 !important;
-    background: #fff !important;
-    background-image: none !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-}
-
-
-/* ── 20260928.10 Sidebar + light mode lock (permanent) ───────── */
-aside.sidebar,
-#rc-sidebar,
-.sidebar,
-nav.sidebar {
-  background: #0b0f19 !important;
-  color: #f8fafc !important;
-}
-aside.sidebar *,
-#rc-sidebar *,
-.sidebar a,
-.sidebar span,
-.sidebar .section-label,
-aside.sidebar .sidebar-link,
-#rc-sidebar .sidebar-link {
-  color: #e2e8f0 !important;
-}
-aside.sidebar a:hover,
-aside.sidebar .sidebar-link:hover,
-aside.sidebar a.active,
-aside.sidebar .sidebar-link.active {
-  color: #ffffff !important;
-}
-html[data-theme="light"] aside.sidebar,
-html[data-theme="light"] #rc-sidebar {
-  background: #0b0f19 !important;
-  color: #f8fafc !important;
-}
-/* Prefer OS theme when no manual override */
-
-
-/* ── 20260928.18 Sidebar text lock (all themes) ───────── */
-aside#rc-sidebar,
-aside.sidebar,
-#rc-sidebar {
-  background: #0b0f19 !important;
-  color: #f8fafc !important;
-  border-right: 1px solid #1e293b !important;
-}
-aside#rc-sidebar *,
-aside.sidebar *,
-#rc-sidebar * {
-  color: #e2e8f0 !important;
-  border-color: #334155 !important;
-}
-aside#rc-sidebar .text-slate-900,
-aside#rc-sidebar .text-slate-800,
-aside#rc-sidebar .text-slate-700,
-aside#rc-sidebar .text-slate-600,
-aside#rc-sidebar .text-slate-500,
-aside#rc-sidebar .text-slate-400,
-aside#rc-sidebar .text-slate-300,
-aside#rc-sidebar .text-black,
-aside#rc-sidebar .text-gray-900,
-aside#rc-sidebar .text-gray-700,
-aside.sidebar .text-slate-900,
-aside.sidebar .text-slate-800,
-aside.sidebar .text-slate-700,
-aside.sidebar .text-slate-600,
-aside.sidebar .text-slate-500,
-aside.sidebar .text-slate-400,
-html[data-theme="light"] aside#rc-sidebar .text-slate-900,
-html[data-theme="light"] aside#rc-sidebar .text-slate-600,
-html[data-theme="light"] aside#rc-sidebar a,
-html[data-theme="light"] aside#rc-sidebar span,
-html[data-theme="light"] aside#rc-sidebar button,
-html[data-theme="light"] aside#rc-sidebar i {
-  color: #f1f5f9 !important;
-}
-aside#rc-sidebar a:hover,
-aside#rc-sidebar a.active,
-aside#rc-sidebar .sidebar-link:hover,
-aside#rc-sidebar .sidebar-link.active,
-aside#rc-sidebar button:hover {
-  color: #ffffff !important;
-  background: rgba(59, 130, 246, 0.15) !important;
-}
-aside#rc-sidebar .count-badge {
-  background: #1e293b !important;
-  color: #93c5fd !important;
-}
-aside#rc-sidebar input,
-aside#rc-sidebar select {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border-color: #475569 !important;
-}
-
-
-/* ── Header count badge + IST clock — locked readable in light & dark ── */
-.rc-count-badge {
-  background: #0f172a !important;
-  color: #f8fafc !important;
-  border-color: #334155 !important;
-}
-html[data-theme="dark"] .rc-count-badge,
-html.dark .rc-count-badge {
+html[data-theme="dark"] .rc-count-badge {
   background: #e2e8f0 !important;
   color: #0f172a !important;
-  border-color: #94a3b8 !important;
 }
+html[data-theme="reserve"] .rc-count-badge {
+  background: #7c2d12 !important;
+  color: #fff7ed !important;
+}
+
 .rc-header-clock {
   background: #f1f5f9 !important;
   color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+  border: 1px solid #cbd5e1 !important;
 }
-html[data-theme="dark"] .rc-header-clock,
-html.dark .rc-header-clock {
+html[data-theme="dark"] .rc-header-clock {
   background: #1e293b !important;
   color: #f1f5f9 !important;
   border-color: #475569 !important;
 }
-/* Exempt badge from light-mode "force dark ink on slate-100" rule */
-html[data-theme="light"] main .rc-count-badge,
-html[data-theme="light"] main .rc-count-badge.text-slate-100 {
+html[data-theme="reserve"] .rc-header-clock {
+  background: #fef3c7 !important;
+  color: #78350f !important;
+  border-color: #f59e0b !important;
+}
+
+/* Sort chips / filter buttons */
+.rc-sort-chip, .rc-filter-chip,
+button.rc-sort-chip, [role="tab"] {
+  color: var(--rc-ink-soft) !important;
+  border-color: var(--rc-border) !important;
+  background: var(--rc-card) !important;
+}
+.rc-sort-chip.is-active, .rc-sort-chip[aria-pressed="true"],
+button.bg-blue-600, .rc-sort-chip.active {
+  background: #0078D4 !important;
+  color: #ffffff !important;
+  border-color: #005A9E !important;
+}
+
+/* ═══ Celebrations strip ═══ */
+.rc-celeb-strip, [class*="celebration"], .value-birthday-strip {
+  background: #fffbeb !important;
+  color: #78350f !important;
+  border-color: #fcd34d !important;
+}
+.rc-celeb-strip h2, .rc-celeb-strip h3, .rc-celeb-strip span,
+.rc-celeb-strip p, .rc-celeb-strip a {
+  color: #78350f !important;
+  opacity: 1 !important;
+}
+html[data-theme="dark"] .rc-celeb-strip,
+html[data-theme="dark"] [class*="celebration"] {
+  background: #1e293b !important;
+  color: #fde68a !important;
+  border-color: #b45309 !important;
+}
+html[data-theme="dark"] .rc-celeb-strip h2,
+html[data-theme="dark"] .rc-celeb-strip span,
+html[data-theme="dark"] .rc-celeb-strip a {
+  color: #fde68a !important;
+}
+html[data-theme="reserve"] .rc-celeb-strip,
+html[data-theme="reserve"] [class*="celebration"] {
+  background: #fff7ed !important;
+  color: #7c2d12 !important;
+  border-color: #fdba74 !important;
+}
+html[data-theme="reserve"] .rc-celeb-strip h2,
+html[data-theme="reserve"] .rc-celeb-strip span,
+html[data-theme="reserve"] .rc-celeb-strip a {
+  color: #7c2d12 !important;
+}
+
+/* ═══ Sidebar ═══ */
+aside.sidebar, aside#rc-sidebar, #rc-sidebar, nav.sidebar {
+  background: var(--rc-side-bg) !important;
+  color: var(--rc-side-ink) !important;
+  border-right: 1px solid var(--rc-border) !important;
+}
+
+aside#rc-sidebar a,
+aside#rc-sidebar .sidebar-link,
+aside#rc-sidebar span,
+aside#rc-sidebar button,
+aside#rc-sidebar i,
+aside.sidebar a,
+aside.sidebar span {
+  color: var(--rc-side-ink) !important;
+  opacity: 1 !important;
+}
+
+aside#rc-sidebar .section-label,
+aside.sidebar .section-label {
+  color: var(--rc-side-muted) !important;
+  opacity: 1 !important;
+  font-weight: 800 !important;
+}
+
+aside#rc-sidebar a.active,
+aside#rc-sidebar .sidebar-link.active,
+aside#rc-sidebar a[aria-current="page"] {
+  background: var(--rc-side-active-bg) !important;
+  color: var(--rc-side-active-ink) !important;
+  font-weight: 700 !important;
+}
+
+aside#rc-sidebar a:hover,
+aside#rc-sidebar .sidebar-link:hover {
+  color: var(--rc-side-active-ink) !important;
+  background: var(--rc-side-active-bg) !important;
+}
+
+aside#rc-sidebar .count-badge {
+  background: rgba(0,0,0,.2) !important;
+  color: var(--rc-side-ink) !important;
+}
+
+html[data-theme="light"] aside#rc-sidebar .count-badge {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+html[data-theme="dark"] aside#rc-sidebar .count-badge {
+  background: #005A9E !important;
+  color: #EFF6FC !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar .count-badge {
+  background: #9a3412 !important;
+  color: #fff7ed !important;
+}
+
+/* ═══ Edit modal / enterprise editor ═══ */
+#enterprise-editor-root .rc-ed-panel,
+#enterprise-editor-root .rc-ed-body,
+#enterprise-editor-root .rc-ed-head,
+#enterprise-editor-root .rc-ed-foot {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+#enterprise-editor-root .rc-ed-lbl {
+  color: #475569 !important;
+}
+#enterprise-editor-root .rc-ed-input,
+#enterprise-editor-root select.rc-ed-input,
+#enterprise-editor-root textarea.rc-ed-input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+#enterprise-editor-root .rc-ed-section-title {
+  color: #334155 !important;
+}
+#enterprise-editor-root .rc-ed-btn-primary,
+#enterprise-editor-root button[type="submit"] {
+  background: #0f172a !important;
+  color: #ffffff !important;
+}
+#enterprise-editor-root .rc-ed-btn-ghost {
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+}
+
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-panel,
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-body,
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-head,
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-foot {
+  background: #1e293b !important;
   color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-lbl,
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-section-title {
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-input,
+html[data-theme="dark"] #enterprise-editor-root select.rc-ed-input {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-btn-primary {
+  background: #2899F5 !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] #enterprise-editor-root .rc-ed-btn-ghost {
+  background: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+/* ═══ Primary action buttons (never white-on-white) ═══ */
+button.bg-blue-600, a.bg-blue-600, .btn-primary,
+button[class*="bg-blue-"], .rc-btn-primary {
+  color: #ffffff !important;
+}
+button.bg-white, a.bg-white {
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* ═══ Reports (numero / blood / janam shells embedded) ═══ */
+.rc-numero-shell, .numero-root, .blood-report-root {
+  color: var(--rc-ink) !important;
+}
+.rc-numero-shell .card, .rc-numero-shell .nr-card,
+.numero-root .card {
+  background: var(--rc-card) !important;
+  color: var(--rc-ink) !important;
+  border-color: var(--rc-border) !important;
+}
+
+/* ═══ Force readable muted utilities ═══ */
+html[data-theme="light"] .text-slate-500,
+html[data-theme="light"] .text-slate-400,
+html[data-theme="light"] .text-gray-500,
+html[data-theme="reserve"] .text-slate-500,
+html[data-theme="reserve"] .text-slate-400,
+html[data-theme="reserve"] .text-gray-500 {
+  color: #475569 !important;
+}
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-slate-400 {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .text-slate-900,
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-gray-900 {
+  color: #f8fafc !important;
+}
+html[data-theme="light"] .text-slate-900,
+html[data-theme="reserve"] .text-slate-900 {
+  color: #0f172a !important;
+}
+
+/* Fav star button on cards */
+.rc-fav-btn {
+  background: var(--rc-card) !important;
+  border: 1px solid var(--rc-border) !important;
+  color: var(--rc-ink-muted) !important;
+}
+html[data-theme="dark"] .rc-fav-btn {
+  background: #0f172a !important;
+  border-color: #475569 !important;
+  color: #fbbf24 !important;
+}
+
+
+/* ═══ Reserve sidebar lock (20261003.23) — cream panel, espresso labels ═══ */
+html[data-theme="reserve"] aside#rc-sidebar,
+html[data-theme="reserve"] aside.sidebar,
+html[data-theme="reserve"] #rc-sidebar {
+  background: #efe6d4 !important;
+  color: #1c1917 !important;
+  border-right: 1px solid #d6d3d1 !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar a,
+html[data-theme="reserve"] aside#rc-sidebar .sidebar-link,
+html[data-theme="reserve"] aside#rc-sidebar .link-text,
+html[data-theme="reserve"] aside#rc-sidebar span:not(.count-badge),
+html[data-theme="reserve"] aside#rc-sidebar i,
+html[data-theme="reserve"] aside#rc-sidebar button,
+html[data-theme="reserve"] aside#rc-sidebar .text-slate-300,
+html[data-theme="reserve"] aside#rc-sidebar .text-slate-400,
+html[data-theme="reserve"] aside#rc-sidebar .text-slate-500,
+html[data-theme="reserve"] aside#rc-sidebar .text-slate-600 {
+  color: #1c1917 !important;
+  opacity: 1 !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar .section-label {
+  color: #7c2d12 !important;
+  opacity: 1 !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar a.active,
+html[data-theme="reserve"] aside#rc-sidebar .sidebar-link.active {
+  background: #7c2d12 !important;
+  color: #fff7ed !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar a.active .link-text,
+html[data-theme="reserve"] aside#rc-sidebar a.active i,
+html[data-theme="reserve"] aside#rc-sidebar .sidebar-link.active i {
+  color: #fff7ed !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar .count-badge {
+  background: #7c2d12 !important;
+  color: #fff7ed !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar a.active .count-badge {
+  background: #fff7ed !important;
+  color: #7c2d12 !important;
+}
+html[data-theme="reserve"] aside#rc-sidebar .border-t {
+  border-color: #d6d3d1 !important;
+}
+
+
+/* ═══ Top widgets: force single 4-col row ═══ */
+.rc-top-widgets {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.5rem !important;
+  align-items: stretch !important;
+}
+#rc-public-widgets.contents { display: contents !important; }
+.rc-live-card { min-height: 5.5rem; max-height: 8.5rem; }
+@media (max-width: 640px) {
+  .rc-top-widgets {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .rc-live-card { max-height: none; }
+}
+
+/* ═══ GitHub-style site footer ═══ */
+footer[role="contentinfo"] .rc-site-footer a,
+footer[role="contentinfo"] .rc-site-footer button {
+  color: inherit;
+  text-decoration: none;
+}
+footer[role="contentinfo"] .rc-site-footer a:hover,
+footer[role="contentinfo"] .rc-site-footer button:hover {
+  text-decoration: underline;
+  color: var(--rc-ink, #0f172a);
+}
+html[data-theme="dark"] footer[role="contentinfo"] {
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+html[data-theme="reserve"] footer[role="contentinfo"] {
+  border-color: #d6d3d1 !important;
+  color: #57534e !important;
+}
+
+
+/* ═══ Fluent guard — dashboard only (skip numerology/janam report bodies) ═══ */
+body:not(.nr-sacred):not(.jp-vedic) :is(
+  [class*="bg-slate-600"],[class*="bg-slate-700"],[class*="bg-slate-800"],[class*="bg-slate-900"],
+  [class*="bg-gray-700"],[class*="bg-gray-800"],[class*="bg-gray-900"],
+  [class*="bg-blue-6"],[class*="bg-blue-7"],[class*="bg-blue-8"],[class*="bg-blue-9"],
+  [class*="bg-indigo-"],[class*="bg-violet-"],[class*="bg-sky-7"],[class*="bg-sky-8"],[class*="bg-cyan-7"],
+  [class*="bg-teal-7"],[class*="bg-emerald-6"],[class*="bg-emerald-7"],[class*="bg-green-7"],
+  [class*="bg-rose-6"],[class*="bg-rose-7"],[class*="bg-red-6"],[class*="bg-red-7"],
+  [class*="bg-amber-6"],[class*="bg-orange-6"],
+  [class*="bg-gradient"],[class*="from-slate-"],[class*="from-blue-"],[class*="from-indigo-"],[class*="from-emerald-"]
+) :is(.text-white,.text-slate-50,.text-slate-100,.text-slate-200,.text-slate-300,
+     .text-slate-400,.text-slate-500,.text-slate-600,
+     h1,h2,h3,h4,h5,h6,p,span,a,small,strong,label,li,td,th,div){
+  color:#ffffff !important; opacity:1 !important;
+}
+body:not(.nr-sacred):not(.jp-vedic) :is([class*="bg-slate-700"],[class*="bg-slate-800"],[class*="bg-slate-900"],[class*="bg-gradient"])
+  :is(.text-slate-400,.text-slate-500,.rc-meta,.text-muted){ color:#CBD5E1 !important; }
+
+
+/* ═══ Missing Tailwind gradient utilities (purged from app.css) ═══ */
+.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-gradient-stops))}
+.bg-gradient-to-b{background-image:linear-gradient(to bottom,var(--tw-gradient-stops))}
+.from-slate-900{--tw-gradient-from:#0f172a var(--tw-gradient-from-position);--tw-gradient-to:rgb(15 23 42 / 0);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}
+.via-slate-800{--tw-gradient-to:rgb(30 41 59 / 0);--tw-gradient-stops:var(--tw-gradient-from),#1e293b var(--tw-gradient-via-position),var(--tw-gradient-to)}
+.via-slate-900{--tw-gradient-to:rgb(15 23 42 / 0);--tw-gradient-stops:var(--tw-gradient-from),#0f172a var(--tw-gradient-via-position),var(--tw-gradient-to)}
+.to-indigo-950{--tw-gradient-to:#1e1b4b var(--tw-gradient-to-position)}
+.to-slate-900{--tw-gradient-to:#0f172a var(--tw-gradient-to-position)}
+
+/* rc-hero-dark → see Surface roles above */
+
+
+.rc-arthsathi-mark{ height:32px; width:auto; color:var(--rc-ink,#201F1E); }
+html[data-theme="dark"] .rc-arthsathi-mark{ color:#F3F2F1; }
+
+
+/* Tenant logo plate — fixed by company.logo_bg, not theme */
+.rc-logo-plate{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:10px}
+.rc-logo-plate[data-bg="light"]{background:#FFFFFF}
+.rc-logo-plate[data-bg="dark"]{background:#1B1A19}
+.rc-logo-plate img{display:block;max-height:48px;width:auto;max-width:160px;object-fit:contain}
+
+/* ═══ Report controls — unified readable pairing (all themes) ═══ */
+body.nr-sacred #report-container :is(.nr-util-btn,.nr-seg-btn,.mode-toggle-btn,.nr-pill,.nr-pill-soft,.nr-seg),
+body.jp-vedic :is(.jp-btn,.jp-btn-ghost,.jp-chip,.jp-seg,.jp-lang-toggle){
+  background:var(--rc-paper)!important; color:var(--rc-ink)!important;
+  -webkit-text-fill-color:var(--rc-ink)!important; border:1px solid var(--rc-border)!important;
+  background-image:none!important; backdrop-filter:none!important; box-shadow:none!important; text-shadow:none!important;
+}
+body.nr-sacred #report-container :is(.nr-seg-on,.nr-util-on,.nr-pill-on,.mode-toggle-btn.nr-seg-on,.nr-seg-on-gold,.tab-active),
+body.jp-vedic :is(.jp-btn-primary,.jp-seg-on,.jp-chip-on,.rc-chrome-btn.pri){
+  background:var(--rc-accent)!important; color:#fff!important; -webkit-text-fill-color:#fff!important;
+  border-color:var(--rc-accent)!important; background-image:none!important;
+}
+body.nr-sacred #report-container :is(.nr-util-btn,.nr-seg-btn,.mode-toggle-btn):hover,
+body.jp-vedic :is(.jp-btn,.jp-btn-ghost):hover{
+  border-color:var(--rc-accent)!important; color:var(--rc-accent)!important; -webkit-text-fill-color:var(--rc-accent)!important;
+}
+/* status pills keep a semantic colour on a readable tint, not light-on-light */
+body.nr-sacred #report-container .nr-pill-emerald{ background:#DFF6DD!important; color:#0E700E!important; -webkit-text-fill-color:#0E700E!important; }
+body.nr-sacred #report-container .nr-pill-rose,  body.nr-sacred #report-container .nr-pill-red{ background:#FDE7E9!important; color:#C42B1C!important; -webkit-text-fill-color:#C42B1C!important; }
+
+/* ═══ Mobile off-canvas sidebar (<768px) ═══ */
+@media (max-width: 767px) {
+  aside#rc-sidebar,
+  aside.sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 80;
+    width: 15rem !important;
+    max-width: 85vw;
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+    display: flex !important;
+    flex-direction: column;
+    box-shadow: 4px 0 24px rgba(0,0,0,.25);
+  }
+  aside#rc-sidebar.rc-sidebar-mobile-open,
+  aside.sidebar.rc-sidebar-mobile-open {
+    transform: translateX(0);
+  }
+}
+@media (min-width: 768px) {
+  aside#rc-sidebar.rc-sidebar-mobile-open {
+    /* desktop ignores mobile open flag */
+  }
+}
+
+/* ── Team chrome chips (single row, theme tokens) ── */
+.rc-team-chip{
+  background:var(--rc-card)!important;
+  color:var(--rc-ink)!important;
+  border-color:var(--rc-border)!important;
+}
+.rc-team-chip:hover{ border-color:var(--rc-accent)!important; color:var(--rc-accent)!important; }
+.rc-team-chip--on{
+  background:var(--rc-accent)!important;
+  color:#fff!important;
+  border-color:var(--rc-accent)!important;
+}
+.rc-team-chip--wa{
+  color:#047857!important;
+  background:color-mix(in srgb, #10b981 12%, var(--rc-card))!important;
+  border-color:color-mix(in srgb, #10b981 35%, var(--rc-border))!important;
+}
+html[data-theme="dark"] .rc-team-chip--wa{ color:#6ee7b7!important; }
+
+/* ── Live widgets + celebrations (light / dark / reserve) ── */
+.rc-live-card,
+.rc-celeb-strip{
+  background:var(--rc-card)!important;
+  border-color:var(--rc-border)!important;
+  color:var(--rc-ink)!important;
+}
+.rc-live-kicker,
+.rc-celeb-strip__kicker,
+.rc-celeb-strip__date{ color:var(--rc-ink-muted)!important; }
+.rc-live-value,
+.rc-celeb-strip__title,
+.rc-celeb-name{ color:var(--rc-ink)!important; }
+.rc-live-meta,
+.rc-celeb-kind{ color:var(--rc-ink-soft)!important; }
+.rc-live-badge{
+  background:var(--rc-paper)!important;
+  color:var(--rc-ink-muted)!important;
+  border-color:var(--rc-border)!important;
+}
+.rc-celeb-strip__hd{ border-color:var(--rc-border)!important; }
+.rc-celeb-card{
+  background:var(--rc-paper)!important;
+  border-color:var(--rc-border)!important;
+  color:var(--rc-ink)!important;
+}
+.rc-celeb-avatar{
+  background:var(--rc-paper)!important;
+  border-color:var(--rc-border)!important;
+  color:var(--rc-ink-muted)!important;
+}
+.rc-celeb-when{
+  color:var(--rc-ink)!important;
+  background:var(--rc-paper)!important;
+  border:1px solid var(--rc-border)!important;
+}
+.rc-celeb-when--today{
+  color:#9f1239!important;
+  background:color-mix(in srgb, #e11d48 12%, var(--rc-card))!important;
+  border-color:color-mix(in srgb, #e11d48 30%, var(--rc-border))!important;
+}
+html[data-theme="dark"] .rc-celeb-when--today{
+  color:#fda4af!important;
+}
+
+/* ── Sidebar theme chips + sign-out (follow pane, not fixed navy) ── */
+aside#rc-sidebar,
+aside.sidebar {
+  --rc-side-border: color-mix(in srgb, var(--rc-side-ink, #201F1E) 18%, transparent);
+}
+html[data-theme="light"] aside#rc-sidebar,
+html[data-theme="light"] aside.sidebar {
+  --rc-side-ink: #0f172a;
+  --rc-side-active-bg: #eff6fc;
+  --rc-side-active-ink: #005a9e;
+  --rc-side-border: #e2e8f0;
+}
+html[data-theme="dark"] aside#rc-sidebar,
+html[data-theme="dark"] aside.sidebar,
+html.dark:not([data-theme="reserve"]) aside#rc-sidebar {
+  --rc-side-ink: #e2e8f0;
+  --rc-side-active-bg: rgba(59,130,246,.22);
+  --rc-side-active-ink: #dbeafe;
+  --rc-side-border: #1e293b;
+}
+html[data-theme="reserve"] aside#rc-sidebar,
+html[data-theme="reserve"] aside.sidebar {
+  --rc-side-ink: #1c1917;
+  --rc-side-active-bg: #f5e6d3;
+  --rc-side-active-ink: #7c2d12;
+  --rc-side-border: #d6d3d1;
+}
+.rc-theme-seg__btn{
+  color: var(--rc-side-ink) !important;
+  background: transparent !important;
+  border-color: var(--rc-side-border) !important;
+}
+.rc-theme-seg__btn:hover{
+  background: var(--rc-side-active-bg) !important;
+}
+.rc-theme-seg__btn.is-active,
+.rc-theme-seg__btn[aria-pressed="true"]{
+  background: var(--rc-side-active-bg) !important;
+  color: var(--rc-side-active-ink) !important;
+  border-color: var(--rc-side-active-ink) !important;
+}
+.rc-sidebar-logout{
+  background: transparent !important;
+  color: var(--rc-side-ink) !important;
+  border: 1px solid var(--rc-side-border) !important;
+}
+.rc-sidebar-logout:hover{
+  background: color-mix(in srgb, #ef4444 14%, transparent) !important;
+  color: #b91c1c !important;
+  border-color: #f87171 !important;
+}
+html[data-theme="dark"] .rc-sidebar-logout:hover{
+  color: #fca5a5 !important;
+}
+.rc-sidebar-foot__label{ color: var(--rc-side-ink) !important; opacity: .65; }
+
+/* THEME LOGOUT MUST SHOW */
+.rc-sidebar-foot, .rc-theme-seg, .rc-theme-seg__btn, .rc-sidebar-logout {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.rc-theme-seg__btn, .rc-sidebar-logout {
+  color: var(--rc-side-ink, #201F1E) !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * WinUI 3 / Fluent 2 — global chrome (loads last; token-driven)
+ * Mirrors WinUI control density, radius, elevation, and interaction states.
+ * Does not restyle report sacred/vedic bodies beyond shared tokens.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Shell / mica-like page ground */
+html body.rc-app-shell,
+html body {
+  background: var(--winui-mica, var(--rc-paper)) !important;
+  color: var(--rc-ink) !important;
+  font-family: var(--rc-font) !important;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Typography scale (WinUI type ramp, approximate) */
+h1, .text-3xl, .text-2xl.font-black {
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+  color: var(--rc-ink) !important;
+}
+h2, h3, .font-black {
+  font-weight: 600 !important;
+  color: var(--rc-ink) !important;
+}
+h4, h5, h6 {
+  font-weight: 600 !important;
+  color: var(--rc-ink-soft) !important;
+}
+p, label, li, td, th, span, small {
+  color: inherit;
+}
+
+/* Cards — WinUI layered surface */
+.rc-card,
+.rounded-2xl.border,
+.rounded-xl.border,
+.bg-white.rounded-2xl,
+.bg-white.rounded-xl,
+div.bg-white.border,
+.shadow-sm.rounded-2xl {
+  background: var(--rc-card) !important;
+  color: var(--rc-ink) !important;
+  border: 1px solid var(--rc-border) !important;
+  border-radius: var(--winui-radius-lg) !important;
+  box-shadow: var(--winui-elevation-1) !important;
+}
+.rc-card:hover,
+.rounded-2xl.border:hover {
+  box-shadow: var(--winui-elevation-2);
+}
+
+/* Primary / accent buttons (WinUI AccentButton) */
+button.bg-blue-600,
+a.bg-blue-600,
+.bg-blue-600,
+button.bg-blue-700,
+.rc-chrome-btn.pri,
+.jp-btn-primary,
+button[type="submit"].bg-blue-600,
+.rc-btn-accent {
+  background: var(--rc-accent) !important;
+  background-image: none !important;
+  color: #fff !important;
+  border: 1px solid var(--rc-accent) !important;
+  border-radius: var(--winui-radius-sm) !important;
+  min-height: var(--winui-control-h);
+  padding: 0 12px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  transition: background .12s ease, border-color .12s ease;
+}
+button.bg-blue-600:hover,
+a.bg-blue-600:hover,
+.bg-blue-600:hover,
+.rc-chrome-btn.pri:hover {
+  background: var(--winui-accent-hover) !important;
+  border-color: var(--winui-accent-hover) !important;
+  color: #fff !important;
+}
+button.bg-blue-600:active,
+.rc-chrome-btn.pri:active {
+  background: var(--winui-accent-pressed) !important;
+}
+
+/* Secondary / subtle buttons (WinUI Button) */
+button.border,
+a.border.rounded-lg,
+.rc-chrome-btn:not(.pri),
+.jp-btn,
+.jp-btn-ghost,
+button.bg-white.border,
+.rc-btn-subtle {
+  background: var(--winui-subtle-fill) !important;
+  color: var(--rc-ink) !important;
+  border: 1px solid var(--rc-border) !important;
+  border-radius: var(--winui-radius-sm) !important;
+  min-height: var(--winui-control-h);
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  transition: background .12s ease, border-color .12s ease;
+}
+button.border:hover,
+.rc-chrome-btn:not(.pri):hover,
+.jp-btn:hover {
+  background: var(--winui-subtle-fill-hover) !important;
+  border-color: color-mix(in srgb, var(--rc-border) 70%, var(--rc-ink-muted)) !important;
+}
+
+/* Inputs — WinUI TextBox */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+select,
+textarea {
+  min-height: var(--winui-control-h) !important;
+  border-radius: var(--winui-radius-sm) !important;
+  border: 1px solid var(--rc-border) !important;
+  background: var(--rc-card) !important;
+  color: var(--rc-ink) !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--rc-accent) !important;
+  box-shadow: 0 0 0 1px var(--rc-accent) !important;
+}
+
+/* Sidebar — WinUI NavigationView */
+aside.sidebar,
+.rc-sidebar,
+nav.sidebar {
+  background: var(--rc-side-bg) !important;
+  color: var(--rc-side-ink) !important;
+  border-right: 1px solid var(--rc-border) !important;
+}
+aside.sidebar a,
+.rc-sidebar a,
+.rc-nav-item {
+  border-radius: var(--winui-radius-md) !important;
+  color: var(--rc-side-ink) !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  transition: background .12s ease, color .12s ease;
+}
+aside.sidebar a:hover,
+.rc-nav-item:hover {
+  background: var(--winui-subtle-fill-hover) !important;
+  color: var(--rc-side-ink) !important;
+}
+aside.sidebar a.active,
+aside.sidebar a[aria-current="page"],
+.rc-nav-item.active,
+.rc-nav-item[aria-current="page"] {
+  background: var(--rc-side-active-bg) !important;
+  color: var(--rc-side-active-ink) !important;
+  font-weight: 600 !important;
+}
+
+/* Header bar */
+header.rc-header,
+.rc-topbar,
+.rc-app-header {
+  background: color-mix(in srgb, var(--rc-header-bg) 88%, transparent) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-bottom: 1px solid var(--rc-border) !important;
+  color: var(--rc-ink) !important;
+}
+
+/* Tabs / chips — WinUI Pivot / Toggle */
+.rc-team-chip,
+.rc-chip,
+.rc-tab,
+[role="tab"] {
+  border-radius: var(--winui-radius-md) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--rc-ink-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  min-height: 28px;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+.rc-team-chip:hover,
+.rc-chip:hover,
+.rc-tab:hover {
+  background: var(--winui-subtle-fill-hover) !important;
+  color: var(--rc-ink) !important;
+}
+.rc-team-chip.active,
+.rc-chip.active,
+.rc-tab.active,
+[role="tab"][aria-selected="true"] {
+  background: var(--rc-side-active-bg) !important;
+  color: var(--rc-side-active-ink) !important;
+  border-color: color-mix(in srgb, var(--rc-accent) 25%, transparent) !important;
+}
+
+/* Tables */
+table {
+  background: var(--rc-card) !important;
+  color: var(--rc-ink) !important;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--winui-radius-md);
+  overflow: hidden;
+}
+th {
+  background: var(--winui-subtle-fill) !important;
+  color: var(--rc-ink-muted) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  border-bottom: 1px solid var(--rc-border) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+td {
+  color: var(--rc-ink) !important;
+  border-bottom: 1px solid var(--rc-border) !important;
+  font-size: 13px !important;
+}
+tr:hover td {
+  background: var(--winui-subtle-fill) !important;
+}
+
+/* Modals / dialogs */
+.rc-modal,
+[x-show].fixed.inset-0 .bg-white,
+.fixed.inset-0 .rounded-2xl.bg-white {
+  border-radius: var(--winui-radius-xl) !important;
+  box-shadow: var(--winui-elevation-3) !important;
+  border: 1px solid var(--rc-border) !important;
+  background: var(--rc-card) !important;
+  color: var(--rc-ink) !important;
+}
+
+/* Focus visible — WinUI focus stroke */
+:focus-visible {
+  outline: 2px solid var(--rc-accent) !important;
+  outline-offset: 2px !important;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* Scrollbars — thin Fluent-like */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--rc-ink-muted) 45%, transparent) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--rc-ink-muted) 40%, transparent);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Login glass card (if present) */
+.rc-login-card,
+.login-card {
+  background: color-mix(in srgb, var(--rc-card) 86%, transparent) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--rc-border) !important;
+  border-radius: var(--winui-radius-xl) !important;
+  box-shadow: var(--winui-elevation-3) !important;
+  color: var(--rc-ink) !important;
+}
+
+/* Footer — compact WinUI app bar style */
+footer[role="contentinfo"] {
+  background: transparent !important;
+  color: var(--rc-ink-muted) !important;
+  border-top: 1px solid var(--rc-border) !important;
+  font-size: 12px !important;
+}
+footer[role="contentinfo"] a {
+  color: var(--rc-ink-muted) !important;
+  text-decoration: none !important;
+  border-radius: var(--winui-radius-sm);
+}
+footer[role="contentinfo"] a:hover {
+  color: var(--rc-accent) !important;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Design System 2026.1 — complete UI/UX refresh (Fluent 2 + modern web)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+#rc-content, main.rc-main, .rc-content-pane {
+  padding: var(--rc-space-4, 16px) var(--rc-space-5, 20px) !important;
+}
+@media (min-width: 768px) {
+  #rc-content, main.rc-main, .rc-content-pane {
+    padding: var(--rc-space-5, 20px) var(--rc-space-6, 24px) !important;
+  }
+}
+
+h1.text-2xl, h1.text-3xl, .rc-page-title {
+  font-size: var(--rc-text-2xl, 22px) !important;
+  line-height: 1.25 !important;
+  font-weight: 600 !important;
+  color: var(--rc-ink) !important;
+  letter-spacing: -0.02em;
+}
+h1 + p.text-slate-500, .rc-page-sub {
+  font-size: var(--rc-text-sm, 12px) !important;
+  color: var(--rc-ink-muted) !important;
+  line-height: 1.45 !important;
+}
+
+.rc-badge-success { background: var(--rc-success-bg, #e8f5e9) !important; color: var(--rc-success, #0F7B0F) !important; }
+.rc-badge-warning { background: var(--rc-warning-bg, #fff3e0) !important; color: var(--rc-warning, #9D5D00) !important; }
+.rc-badge-danger  { background: var(--rc-danger-bg, #fde7e9) !important; color: var(--rc-danger, #C42B1C) !important; }
+.rc-badge-info    { background: var(--rc-info-bg, #e8f4fc) !important; color: var(--rc-info, var(--rc-accent)) !important; }
+
+.rc-empty, .empty-state {
+  text-align: center;
+  padding: 40px 24px;
+  color: var(--rc-ink-muted) !important;
+  background: var(--winui-subtle-fill, #f5f5f5) !important;
+  border: 1px dashed var(--rc-border) !important;
+  border-radius: var(--winui-radius-lg, 12px) !important;
+}
+
+.rc-toolbar, .sticky.top-0.z-20 {
+  background: color-mix(in srgb, var(--rc-paper) 92%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--rc-border) !important;
+}
+
+input[type="search"] {
+  border-radius: var(--winui-radius-md, 8px) !important;
+  background: var(--winui-subtle-fill, #f5f5f5) !important;
+  border-color: transparent !important;
+}
+input[type="search"]:focus {
+  background: var(--rc-card) !important;
+  border-color: var(--rc-accent) !important;
+}
+
+.rc-member-card, .rc-dir-card, .team-card {
+  border-radius: var(--winui-radius-lg, 12px) !important;
+  border: 1px solid var(--rc-border) !important;
+  background: var(--rc-card) !important;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+.rc-member-card:hover, .rc-dir-card:hover, .team-card:hover {
+  box-shadow: var(--winui-elevation-2, 0 2px 8px rgba(0,0,0,.08)) !important;
+  border-color: color-mix(in srgb, var(--rc-accent) 28%, var(--rc-border)) !important;
+}
+.rc-member-card.is-selected, .team-card.selected {
+  border-color: var(--rc-accent) !important;
+  box-shadow: 0 0 0 1px var(--rc-accent) !important;
+  background: color-mix(in srgb, var(--rc-accent) 6%, var(--rc-card)) !important;
+}
+
+aside.sidebar a, .rc-nav-item {
+  margin: 2px 8px !important;
+  padding: 8px 12px !important;
+  min-height: 36px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+@media (max-width: 640px) {
+  form button[type="submit"].bg-blue-600,
+  form .rc-chrome-btn.pri { width: 100% !important; }
+}
+
+a.text-blue-600, a.text-blue-700, a.link {
+  color: var(--rc-accent) !important;
+  text-decoration: none !important;
+}
+a.text-blue-600:hover, a.link:hover {
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+.rc-progress, .jp-progress, .jp-dasha-bar {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--winui-subtle-fill, #eee) !important;
+  overflow: hidden;
+}
+.rc-progress > i, .jp-progress > i, .jp-dasha-bar > i {
+  background: var(--rc-accent) !important;
+  border-radius: 999px !important;
+}
+
+@keyframes rc-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.rc-skeleton {
+  background: linear-gradient(90deg, var(--winui-subtle-fill, #eee) 25%, var(--rc-card) 50%, var(--winui-subtle-fill, #eee) 75%);
+  background-size: 200% 100%;
+  animation: rc-shimmer 1.2s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--rc-accent) 28%, transparent);
+  color: var(--rc-ink);
+}
+
+@media (prefers-contrast: more) {
+  button, a.border, input, select, textarea { border-width: 2px !important; }
+}
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .rc-card, .rounded-2xl.border { box-shadow: none !important; }
+}
+
+/* Sign out: power icon only, no underline */
+.rc-sidebar-logout,
+.rc-sidebar-logout:hover,
+.rc-sidebar-logout:focus,
+.rc-sidebar-logout * {
+  text-decoration: none !important;
+}
+.rc-sidebar-logout .link-text { display: none !important; }
+
+/* rc-focus-polish — keyboard focus ring (optional polish) */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--rc-accent, #0078D4) !important;
+  outline-offset: 2px !important;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--rc-accent, #0078D4) !important;
+  outline-offset: 2px !important;
+}
+
+/* Team directory: never apply WinUI control height to inline card lines */
+.rc-vcard-line button,
+.rc-vcard .rc-vcard-line button,
+article.rc-vcard button.border-0 {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  line-height: 1.25 !important;
 }

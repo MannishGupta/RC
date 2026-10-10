@@ -19,8 +19,10 @@ $active = array_values(array_filter($routes, static function ($r) use ($runnerId
 }));
 ?>
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="hi" data-theme="reserve">
 <head>
+<?php if (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_theme_head.php')) { require BASE_PATH . '/app/views/partials/rc_theme_head.php'; } ?>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Aapka kaam · Dispatch</title>

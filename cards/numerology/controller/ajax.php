@@ -3,6 +3,36 @@
 declare(strict_types=1);
 if (!defined('BASE_PATH') || !class_exists('AppNumeroEngine')) exit;
 
+// ── AJAX: Numerology Dasha Calculator (?ajax=dasha) ────────────────
+if (!empty($_GET['ajax']) && $_GET['ajax'] === 'dasha') {
+    header('Content-Type: application/json; charset=utf-8');
+    if (!function_exists('numero_dasha_report')) {
+        $_dasha = dirname(__DIR__) . '/engine/dasha.php';
+        if (is_file($_dasha)) {
+            require_once $_dasha;
+        }
+    }
+    if (!function_exists('numero_dasha_report')) {
+        echo json_encode(['ok' => false, 'error' => 'dasha engine unavailable']);
+        exit;
+    }
+    $name = mb_substr(trim(strip_tags((string)($_GET['name'] ?? $_POST['name'] ?? ''))), 0, 120);
+    $dob  = trim(strip_tags((string)($_GET['dob'] ?? $_POST['dob'] ?? '')));
+    $sys  = strtolower(trim((string)($_GET['system'] ?? $_POST['system'] ?? 'pythagorean')));
+    $tgt  = trim(strip_tags((string)($_GET['target'] ?? $_POST['target'] ?? 'now')));
+    if ($name === '' || $dob === '') {
+        echo json_encode(['ok' => false, 'error' => 'name and dob required']);
+        exit;
+    }
+    $report = numero_dasha_report($name, $dob, [
+        'system' => ($sys === 'chaldean') ? 'chaldean' : 'pythagorean',
+        'target' => $tgt !== '' ? $tgt : 'now',
+    ]);
+    echo json_encode($report, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+
 // controller/ajax.php — AJAX endpoint handlers: vastu, name_analysis, print-audit
 
 // ── AJAX: Vastu score (?ajax=vastu) ──────────────────────────────

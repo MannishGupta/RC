@@ -5,8 +5,15 @@ $isHi = ($lang === 'hi');
 $pinBorderColors = ['nr-phase-orange', 'nr-phase-violet', 'nr-phase-sky', 'nr-phase-emerald'];
 $pinnaclesArr = $report['pinnacles']['pinnacles'] ?? [];
 ?>
-    <div x-show="activeTab==='timeline'" class="tab-section nr-stack print-page-break" role="tabpanel" aria-label="<?= $isHi ? 'समयरेखा' : 'Timeline' ?>">
-        <h2 class="hidden print:block text-lg font-black text-slate-900 uppercase tracking-widest border-b pb-2"><?= $isHi ? 'समयरेखा और जीवन चरण' : 'Timeline & Life Phases' ?></h2>
+    <div x-show="activeTab==='timeline'" class="tab-section nr-stack print-page-break" role="tabpanel" aria-label="<?= $isHi ? 'दशा' : 'Dasha' ?>">
+      <header class="nr-card-header" style="margin-bottom:1rem">
+        <p class="nr-eyebrow"><?= $isHi ? 'अंकशास्त्रीय दशा' : 'Numerology Dasha' ?></p>
+        <h3 class="nr-h3"><?= $isHi ? 'जीवन काल और वर्तमान चक्र' : 'Life Periods & Current Cycles' ?></h3>
+        <p class="nr-muted"><?= $isHi
+             ? 'पिनाकल (मैक्रो-दशा) आयु-सीमा सहित, और वर्तमान व्यक्तिगत वर्ष/माह/दिन (माइक्रो-दशा)।'
+             : 'Pinnacle periods (macro-dasha) with age ranges, plus the current Personal Year / Month / Day (micro-dasha).' ?></p>
+      </header>
+        <h2 class="hidden print:block text-lg font-black text-slate-900 uppercase tracking-widest border-b pb-2"><?= $isHi ? 'अंकशास्त्रीय दशा — जीवन काल और चक्र' : 'Numerology Dasha — Life Periods & Cycles' ?></h2>
 
         <div class="nr-grid-3">
             <?php

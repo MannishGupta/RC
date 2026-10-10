@@ -8,33 +8,64 @@ if (!defined('BASE_PATH')) exit;
 $developerName    = 'Arthsathi Limited';
 $developerWebsite = 'https://arthsathi.com';
 $developerEmail   = 'legal@arthsathi.com';
-$privacyEmail     = 'privacy@arthsathi.com';
-$clientName       = $viewData['company']['name'] ?? ($companyData['name'] ?? 'Client Organization');
-$clientName       = is_string($clientName) ? $clientName : 'Client Organization';
 $termsEffectiveDate = defined('TERMS_EFFECTIVE_DATE') ? TERMS_EFFECTIVE_DATE : '23 September 2026';
 $appVer = defined('APP_VERSION') ? APP_VERSION : 'unknown';
 $appDate = defined('APP_VERSION_DATE') ? APP_VERSION_DATE : '';
 $h = static function ($s) {
     return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 };
+
+/* Tenant organisation (Data Fiduciary) from company record */
+$co = [];
+if (!empty($viewData['company']) && is_array($viewData['company'])) {
+    $co = $viewData['company'];
+} elseif (class_exists('AppDB')) {
+    $raw = AppDB::read('company') ?: [];
+    if (isset($raw[0]) && is_array($raw[0])) {
+        $raw = $raw[0];
+    }
+    $co = is_array($raw) ? $raw : [];
+}
+$clientName = trim((string)($co['name'] ?? ''));
+if ($clientName === '') {
+    $clientName = 'the organisation operating this Resource Centre instance';
+}
+$clientAddr = trim((string)($co['address'] ?? $co['registered_address'] ?? $co['office_address'] ?? ''));
+$clientPhone = trim((string)($co['phone'] ?? $co['tel'] ?? $co['mobile'] ?? ''));
+$clientEmail = trim((string)($co['email'] ?? $co['contact_email'] ?? ''));
+$clientWeb = trim((string)($co['website'] ?? ''));
+$dpdp = (isset($co['dpdp']) && is_array($co['dpdp'])) ? $co['dpdp'] : [];
+$goName = trim((string)($dpdp['grievance_officer_name'] ?? $co['grievance_officer_name'] ?? ''));
+$goEmail = trim((string)($dpdp['grievance_officer_email'] ?? $co['grievance_officer_email'] ?? $clientEmail));
+$goPhone = trim((string)($dpdp['grievance_officer_phone'] ?? $co['grievance_officer_phone'] ?? $clientPhone));
+$privacyEmail = trim((string)($dpdp['privacy_contact_email'] ?? $goEmail));
+if ($privacyEmail === '') {
+    $privacyEmail = $clientEmail !== '' ? $clientEmail : 'privacy@arthsathi.com';
+}
+$retentionNote = trim((string)($dpdp['retention_note'] ?? ''));
+if ($retentionNote === '') {
+    $retentionNote = 'Personal data is retained for the duration of employment or engagement and thereafter only as required under applicable law, statutory registers, or legitimate legal claims.';
+}
 ?>
 <style>
-    .gov-hub h2 { color: #0f172a; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: .6rem; margin: 1.75rem 0 .85rem; font-size: 1.15rem; letter-spacing: -.02em; }
-    .gov-hub h3 { color: #1e293b; font-weight: 700; margin: 1.25rem 0 .5rem; font-size: 1rem; }
-    .gov-hub p, .gov-hub li { color: #475569; line-height: 1.75; font-size: .925rem; margin-bottom: .65rem; }
+    .gov-hub h2 { color: var(--rc-ink); font-weight: 800; border-bottom: 2px solid var(--rc-border); padding-bottom: .6rem; margin: 1.75rem 0 .85rem; font-size: 1.15rem; letter-spacing: -.02em; }
+    .gov-hub h3 { color: var(--rc-ink-soft); font-weight: 700; margin: 1.25rem 0 .5rem; font-size: 1rem; }
+    .gov-hub p, .gov-hub li { color: var(--rc-ink-muted); line-height: 1.75; font-size: .925rem; margin-bottom: .65rem; }
     .gov-hub ul { list-style: disc; padding-left: 1.35rem; margin-bottom: 1rem; }
-    .gov-hub strong { color: #1e293b; font-weight: 700; }
-    .gov-hub a { color: #2563eb; font-weight: 600; text-decoration: none; }
-    .gov-hub a:hover { text-decoration: underline; color: #1d4ed8; }
-    .gov-tab { border: 1px solid #e2e8f0; background: #fff; color: #475569; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: .55rem .9rem; border-radius: 9999px; cursor: pointer; transition: .15s; }
-    .gov-tab:hover, .gov-tab:focus-visible { border-color: #93c5fd; color: #1d4ed8; outline: 2px solid #93c5fd; outline-offset: 2px; }
-    .gov-tab[aria-selected="true"] { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
-    .gov-callout { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem 1.15rem; margin: 1rem 0; }
-    .gov-callout.dpdp { background: #eff6ff; border-color: #bfdbfe; }
-    .gov-callout.loc { background: #fff7ed; border-color: #fed7aa; }
+    .gov-hub strong { color: var(--rc-ink); font-weight: 700; }
+    .gov-hub a { color: var(--rc-accent); font-weight: 600; text-decoration: none; }
+    .gov-hub a:hover { text-decoration: underline; }
+    .gov-tab { border: 1px solid var(--rc-border); background: var(--rc-card); color: var(--rc-ink-muted); font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: .55rem .9rem; border-radius: 9999px; cursor: pointer; transition: .15s; }
+    .gov-tab:hover, .gov-tab:focus-visible { border-color: var(--rc-accent); color: var(--rc-accent); outline: 2px solid color-mix(in srgb, var(--rc-accent) 40%, transparent); outline-offset: 2px; }
+    .gov-tab[aria-selected="true"] { background: var(--rc-accent); color: #fff; border-color: var(--rc-accent); }
+    .gov-callout { background: var(--rc-paper); border: 1px solid var(--rc-border); border-radius: 1rem; padding: 1rem 1.15rem; margin: 1rem 0; color: var(--rc-ink-soft); }
+    .gov-callout.dpdp { border-color: color-mix(in srgb, var(--rc-accent) 35%, var(--rc-border)); }
+    .gov-callout.loc { border-color: color-mix(in srgb, #d97706 35%, var(--rc-border)); }
+    .gov-hub { color: var(--rc-ink); }
+    .gov-shell { background: var(--rc-card); border-color: var(--rc-border); }
 </style>
 
-<div class="w-full bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-10 mb-8"
+<div class="gov-shell gov-hub w-full rounded-3xl shadow-sm border p-6 md:p-10 mb-8"
      x-data="{ panel: (new URLSearchParams(location.search).get('policy') || 'terms') }"
      x-init="$watch('panel', v => { const u = new URL(location.href); u.searchParams.set('tab','terms'); u.searchParams.set('policy', v); history.replaceState({}, '', u); })">
 
@@ -131,6 +162,7 @@ $h = static function ($s) {
             </ul>
 
             <h2>5. Rights of Data Principals</h2>
+            <p>Retention: <?= $h($retentionNote) ?></p>
             <p>Subject to the DPDP Act and employment law, individuals may request from the Client (Data Fiduciary):</p>
             <ul>
                 <li>Access to personal data held about them in the Platform;</li>
@@ -161,7 +193,16 @@ $h = static function ($s) {
             <h2>10. Grievance &amp; contact</h2>
             <ul>
                 <li>Client administrators: use internal HR / IT channels for roster and access issues.</li>
-                <li>Developer privacy contact: <a href="mailto:<?= $h($privacyEmail) ?>"><?= $h($privacyEmail) ?></a></li>
+                <li><strong>Data Fiduciary:</strong> <?= $h($clientName) ?><?php if ($clientAddr !== ''): ?> — <?= $h($clientAddr) ?><?php endif; ?></li>
+                <?php if ($clientPhone !== ''): ?><li>Organisation phone: <?= $h($clientPhone) ?></li><?php endif; ?>
+                <?php if ($clientEmail !== ''): ?><li>Organisation email: <a href="mailto:<?= $h($clientEmail) ?>"><?= $h($clientEmail) ?></a></li><?php endif; ?>
+                <?php if ($clientWeb !== ''): ?><li>Website: <a href="<?= $h(preg_match('~^https?://~i',$clientWeb)?$clientWeb:'https://'.$clientWeb) ?>" rel="noopener noreferrer" target="_blank"><?= $h($clientWeb) ?></a></li><?php endif; ?>
+                <li><strong>Grievance Officer<?= $goName !== '' ? ': ' . $h($goName) : '' ?></strong>
+                    <?php if ($goEmail !== ''): ?> — <a href="mailto:<?= $h($goEmail) ?>"><?= $h($goEmail) ?></a><?php endif; ?>
+                    <?php if ($goPhone !== ''): ?> · <?= $h($goPhone) ?><?php endif; ?>
+                </li>
+                <li>Privacy contact: <a href="mailto:<?= $h($privacyEmail) ?>"><?= $h($privacyEmail) ?></a></li>
+                <li>Platform provider: <?= $h($developerName) ?> · <a href="mailto:<?= $h($developerEmail) ?>"><?= $h($developerEmail) ?></a></li>
                 <li>Legal: <a href="mailto:<?= $h($developerEmail) ?>"><?= $h($developerEmail) ?></a></li>
             </ul>
             <p class="text-xs text-slate-400">This notice is operational guidance for Platform use. It is not a substitute for formal legal advice or a Client-specific privacy policy filed with regulators.</p>

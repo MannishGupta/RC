@@ -21,9 +21,13 @@ final class RolePack
         if ($user === 'admin' || $user === 'super_admin') {
             return 'admin';
         }
+        // General HR / visitor — dedicated pack (view + share operational modules)
+        if ($user === 'public' || $user === null || $user === '' || $user === 'general_hr') {
+            return 'general_hr';
+        }
         $cfg = self::config();
         $id = (string)($cfg['crm_pack'] ?? 'logistics');
-        return $id !== '' ? $id : 'readonly';
+        return $id !== '' ? $id : 'general_hr';
     }
 
     /** @return list<string>|null null = all tabs (*) */
@@ -41,7 +45,7 @@ final class RolePack
             }
             return array_values(array_map('strval', $tabs));
         }
-        return ['team', 'terms'];
+        return ['team', 'locations', 'bank', 'docs', 'mediakit', 'events', 'statutory', 'numero', 'cctv', 'terms', 'access', 'statistics', 'cartags', 'assets', 'expiry', 'org', 'status', 'janam'];
     }
 
     public static function canAccess(?string $user, string $tab): bool

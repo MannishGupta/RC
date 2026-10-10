@@ -2710,8 +2710,8 @@
     },
     {
       "id": "timeline",
-      "en": "Timeline",
-      "hi": "समय रेखा",
+      "en": "Dasha",
+      "hi": "दशा",
       "icon": "fa-clock-rotate-left",
       "tier": "free"
     },

@@ -41,11 +41,17 @@ $logoW = 160;
 $logoH = 48;
 ?>
 <!DOCTYPE html>
-<html lang="en-IN">
+<html lang="en-IN" data-theme="reserve">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#0f172a">
+    <?php if (is_file(__DIR__ . '/partials/rc_theme_head.php')) require __DIR__ . '/partials/rc_theme_head.php'; ?>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+
+    <meta name="format-detection" content="telephone=no,date=no,email=no,address=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+    <meta name="theme-color" id="rc-theme-color" content="#FAF9F8">
     <meta name="color-scheme" content="light">
 <?php if ($seoHtml !== ''): ?>
     <?= $seoHtml ?>
@@ -69,7 +75,7 @@ $logoH = 48;
         html{-webkit-text-size-adjust:100%}
         body{
             margin:0;
-            min-height:100vh;
+            min-height:100vh;min-height:100dvh;
             display:flex;flex-direction:column;align-items:center;justify-content:center;
             padding:1.5rem;
             font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -128,15 +134,44 @@ $logoH = 48;
         @media (prefers-reduced-motion:reduce){.spin{animation:none}}
     </style>
     <link rel="stylesheet" href="assets/a11y.css?v=260921.29">
-<link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
+<link rel="stylesheet" href="/assets/contrast-lock.css?v=20261009.9">
+    <link rel="stylesheet" href="/assets/rc-compat.css?v=20261009.13">
     <script src="assets/a11y-tooltip.js?v=260921.29" defer></script>
+
+<script>
+(function(){
+  var map = { light:'#FAF9F8', dark:'#1B1A19', reserve:'#F5F0E8' };
+  function apply(){
+    var th = (document.documentElement.getAttribute('data-theme')||'light');
+    if (th === 'system') {
+      th = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var el = document.getElementById('rc-theme-color');
+    if (el) el.setAttribute('content', map[th] || map.light);
+  }
+  apply();
+  document.addEventListener('DOMContentLoaded', apply);
+  try {
+    var _s = localStorage.getItem('rc-theme');
+    if (_s) { /* theme already applied by head script */ }
+  } catch(e) {}
+  var obs = new MutationObserver(apply);
+  obs.observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','class'] });
+})();
+</script>
+
 </head>
-<body>
+<body class="rc-login-portal">
+<canvas id="rc-login-net" class="rc-login-net" aria-hidden="true"></canvas>
+<div class="rc-login-orbs" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="rc-login-scan" aria-hidden="true"></div>
 <a class="rc-skip-link" href="#password">Skip to sign-in form</a>
 
     <main id="login-main" class="card">
         <div class="logo-wrap">
 <?php if ($compLogo): ?>
+            <?php $__logoBg = strtolower((string)($companyData['logo_bg'] ?? 'light')); if (!in_array($__logoBg, ['light','dark'], true)) $__logoBg = 'light'; ?>
+            <span class="rc-logo-plate" data-bg="<?= $h($__logoBg) ?>">
             <img src="<?= $h($compLogo) ?>"
                  alt="<?= $h($compName) ?>"
                  class="logo-img"
@@ -144,6 +179,7 @@ $logoH = 48;
                  height="<?= (int)$logoH ?>"
                  decoding="async"
                  fetchpriority="high">
+            </span>
 <?php else: ?>
             <div class="logo-fallback" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -211,13 +247,25 @@ $logoH = 48;
             fetch('index.php', {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
                 body: JSON.stringify({
                     action: 'login',
                     password: pass,
                     csrf_token: <?= json_encode($csrf, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
                 })
-            }).then(function (res) { return res.json(); }).then(function (data) {
+            }).then(function (res) {
+                return res.text().then(function (text) {
+                    var data = null;
+                    try { data = text ? JSON.parse(text) : null; } catch (e) {
+                        throw new Error(
+                            (text && text.replace(/<[^>]+>/g, ' ').trim().slice(0, 160))
+                            || ('Login failed (HTTP ' + res.status + ', empty or non-JSON response)')
+                        );
+                    }
+                    if (!data) throw new Error('Login failed (HTTP ' + res.status + ', empty response)');
+                    return data;
+                });
+            }).then(function (data) {
                 if (data.status === 'success') {
                     msg.className = 'msg-box ok';
                     msg.textContent = 'Access granted — redirecting…';
@@ -255,5 +303,65 @@ $logoH = 48;
   }).catch(function () {});
 })();
 </script>
+
+<style id="rc-login-portal-css">
+html,body.rc-login-portal{min-height:100%;margin:0}
+body.rc-login-portal{
+  background:#0b1220!important;color:#e2e8f0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;min-height:100dvh;padding:1.5rem;position:relative;overflow-x:hidden;
+}
+.rc-login-net{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.rc-login-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.rc-login-orbs i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.35}
+.rc-login-orbs i:nth-child(1){width:40vw;height:40vw;left:-10%;top:-10%;background:#1d4ed8}
+.rc-login-orbs i:nth-child(2){width:30vw;height:30vw;right:-5%;bottom:10%;background:#0e7490}
+.rc-login-orbs i:nth-child(3){width:25vw;height:25vw;left:40%;bottom:-10%;background:#4c1d95}
+.rc-login-scan{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.02) 2px,rgba(255,255,255,.02) 4px)}
+body.rc-login-portal main.card,#login-main.card{
+  position:relative;z-index:2;
+  background:rgba(15,23,42,.72)!important;backdrop-filter:blur(16px);
+  border:1px solid rgba(148,163,184,.25)!important;
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.5)!important;
+  color:#e2e8f0!important;
+}
+body.rc-login-portal .heading,body.rc-login-portal .subheading,body.rc-login-portal .subheading strong{color:#f1f5f9!important}
+body.rc-login-portal .powered,body.rc-login-portal .powered a{color:#94a3b8!important}
+body.rc-login-portal .input-field{background:#0f172a!important;color:#f1f5f9!important;border-color:#334155!important}
+body.rc-login-portal .btn{background:#2563eb!important;color:#fff!important}
+@media (prefers-reduced-motion: reduce){
+  .rc-login-net,.rc-login-orbs,.rc-login-scan{display:none!important}
+  body.rc-login-portal{background:#0f172a!important}
+}
+</style>
+<script>
+(function(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var c = document.getElementById('rc-login-net');
+  if (!c || !c.getContext) return;
+  var ctx = c.getContext('2d'), pts = [], N = 48, W, H;
+  function resize(){ W=c.width=window.innerWidth; H=c.height=window.innerHeight; }
+  function init(){
+    pts=[]; for(var i=0;i<N;i++) pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35});
+  }
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<pts.length;i++){
+      var p=pts[i]; p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1; if(p.y<0||p.y>H)p.vy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.4,0,6.28); ctx.fillStyle='rgba(148,163,184,.55)'; ctx.fill();
+      for(var j=i+1;j<pts.length;j++){
+        var q=pts[j], dx=p.x-q.x, dy=p.y-q.y, d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){ ctx.strokeStyle='rgba(59,130,246,'+(0.18*(1-d/120))+')'; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke(); }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  resize(); init(); tick();
+  window.addEventListener('resize', function(){ resize(); init(); });
+})();
+</script>
+
 </body>
 </html>

@@ -23,6 +23,33 @@
 //    public by design — that's what a QR scan hits — but were hardened
 //    separately.
 if (!defined('BASE_PATH')) exit;
+if (is_file(BASE_PATH . '/app/VehicleCatalog.php')) {
+    require_once BASE_PATH . '/app/VehicleCatalog.php';
+}
+if (is_file(BASE_PATH . '/app/MasterDirectory.php')) {
+    require_once BASE_PATH . '/app/MasterDirectory.php';
+}
+
+/** Resolve OEM logo URL for a make/model string. */
+function rc_cartag_logo(string $makeModel): string {
+    $try = trim($makeModel);
+    if ($try === '') return '';
+    if (class_exists('VehicleCatalog')) {
+        $u = VehicleCatalog::getVehicleLogo($try);
+        if (is_string($u) && $u !== '') return $u;
+        $first = trim(explode(' ', $try)[0] ?? '');
+        if ($first !== '' && $first !== $try) {
+            $u = VehicleCatalog::getVehicleLogo($first);
+            if (is_string($u) && $u !== '') return $u;
+        }
+    }
+    if (class_exists('MasterDirectory')) {
+        $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', explode(' ', $try)[0] ?? $try) ?? '');
+        $u = MasterDirectory::logoUrl('', 'oems', $slug);
+        if (is_string($u) && $u !== '') return $u;
+    }
+    return '';
+}
 ?>
 <style>/* cartag-modal-overflow-fix */
 [x-show="modalOpen"] {
@@ -148,6 +175,15 @@ foreach ($carTags as &$_t) {
         'PUC'       => VehicleRegistry::validity((string)($_reg['pucc_upto'] ?? '')),
         'Fitness'   => VehicleRegistry::validity((string)($_reg['fitness_upto'] ?? '')),
     ] : [];
+    // OEM logo — VehicleCatalog was built but never called from this tab
+    $_make = trim((string)($_t['make_model'] ?? $_t['manufacturer'] ?? $_t['make'] ?? ''));
+    if ($_make === '' && !empty($_reg['maker_model'])) {
+        $_make = trim((string)$_reg['maker_model']);
+    }
+    $_t['oem_logo'] = ($_make !== '' && function_exists('rc_cartag_logo')) ? rc_cartag_logo($_make) : '';
+    if ($_t['oem_logo'] === '' && $_make !== '' && class_exists('VehicleCatalog')) {
+        $_t['oem_logo'] = (string)VehicleCatalog::getVehicleLogo($_make);
+    }
 }
 unset($_t);
 
@@ -157,6 +193,13 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
 ?>
 
 <div class="w-full flex flex-col space-y-4" x-data="carTagsTab()">
+
+<div x-show="(tags || []).length === 0" x-cloak class="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+  <i class="fa-solid fa-car text-3xl text-slate-300 mb-3"></i>
+  <p class="text-sm font-bold text-slate-700">No fleet assets yet</p>
+  <p class="text-xs text-slate-500 mt-1">Register a vehicle tag to get started.</p>
+</div>
+
 
     <?php if ($carTagsLegacyPending > 0): ?>
     <!-- Shown only while old-format records exist that have not yet been
@@ -213,21 +256,33 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
                 <template x-for="t in tags" :key="t.id">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden group hover:border-blue-300 hover:shadow-md transition-all flex flex-col">
 
-                        <div class="bg-gradient-to-r from-slate-800 to-slate-700 px-5 pt-5 pb-8 relative overflow-hidden">
-                            <div class="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-white/5"></div>
-                            <div class="flex items-start justify-between relative">
-                                <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                    <i class="fa-solid fa-car text-white/80 text-sm"></i>
+                        <div class="bg-gradient-to-r from-slate-900 to-slate-700 px-4 pt-4 pb-10 relative overflow-hidden">
+                            <div class="flex items-center gap-3 relative">
+                                <!-- OEM logo always on white tile so black SVGs stay visible -->
+                                <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-md overflow-hidden p-1.5 ring-1 ring-white/30">
+                                    <div class="w-11 h-11 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden shrink-0">
+                                        <img x-show="t.oem_logo" :src="t.oem_logo" :alt="t.manufacturer || t.make || 'OEM'"
+                                             class="max-h-full max-w-full object-contain" width="40" height="40" loading="lazy"
+                                             :data-cands="JSON.stringify(t.oem_logo_candidates || [])"
+                                             @error="window.rcLogoCascade && window.rcLogoCascade($el)">
+                                        <i x-show="!t.oem_logo" class="fa-solid fa-car text-slate-300"></i>
+                                    </div>
                                 </div>
-                                <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
-                                    <button @click.stop="showQr(t)" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition text-xs" title="QR Code">
+                                <!-- Plate number: dominant, centered in remaining header -->
+                                <div class="flex-1 min-w-0 text-center px-1">
+                                    <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300 mb-0.5">Registration</div>
+                                    <div class="font-black text-white text-xl sm:text-2xl leading-tight font-mono tracking-wider truncate drop-shadow"
+                                         x-text="t._pretty || t.registration_number || t.plate || '—'"></div>
+                                </div>
+                                <div class="flex gap-1.5 shrink-0 opacity-80 group-hover:opacity-100 transition">
+                                    <button type="button" @click.stop="showQr(t)" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition text-xs" title="QR Code">
                                         <i class="fa-solid fa-qrcode"></i>
                                     </button>
                                     <?php if ($isAdmin): ?>
-                                    <button @click.stop="editTag(t)" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition text-xs" title="Edit">
+                                    <button type="button" @click.stop="editTag(t)" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition text-xs" title="Edit">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
-                                    <button @click.stop="removeTag(t)" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-red-500/60 text-white/80 hover:text-white flex items-center justify-center transition text-xs" title="Delete">
+                                    <button type="button" @click.stop="removeTag(t)" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-red-500/70 text-white flex items-center justify-center transition text-xs" title="Delete">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                     <?php endif; ?>
@@ -237,12 +292,9 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
 
                         <div class="-mt-5 mx-4 bg-white rounded-xl border border-slate-100 shadow-sm px-4 pt-4 pb-4 flex-1 flex flex-col gap-3">
                             <div>
-                                <h3 class="font-black text-slate-800 text-lg leading-tight font-mono tracking-wide" x-text="t._pretty || t.registration_number || '—'"></h3>
-
-                                <div class="text-xs text-slate-600 mt-1" x-show="t.make_model || t.colour">
-                                    <span class="font-semibold" x-text="t.make_model"></span><span
-                                        x-show="t.make_model && t.colour" class="text-slate-300"> · </span><span x-text="t.colour"></span>
-                                </div>
+                                <h3 class="font-bold text-slate-800 text-base leading-tight" x-show="t.make_model || t.colour">
+                                    <span x-text="t.make_model || ''"></span><span x-show="t.make_model && t.colour" class="text-slate-300"> · </span><span class="text-slate-600 font-medium" x-text="t.colour || ''"></span>
+                                </h3>
                                 <div class="flex items-center gap-2 mt-1.5 flex-wrap">
                                     <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-mono">#<span x-text="t.tag_id || t.id"></span></span>
                                     <span x-show="t._legacy" class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Not imported</span>
@@ -627,7 +679,7 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
 <!-- EasyQRCodeJS 4.6.2 — replaces qrcodejs 1.0.0, abandoned since 2016
      with issues open from 2024–2026 and an unfixed code-length overflow.
      Same `new QRCode(el, options)` constructor, so this is a drop-in. -->
-<script src="https://cdn.jsdelivr.net/npm/easyqrcodejs@4.6.2/dist/easy.qrcode.min.js"></script>
+<script src="/assets/vendor/easy.qrcode.min.js?v=4.6.2"></script>
 <script>
 
 function renderSquareQR(el, text, size) {

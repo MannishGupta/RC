@@ -159,7 +159,7 @@ foreach ($rows as $_hr) {
     <span class="text-[11px] text-slate-500">Alpine 3.17 · Chart.js 4.5 · Build <?= $h($ver) ?></span>
   </div>
   <!-- Executive header -->
-  <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white p-6 shadow-lg">
+  <div class="rounded-2xl border border-slate-200 rc-surface-inverse rc-hero-dark bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white p-6 shadow-lg">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-200/90 m-0 mb-1">Enterprise Control Plane</p>
@@ -816,3 +816,60 @@ function closeEdit(){
     <p class="mt-2 mb-0 text-xs text-slate-400">Storage is self-healing: required folders and seed JSON are provisioned automatically at <code>0775</code> with no migration prompts.</p>
   </div>
 </div>
+
+<?php
+$_mm = __DIR__ . '/../partials/modules_matrix.php';
+if (is_file($_mm)) { require $_mm; }
+?>
+  <?php if (!empty($isSuperAdmin)): ?>
+  <div class="rc-card rounded-2xl border border-slate-200 bg-white p-5 mb-6 shadow-sm" id="rc-windows-installers">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Windows · Installed Apps</div>
+        <h3 class="text-base font-extrabold text-slate-900 m-0">Windows Installers</h3>
+        <p class="text-xs text-slate-500 m-0 mt-1 max-w-xl">Build per-tenant installers that create a desktop + Start menu shortcut to each RC site and a full Add/Remove Programs entry (name, icon, publisher, version, support links, uninstall).</p>
+      </div>
+      <button type="button" id="rc-build-installers-btn"
+              class="h-10 px-4 rounded-xl text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0">
+        Build installers for all tenants
+      </button>
+    </div>
+    <p class="text-[11px] text-slate-400 mt-2 m-0" id="rc-build-installers-status"></p>
+  </div>
+  <script>
+  (function(){
+    var btn = document.getElementById('rc-build-installers-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+      var st = document.getElementById('rc-build-installers-status');
+      st.textContent = 'Building…';
+      btn.disabled = true;
+      var csrf = (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.csrf) || '';
+      fetch(location.pathname + '?action=installer_build', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrf},
+        body: JSON.stringify({action: 'installer_build', csrf_token: csrf})
+      }).then(function(r){
+        var ct = r.headers.get('content-type') || '';
+        if (!r.ok) {
+          return r.text().then(function(t){ throw new Error(t.slice(0,200) || ('HTTP '+r.status)); });
+        }
+        if (ct.indexOf('application/zip') === -1) {
+          return r.text().then(function(t){ throw new Error(t.slice(0,200) || 'Unexpected response'); });
+        }
+        return r.blob().then(function(b){
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = 'rc-windows-installers.zip';
+          document.body.appendChild(a); a.click(); a.remove();
+          st.textContent = 'Download started.';
+        });
+      }).catch(function(e){
+        st.textContent = String(e.message || e);
+      }).finally(function(){ btn.disabled = false; });
+    });
+  })();
+  </script>
+  <?php endif; ?>
+

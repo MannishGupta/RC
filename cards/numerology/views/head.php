@@ -24,7 +24,8 @@ if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
     }
 }" id="html-root">
 <head>
-<link rel="stylesheet" href="/assets/numerology.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>">
+<link rel="stylesheet" href="/assets/numerology.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+<link rel="stylesheet" href="/assets/contrast-lock.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,6 +52,7 @@ if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
     $_siteName = htmlspecialchars((string)($clientName ?? 'Arthsathi'), ENT_QUOTES);
     ?>
     <title><?= $_ogTitle ?></title>
+    <meta name="description" content="<?= $_ogDesc ?>">
     <meta property="og:site_name"    content="<?= $_siteName ?>">
     <meta property="og:title"        content="<?= $_ogTitle ?>">
     <meta property="og:description"  content="<?= $_ogDesc ?>">
@@ -161,5 +163,5 @@ if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
     <?php endif; ?>
     
 <?php require dirname(__DIR__, 2) . '/partials/lightbox.php'; ?>
-<link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
+<link rel="stylesheet" href="/assets/contrast-lock.css?v=20261009.9">
 </head>

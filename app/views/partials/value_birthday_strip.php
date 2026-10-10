@@ -104,18 +104,18 @@ if (!$items) {
     return;
 }
 ?>
-<div id="rc-bday-strip" class="mb-4 rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 via-white to-rose-50 shadow-sm overflow-hidden" role="region" aria-label="Upcoming birthdays and anniversaries">
-  <div class="px-4 py-2.5 border-b border-amber-100/80 flex items-center justify-between gap-2">
-    <div class="flex items-center gap-2 min-w-0">
-      <span class="text-lg" aria-hidden="true">🎉</span>
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-800/80 m-0">Celebrations · next 7 days</p>
-        <p class="text-sm font-bold text-slate-900 m-0"><?= count($items) ?> upcoming</p>
+<div id="rc-bday-strip" class="rc-live-card rounded-xl border shadow-sm overflow-hidden min-w-0 min-h-0 flex flex-col" role="region" aria-label="Upcoming birthdays and anniversaries">
+  <div class="rc-live-card__hd px-2.5 py-1.5 border-b flex items-center justify-between gap-1 shrink-0">
+    <div class="flex items-center gap-1.5 min-w-0">
+      <span class="text-sm shrink-0" aria-hidden="true">🎉</span>
+      <div class="min-w-0">
+        <p class="rc-live-kicker text-[9px] font-bold uppercase tracking-[0.12em] m-0 truncate">Celebrations</p>
+        <p class="rc-live-value text-xs font-bold m-0 leading-tight"><?= count($items) ?> upcoming</p>
       </div>
     </div>
-    <span class="text-[10px] font-semibold text-slate-500 tabular-nums"><?= $h($today->format('d M Y')) ?> IST</span>
+    <span class="rc-live-kicker text-[9px] font-semibold tabular-nums shrink-0"><?= $h($today->format('d M')) ?></span>
   </div>
-  <div class="flex gap-2 overflow-x-auto p-3 scroll-smooth" style="-webkit-overflow-scrolling:touch">
+  <div class="flex gap-1.5 overflow-x-auto p-2 scroll-smooth flex-1 min-h-0" style="-webkit-overflow-scrolling:touch">
     <?php foreach ($items as $it):
       $wa = '';
       if ($it['phone'] !== '') {
@@ -133,22 +133,22 @@ if (!$items) {
         }
       }
     ?>
-    <div class="shrink-0 w-56 rounded-xl border border-slate-200 bg-white p-3 shadow-sm flex flex-col gap-2">
+    <div class="rc-live-subcard shrink-0 w-36 rounded-lg border p-2 shadow-sm flex flex-col gap-1">
       <div class="flex items-center gap-2">
-        <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0">
+        <div class="rc-live-avatar w-8 h-8 rounded-md overflow-hidden border flex items-center justify-center text-[10px] font-bold shrink-0">
           <?php if ($it['photo'] !== ''): ?>
-            <img src="/images/<?= $h(rawurlencode(basename($it['photo']))) ?>" alt="" width="40" height="40" class="w-full h-full object-cover" loading="lazy" onerror="this.remove()">
+            <img src="/images/<?= $h(rawurlencode(basename($it['photo']))) ?>" alt="" width="32" height="32" class="w-full h-full object-cover" loading="lazy" onerror="this.remove()">
           <?php else: ?>
             <?= $h(mb_strtoupper(mb_substr($it['name'], 0, 1))) ?>
           <?php endif; ?>
         </div>
         <div class="min-w-0">
-          <div class="text-sm font-bold text-slate-900 truncate"><?= $h($it['name']) ?></div>
-          <div class="text-[11px] font-semibold text-slate-600"><?= $h($it['icon'] . ' ' . $it['label']) ?></div>
+          <div class="rc-live-value text-xs font-bold truncate"><?= $h($it['name']) ?></div>
+          <div class="rc-live-meta text-[11px] font-semibold"><?= $h($it['icon'] . ' ' . $it['label']) ?></div>
         </div>
       </div>
       <div class="flex items-center justify-between gap-1">
-        <span class="text-[11px] font-bold <?= $it['days'] === 0 ? 'text-rose-700 bg-rose-50 border-rose-200' : 'text-amber-800 bg-amber-50 border-amber-200' ?> border rounded-full px-2 py-0.5"><?= $h($it['when_label']) ?></span>
+        <span class="text-[11px] font-bold <?= $it['days'] === 0 ? 'rc-live-pill rc-live-pill rc-live-pill--hot' : 'rc-live-pill' ?> border rounded-full px-2 py-0.5"><?= $h($it['when_label']) ?></span>
         <?php if ($wa !== ''): ?>
           <a href="<?= $h($wa) ?>" target="_blank" rel="noopener" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1" aria-label="Wish <?= $h($it['name']) ?> on WhatsApp">
             <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Wish

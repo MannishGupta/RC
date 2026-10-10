@@ -77,3 +77,218 @@ table.nr-loshu .nr-loshu-el {
     background: #e5e5e5 !important;
   }
 }
+
+
+/* ═══ FLUENT FLATTEN 2.0 — readable metrics + meta on light corporate skin ═══ */
+:root {
+  --rc-ink: #201F1E;
+  --rc-ink-soft: #323130;
+  --rc-ink-muted: #605E5C;
+  --rc-paper: #FAF9F8;
+  --rc-card: #FFFFFF;
+  --rc-border: #E1DFDD;
+  --rc-accent: #0078D4;
+}
+html[data-theme="dark"] {
+  --rc-ink: #F3F2F1;
+  --rc-ink-soft: #E1DFDD;
+  --rc-ink-muted: #C8C6C4;
+  --rc-paper: #1B1A19;
+  --rc-card: #242322;
+  --rc-border: #3B3A39;
+  --rc-accent: #4CA3EE;
+}
+html[data-theme="reserve"] {
+  --rc-ink: #1F1B16;
+  --rc-ink-soft: #3A322A;
+  --rc-ink-muted: #5C5248;
+  --rc-paper: #F5F1EA;
+  --rc-card: #FFFFFF;
+  --rc-border: #E3DACE;
+  --rc-accent: #0F6CBD;
+}
+
+html body.nr-sacred,
+html body.nr-sacred #report-container,
+html #report-container {
+  background: var(--rc-paper) !important;
+  background-image: none !important;
+  color: var(--rc-ink) !important;
+  font-family: "Segoe UI Variable Text","Segoe UI","Aptos","Inter","Noto Sans Devanagari",system-ui,sans-serif !important;
+}
+body.nr-sacred::before, body.nr-sacred::after,
+#report-container .nr-particles,
+#report-container.nr-manuscript::before,
+#report-container.nr-manuscript::after {
+  content: none !important; display: none !important; opacity: 0 !important;
+}
+
+/* Hero + name block */
+html #report-container .nr-hero,
+html #report-container .nr-profile-head {
+  background: var(--rc-card) !important;
+  background-image: none !important;
+  color: var(--rc-ink) !important;
+  border: 1px solid var(--rc-border) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06) !important;
+}
+html #report-container .nr-name,
+html #report-container .nr-hero .nr-name,
+html #report-container h1 {
+  color: var(--rc-ink) !important;
+  -webkit-text-fill-color: var(--rc-ink) !important;
+  text-shadow: none !important;
+}
+
+/* Meta row under name — was light-on-light (unreadable) */
+html #report-container .nr-meta,
+html #report-container .nr-meta-a11y,
+html #report-container .nr-meta li,
+html #report-container ul.nr-meta li {
+  color: var(--rc-ink-muted) !important;
+  -webkit-text-fill-color: var(--rc-ink-muted) !important;
+  opacity: 1 !important;
+}
+html #report-container .nr-meta i,
+html #report-container .nr-meta-a11y i {
+  color: var(--rc-accent) !important;
+  -webkit-text-fill-color: var(--rc-accent) !important;
+}
+
+/* Key metrics strip — kill dark navy panels (higher specificity than legacy grid rules) */
+html #report-container .nr-metrics,
+html #report-container section.nr-metrics {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  padding: 0.5rem 0 !important;
+}
+html #report-container .nr-section-label {
+  color: var(--rc-ink-muted) !important;
+  -webkit-text-fill-color: var(--rc-ink-muted) !important;
+}
+html #report-container .nr-metrics-grid,
+html #report-container .nr-metrics .nr-metrics-grid {
+  background: transparent !important;
+  gap: 0.65rem !important;
+}
+html #report-container .nr-metrics-grid .nr-metric,
+html #report-container .nr-metric,
+html #report-container article.nr-metric,
+html #report-container [class*="nr-metric-"] {
+  background: var(--rc-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--rc-border) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05) !important;
+  color: var(--rc-ink) !important;
+  -webkit-text-fill-color: var(--rc-ink) !important;
+  border-radius: 10px !important;
+}
+html #report-container .nr-metric-value,
+html #report-container .nr-metrics-grid .nr-metric .nr-metric-value,
+html #report-container .nr-metric .nr-metric-value {
+  color: var(--rc-accent) !important;
+  -webkit-text-fill-color: var(--rc-accent) !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+html #report-container .nr-metric-label,
+html #report-container .nr-metrics-grid .nr-metric .nr-metric-label,
+html #report-container .nr-metric-planet,
+html #report-container .nr-metric-icon {
+  color: var(--rc-ink-muted) !important;
+  -webkit-text-fill-color: var(--rc-ink-muted) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Cards / body copy */
+html #report-container .nr-card,
+html #report-container .rounded-xl,
+html #report-container .rounded-2xl,
+html #report-container section,
+html #report-container article {
+  background: var(--rc-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--rc-border) !important;
+  color: var(--rc-ink) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06) !important;
+}
+html #report-container p,
+html #report-container li,
+html #report-container td,
+html #report-container span:not([class*="fa-"]),
+html #report-container div,
+html #report-container label,
+html #report-container .nr-body,
+html #report-container .nr-lead,
+html #report-container .nr-muted,
+html #report-container .nr-eyebrow {
+  color: var(--rc-ink) !important;
+  -webkit-text-fill-color: var(--rc-ink) !important;
+  text-shadow: none !important;
+}
+html #report-container .nr-muted,
+html #report-container .nr-eyebrow,
+html #report-container .nr-card-kicker {
+  color: var(--rc-ink-muted) !important;
+  -webkit-text-fill-color: var(--rc-ink-muted) !important;
+}
+html #report-container h1, html #report-container h2,
+html #report-container h3, html #report-container h4,
+html #report-container .nr-h3, html #report-container .nr-h4 {
+  color: var(--rc-ink) !important;
+  -webkit-text-fill-color: var(--rc-ink) !important;
+  text-shadow: none !important;
+}
+
+/* Tabs / pills — selected = accent white text; idle = dark on light */
+html #report-container .nr-pill,
+html #report-container .nr-seg-btn,
+html #report-container .nr-util-btn,
+html #report-container .mode-toggle-btn,
+html #report-container .tab-inactive {
+  background: var(--rc-paper) !important;
+  color: var(--rc-ink) !important;
+  -webkit-text-fill-color: var(--rc-ink) !important;
+  border: 1px solid var(--rc-border) !important;
+  box-shadow: none !important;
+}
+html #report-container .nr-seg-on,
+html #report-container .nr-util-on,
+html #report-container .nr-pill-on,
+html #report-container .tab-active,
+html #report-container .mode-toggle-btn.nr-seg-on {
+  background: var(--rc-accent) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  border-color: var(--rc-accent) !important;
+}
+
+/* Cmd bar */
+html #report-container .nr-cmd,
+html #report-container #action-bar,
+html #report-container .nr-header-bar,
+html #report-container .nr-topbar {
+  background: var(--rc-card) !important;
+  color: var(--rc-ink) !important;
+  border-bottom: 1px solid var(--rc-border) !important;
+  backdrop-filter: none !important;
+}
+html #report-container .nr-cmd *,
+html #report-container .nr-cmd-title {
+  color: var(--rc-ink) !important;
+  -webkit-text-fill-color: var(--rc-ink) !important;
+}
+
+/* Tables + callouts */
+html #report-container table { background: var(--rc-card) !important; color: var(--rc-ink) !important; }
+html #report-container thead th { background: var(--rc-paper) !important; color: var(--rc-ink-muted) !important; }
+html #report-container tbody td { color: var(--rc-ink) !important; }
+html #report-container .nr-callout-act { background: #DFF6DD !important; border-left: 4px solid #107C10 !important; color: var(--rc-ink) !important; }
+html #report-container .nr-callout-avoid { background: #FFF4CE !important; border-left: 4px solid #8A6B00 !important; color: var(--rc-ink) !important; }
+
+/* Badge stays high-contrast */
+html #report-container .nr-badge-perfect { background: #107C10 !important; color: #fff !important; }
+html #report-container .nr-badge-valid { background: #0078D4 !important; color: #fff !important; }

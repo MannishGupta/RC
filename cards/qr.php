@@ -41,6 +41,7 @@ $initial = strtoupper(substr($name !== '' ? $name : 'U', 0, 1));
         echo SeoShare::personCard('qr', $pMeta, $cMeta);
     } else {
         echo '<title>QR Code — ' . $h($name) . '</title>';
+        echo '<meta name="description" content="' . $h('QR contact card for ' . $name . ' — scan to save contact details.') . '">';
     }
     ?>
     <!-- EasyQRCodeJS 4.6.2 — deferred; init waits until constructor exists -->

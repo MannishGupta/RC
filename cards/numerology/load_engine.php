@@ -51,3 +51,6 @@ require_once $_ENGINE . '/extended.php';
 
 // ── 9. Chaldean Mobile validation & batch scoring ────────────────────────
 require_once $_ENGINE . '/chaldean_mobile.php';
+
+// ── 10. Dasha calculator (pure LP/pinnacles/PY helpers) ────────────────
+require_once $_ENGINE . '/dasha.php';

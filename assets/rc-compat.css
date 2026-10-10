@@ -1,0 +1,156 @@
+/**
+ * Resource Centre — cross-browser / device / orientation compatibility
+ * Load after layout + contrast-lock. Safe for Chrome, Edge, Firefox, Safari (iOS/macOS).
+ * Version: 20261009.13
+ */
+
+/* --- Viewport units: classic + dynamic (mobile browser chrome) --- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  height: 100%;
+}
+body.rc-app-shell,
+html body.rc-app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+/* Safe areas (notch, home indicator, landscape side insets) */
+body.rc-app-shell {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.rc-sidebar-foot,
+#rc-sidebar-foot {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)) !important;
+}
+header.rc-header,
+.rc-topbar,
+.rc-app-header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Touch: remove tap flash, improve hit targets */
+a, button, [role="button"], .rc-nav-item, .rc-sidebar-logout, .rc-theme-seg__btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button, .rc-hit-lg, .rc-sidebar-logout, .rc-theme-seg__btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+/* Dense icon toolbar keeps 32px visual but expands hit area */
+header .h-8.w-8 {
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+
+/* Overflow: prevent horizontal bounce on iOS */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+#rc-content, main.rc-main {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Images / media fluid */
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+img { image-rendering: -webkit-optimize-contrast; }
+
+/* Form controls: iOS zoom prevention (16px min) + consistent look */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* --- Portrait phones --- */
+@media (max-width: 767px) and (orientation: portrait) {
+  #rc-content, main.rc-main {
+    padding-left: max(12px, env(safe-area-inset-left)) !important;
+    padding-right: max(12px, env(safe-area-inset-right)) !important;
+  }
+  .rc-card, .rounded-2xl.border {
+    border-radius: 12px !important;
+  }
+}
+
+/* --- Landscape phones / short height --- */
+@media (max-height: 500px) and (orientation: landscape) {
+  aside.sidebar .rc-nav-item,
+  aside.sidebar a {
+    min-height: 36px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  .rc-sidebar-foot {
+    padding-top: 4px !important;
+    padding-bottom: max(4px, env(safe-area-inset-bottom)) !important;
+  }
+  .rc-theme-seg__btn {
+    min-height: 36px !important;
+    font-size: 11px !important;
+  }
+  header.rc-header, .rc-topbar {
+    min-height: 48px !important;
+  }
+}
+
+/* --- Tablets --- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  #rc-content {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+/* --- Large / desktop --- */
+@media (min-width: 1280px) {
+  #rc-content {
+    max-width: none;
+  }
+}
+
+/* Print */
+@media print {
+  aside.sidebar, .rc-sidebar-foot, .no-print, header .no-print {
+    display: none !important;
+  }
+  body.rc-app-shell {
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+  #rc-content {
+    overflow: visible !important;
+  }
+}
+
+/* Reduced motion already in contrast-lock; reinforce transforms off */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+}
+
+/* Dark theme-color helpers (JS may also set) */
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"], html.dark:not([data-theme="reserve"]) { color-scheme: dark; }
+html[data-theme="reserve"] { color-scheme: light; }
+
+/* Firefox scrollbar (thin already in contrast-lock) */
+@-moz-document url-prefix() {
+  * { scrollbar-width: thin; }
+}
+
+/* Grid/flex gaps fallback for very old engines — ignore if unsupported */
+@supports not (gap: 1rem) {
+  .flex.gap-2 > * + * { margin-left: 0.5rem; }
+  .flex.gap-4 > * + * { margin-left: 1rem; }
+}

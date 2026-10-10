@@ -154,11 +154,33 @@ if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
     exit;
 }
 $zip->addFromString('BACKUP-STAMP.txt', $stamp);
+
+$manifest = [
+    'app_version' => defined('APP_VERSION') ? (string)APP_VERSION : 'unknown',
+    'generated_at' => date('c'),
+    'operator' => $user,
+    'host' => (string)($_SERVER['HTTP_HOST'] ?? ''),
+    'tenant_count' => count($tenantList ?? []),
+    'tenants' => array_values($tenantList ?? []),
+    'file_count' => 0,
+    'files' => [],
+];
 foreach ($files as $rel => $abs) {
-    if (is_readable($abs)) {
-        $zip->addFile($abs, $rel);
+    if (!is_readable($abs)) {
+        continue;
     }
+    $bin = @file_get_contents($abs);
+    if ($bin === false) {
+        continue;
+    }
+    $manifest['files'][$rel] = [
+        'size' => strlen($bin),
+        'sha256' => hash('sha256', $bin),
+    ];
+    $zip->addFromString($rel, $bin);
 }
+$manifest['file_count'] = count($manifest['files']);
+$zip->addFromString('MANIFEST.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 $zip->close();
 
 $ver = defined('APP_VERSION') ? preg_replace('/[^0-9.]/', '', (string)APP_VERSION) : date('Ymd');

@@ -5,27 +5,76 @@ if (!defined('BASE_PATH')) {
 }
 $isAdminLoc = !empty($isAdmin);
 ?>
+<style>
+/* Location logos: always sit on light plate so dark/reserve themes stay readable */
+.rc-loc-logo-shell {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,.06);
+}
+html[data-theme="dark"] .rc-loc-logo-shell,
+html[data-theme="reserve"] .rc-loc-logo-shell {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+.rc-loc-logo { max-height: 100%; max-width: 100%; object-fit: contain; }
+</style>
 <script>
-window.rcMediaUrl = window.rcMediaUrl || function (name) {
+window.rcMediaUrl = function (name) {
   if (!name) return '';
   var n = String(name).trim();
-  if (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0) return n;
-  // strip query and path prefixes (images/, media/, tenants/...)
+  if (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0 || n.indexOf('/logo_proxy') === 0) return n;
+  // keep path after last slash only
   n = n.split('?')[0].replace(/^.*[\\/]/, '');
   if (!n) return '';
-  var base = (typeof window.RC_BASE === 'string' && window.RC_BASE) ? window.RC_BASE.replace(/\/$/, '') : '';
-  // Prefer media gateway (tenant-safe); images/ also rewritten on Apache/IIS
-  return base + '/media_serve.php?f=' + encodeURIComponent(n);
+  return '/media_serve.php?f=' + encodeURIComponent(n);
 };
-window.rcMediaOnError = window.rcMediaOnError || function (el) {
-  if (!el || el.dataset.rcTried) return;
-  el.dataset.rcTried = '1';
+window.rcMediaOnError = function (el) {
+  if (!el) return;
+  var step = parseInt(el.dataset.rcStep || '0', 10);
   var n = (el.getAttribute('data-src-name') || '').replace(/^.*[\\/]/, '');
-  if (!n) { el.style.display = 'none'; return; }
-  el.src = '/images/' + encodeURIComponent(n);
+  if (!n) {
+    try { n = decodeURIComponent((el.src.split('f=')[1] || '').split('&')[0]); } catch (e) {}
+  }
+  el.dataset.rcStep = String(step + 1);
+  if (step === 0 && n) { el.src = '/media_serve.php?f=' + encodeURIComponent(n); return; }
+  if (step === 1 && n) { el.src = '/images/' + encodeURIComponent(n); return; }
+  if (step === 2 && n) {
+    var stem = n.replace(/\.[^.]+$/, '');
+    el.src = '/media_serve.php?f=' + encodeURIComponent(stem + '.webp');
+    return;
+  }
+  if (step === 3 && n) {
+    var stem2 = n.replace(/\.[^.]+$/, '');
+    el.src = '/media_serve.php?f=' + encodeURIComponent(stem2 + '.jpg');
+    return;
+  }
+  el.style.display = 'none';
+  var shell = el.closest('.rc-loc-logo-shell');
+  if (shell) {
+    var ph = document.createElement('i');
+    ph.className = 'fa-solid fa-building text-slate-300 text-lg';
+    shell.appendChild(ph);
+  }
 };
 </script>
 <div class="w-full flex flex-col gap-4" x-data="{ q: '' }">
+
+<?php if (!empty($isAdmin) && is_file(BASE_PATH . '/app/views/partials/image_upload.php')): ?>
+<div class="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600 mb-2">
+  <p class="font-bold text-slate-700 mb-2">Location image standards</p>
+  <?php
+    $iuField = 'location_photo';
+    $iuCurrent = '';
+    $iuLabel = 'Location photo / logo';
+    $iuId = 'location_tab_photo';
+    $iuNs = 'locations';
+    require BASE_PATH . '/app/views/partials/image_upload.php';
+  ?>
+  <p class="mt-2 text-[11px] text-slate-500">Use <strong>Add / Edit location</strong> to save the image on a record. Rules above match the server.</p>
+</div>
+<?php endif; ?>
+
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-3 min-w-0">
       <div class="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -48,8 +97,8 @@ window.rcMediaOnError = window.rcMediaOnError || function (el) {
 
   <div class="flex flex-wrap items-center gap-2" x-show="(filteredList||[]).some(i => i.logo || i.photo)">
     <template x-for="i in (filteredList||[]).filter(i => i.logo || i.photo)" :key="'lg-'+(i.id||i.slug||i.name)">
-      <div class="h-11 w-11 rounded-lg border border-slate-200 bg-white p-1 flex items-center justify-center overflow-hidden shadow-sm" :title="i.name">
-        <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($event.target)" alt="" class="max-h-full max-w-full object-contain bg-slate-100 rounded" loading="lazy"
+      <div class="rc-loc-logo-shell h-12 w-12 rounded-lg p-1.5 flex items-center justify-center overflow-hidden" :title="i.name">
+        <img :src="i.logo_url || rcMediaUrl(i.logo || i.photo || i.image)" :data-src-name="i.logo || i.photo || i.image" @error="rcMediaOnError($el)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy"
              @error="$el.style.display='none'">
       </div>
     </template>
@@ -68,11 +117,10 @@ window.rcMediaOnError = window.rcMediaOnError || function (el) {
       <article class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
         <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-3 min-h-[3.75rem]">
           <div class="w-14 h-14 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-            <template x-if="i.logo || i.photo">
-              <img :src="rcMediaUrl(i.logo || i.photo)" :data-src-name="i.logo || i.photo" @error="rcMediaOnError($event.target)" alt="" class="w-full h-full object-contain p-1 bg-slate-50" loading="lazy"
-                   @error="$el.replaceWith(Object.assign(document.createElement('i'),{className:'fa-solid fa-building text-slate-300 text-lg'}))">
+            <template x-if="i.logo_url || i.logo || i.photo || i.image">
+              <img :src="i.logo_url || rcMediaUrl(i.logo || i.photo || i.image)" :data-src-name="i.logo || i.photo || i.image" @error="rcMediaOnError($el)" alt="" class="max-h-full max-w-full object-contain rc-loc-logo" loading="lazy">
             </template>
-            <template x-if="!(i.logo || i.photo)">
+            <template x-if="!(i.logo_url || i.logo || i.photo || i.image)">
               <i class="fa-solid fa-building text-slate-300 text-lg"></i>
             </template>
           </div>

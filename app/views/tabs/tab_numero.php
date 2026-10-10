@@ -1,3 +1,21 @@
+<?php if (!defined('BASE_PATH')) exit; ?>
+<style>
+.rc-numero-shell { font-family: Inter, "Noto Sans Devanagari", system-ui, sans-serif; }
+.rc-numero-shell .card, .rc-numero-shell .nr-card {
+  background: #fff; color: #0f172a; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
+}
+html[data-theme="dark"] .rc-numero-shell .card,
+html[data-theme="dark"] .rc-numero-shell .nr-card {
+  background: #1e293b; color: #e2e8f0; border-color: #334155;
+}
+.rc-numero-shell h1, .rc-numero-shell h2 { font-weight: 800; letter-spacing: -0.02em; }
+.rc-numero-shell a.btn, .rc-numero-shell .chrome-btn {
+  font-size: 0.75rem; font-weight: 700; border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem; border: 1px solid #cbd5e1; background: #fff; color: #0f172a;
+}
+</style>
+<div class="rc-numero-shell w-full">
 <?php
 // Version: 260916.14
 // views/tab_numero.php — V2.0.0
@@ -264,3 +282,5 @@ if (!defined('BASE_PATH')) exit;
     applyTheme(mq.matches);
 })();
 </script>
+
+</div>

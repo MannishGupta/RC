@@ -3,6 +3,13 @@
 if (!defined('BASE_PATH')) exit;
 ?>
 <div class="space-y-4" x-data="valueAssets()" x-init="load()">
+
+  <div x-show="!assets.length" x-cloak class="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+    <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-3"></i>
+    <p class="text-sm font-bold text-slate-700">No assets yet</p>
+    <p class="text-xs text-slate-500 mt-1">Provision your first asset to track checkouts.</p>
+  </div>
+
   <div>
     <h2 class="text-base font-bold text-slate-800">Asset Checkout Registry</h2>
     <p class="text-xs text-slate-500">Phones, keys, and equipment assigned to staff with due dates.</p>
@@ -62,7 +69,7 @@ if (!defined('BASE_PATH')) exit;
 <script>
 function valueAssets() {
   return {
-    assets: [], form: null,
+    assets: [], form: null, loading: true,
     async api(body) {
       const fd = new FormData();
       Object.entries(body).forEach(([k,v]) => fd.append(k, v ?? ''));
@@ -70,7 +77,7 @@ function valueAssets() {
     },
     async load() {
       const r = await this.api({ action: 'vp_list', type: 'assets' });
-      if (r.status === 'ok') this.assets = r.data || [];
+      if (r.status === 'ok') this.assets = r.data || []; this.loading = false;
     },
     edit(a) { this.form = { ...a }; },
     async save() {

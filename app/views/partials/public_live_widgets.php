@@ -25,39 +25,39 @@ if (class_exists('AppDB')) {
 }
 $h = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 ?>
-<div id="rc-public-widgets" class="mb-4 grid grid-cols-3 gap-2 sm:gap-3" role="region" aria-label="Live local information">
+<div id="rc-public-widgets" class="contents" role="region" aria-label="Live local information">
   <!-- Wall clock IST -->
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 flex flex-col justify-between min-h-[7.5rem]">
+  <div class="rc-live-card rounded-xl border shadow-sm p-2.5 sm:p-3 flex flex-col justify-between min-h-0 min-w-0 overflow-hidden">
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Wall clock</span>
-      <span class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-2 py-0.5">IST · Asia/Kolkata</span>
+      <span class="text-[10px] font-bold uppercase tracking-[0.14em] rc-live-kicker">Wall clock</span>
+      <span class="text-[9px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-1.5 py-0.5 shrink-0">IST</span>
     </div>
-    <div id="rc-wall-clock" class="mt-2 font-mono text-lg sm:text-2xl md:text-3xl font-black tabular-nums text-slate-900 tracking-tight" aria-live="polite">--:--:--</div>
-    <div id="rc-wall-date" class="text-xs font-semibold text-slate-600 mt-1">—</div>
+    <div id="rc-wall-clock" class="mt-1 font-mono text-base sm:text-xl md:text-2xl font-black tabular-nums rc-live-value tracking-tight leading-none" aria-live="polite">--:--:--</div>
+    <div id="rc-wall-date" class="text-xs font-semibold rc-live-meta mt-1">—</div>
   </div>
   <!-- Weather -->
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 flex flex-col justify-between min-h-[7.5rem]">
+  <div class="rc-live-card rounded-xl border shadow-sm p-2.5 sm:p-3 flex flex-col justify-between min-h-0 min-w-0 overflow-hidden">
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Weather</span>
-      <span class="text-[10px] text-slate-400">Open-Meteo</span>
+      <span class="text-[10px] font-bold uppercase tracking-[0.14em] rc-live-kicker">Weather</span>
+      <span class="text-[9px] rc-live-kicker shrink-0 hidden sm:inline">Open-Meteo</span>
     </div>
     <div class="mt-2 flex items-end gap-2">
-      <span id="rc-wx-temp" class="text-lg sm:text-2xl md:text-3xl font-black text-slate-900 tabular-nums">—°</span>
+      <span id="rc-wx-temp" class="text-base sm:text-xl md:text-2xl font-black rc-live-value tabular-nums leading-none">—°</span>
       <span id="rc-wx-icon" class="text-2xl" aria-hidden="true">🌤️</span>
     </div>
-    <div id="rc-wx-desc" class="text-xs font-semibold text-slate-600 mt-1">Loading…</div>
+    <div id="rc-wx-desc" class="text-xs font-semibold rc-live-meta mt-1">Loading…</div>
   </div>
   <!-- AQI -->
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 flex flex-col justify-between min-h-[7.5rem]">
+  <div class="rc-live-card rounded-xl border shadow-sm p-2.5 sm:p-3 flex flex-col justify-between min-h-0 min-w-0 overflow-hidden">
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Air quality</span>
-      <span id="rc-aqi-badge" class="text-[10px] font-bold rounded-full px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200">US AQI</span>
+      <span class="text-[10px] font-bold uppercase tracking-[0.14em] rc-live-kicker">Air quality</span>
+      <span id="rc-aqi-badge" class="text-[10px] font-bold rounded-full px-2 py-0.5 bg-slate-100 rc-live-meta border border-slate-200">US AQI</span>
     </div>
     <div class="mt-2 flex items-end gap-2">
-      <span id="rc-aqi-val" class="text-lg sm:text-2xl md:text-3xl font-black text-slate-900 tabular-nums">—</span>
-      <span id="rc-aqi-label" class="text-sm font-bold text-slate-600">—</span>
+      <span id="rc-aqi-val" class="text-base sm:text-xl md:text-2xl font-black rc-live-value tabular-nums leading-none">—</span>
+      <span id="rc-aqi-label" class="text-sm font-bold rc-live-meta">—</span>
     </div>
-    <div id="rc-aqi-detail" class="text-xs font-semibold text-slate-600 mt-1">PM2.5 · PM10 loading…</div>
+    <div id="rc-aqi-detail" class="text-xs font-semibold rc-live-meta mt-1">PM2.5 · PM10 loading…</div>
   </div>
 </div>
 <script>
@@ -104,7 +104,7 @@ $h = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 
     return ['—', '🌡️'];
   }
   function aqiBand(v) {
-    if (v == null || isNaN(v)) return { label: '—', cls: 'bg-slate-100 text-slate-600 border-slate-200', color: '#64748b' };
+    if (v == null || isNaN(v)) return { label: '—', cls: 'bg-slate-100 rc-live-meta border-slate-200', color: '#64748b' };
     if (v <= 50) return { label: 'Good', cls: 'bg-teal-50 text-teal-800 border-teal-200', color: '#0f766e' };
     if (v <= 100) return { label: 'Moderate', cls: 'bg-amber-50 text-amber-900 border-amber-200', color: '#b45309' };
     if (v <= 150) return { label: 'Unhealthy*', cls: 'bg-orange-50 text-orange-900 border-orange-300', color: '#c2410c' };

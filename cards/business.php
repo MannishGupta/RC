@@ -459,6 +459,7 @@ if ($sameAs) $personJsonLd['sameAs'] = $sameAs;
         echo SeoShare::personCard('business', is_array($person ?? null) ? $person : [], is_array($company ?? null) ? $company : []);
     } else {
         echo '<title>' . htmlspecialchars((string)($name ?? 'Contact'), ENT_QUOTES, 'UTF-8') . '</title>';
+        echo '<meta name="description" content="' . htmlspecialchars('Digital business card for ' . (string)($name ?? 'team member') . ' — official contact details.', ENT_QUOTES, 'UTF-8') . '">';
     }
     ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1062,16 +1063,6 @@ if ($sameAs) $personJsonLd['sameAs'] = $sameAs;
     <script>
         function shareProfile() {
             // BUG FIX: WhatsApp's URL got printed twice on the final line
-            // ("...slug=mg https://.../slug=mg"). Cause: $waText already ends
-            // with "Digital Card:\n<url>" — a labelled, readable section — but
-            // this object ALSO passed the same URL again as a separate `url`
-            // field. On Android, WhatsApp's share-target handler appends the
-            // `url` extra to the end of the `text` extra regardless of
-            // whether the URL is already present in the text, so the link
-            // appeared twice, space-separated, on the same line — exactly
-            // the reported symptom. The URL is already in `text`, labelled
-            // and on its own line; there is no reason to also carry it in a
-            // separate field that a share target might re-append.
             const shareData = { title: <?= json_encode($ogTitle) ?>, text: <?= json_encode($waText, JSON_UNESCAPED_UNICODE) ?> };
             if (navigator.share) { navigator.share(shareData).catch(err => console.log('Share cancelled', err)); } 
             else {

@@ -1,0 +1,31 @@
+name: RC Safety Check
+on: [push]
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+      - name: Check every PHP file for syntax errors (PHP ${{ matrix.php-version }})
+        run: |
+          err=0
+          while IFS= read -r -d '' f; do
+            php -l "$f" >/dev/null 2>msg.txt || { echo "PHP SYNTAX ERROR in $f:"; cat msg.txt; err=1; }
+          done < <(find . -path ./vendor -prune -o -name '*.php' -print0)
+          if [ "$err" -ne 0 ]; then echo "::error::Build has PHP errors on PHP ${{ matrix.php-version }} - do NOT deploy."; exit 1; fi
+          echo "All PHP files OK (PHP ${{ matrix.php-version }})."
+      - name: Check every JSON data file is valid
+        run: |
+          err=0
+          while IFS= read -r -d '' j; do
+            php -r 'json_decode(file_get_contents($argv[1])); exit(json_last_error()===JSON_ERROR_NONE?0:1);' "$j" \
+              || { echo "BROKEN JSON: $j"; err=1; }
+          done < <(find . -path ./vendor -prune -o -name '*.json' -print0)
+          if [ "$err" -ne 0 ]; then echo "::error::A JSON file is broken - do NOT deploy."; exit 1; fi
+          echo "All JSON files OK."

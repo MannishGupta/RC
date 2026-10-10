@@ -377,7 +377,7 @@ final class VehicleCatalog
     /**
      * Logo URL resolver with fallback chain:
      *   1) Local: assets/cars/{slug}/logo.png|svg
-     *   2) jsDelivr simple-icons / clearbit-style public logo endpoints
+     *   2) jsDelivr simple-icons / public logo endpoints via logo_proxy
      *   3) Generic silhouette
      */
     public static function getVehicleLogo(string $make): string
@@ -385,9 +385,17 @@ final class VehicleCatalog
         $key = self::resolveMake($make);
         $slug = $key ? (self::$catalog[$key]['slug'] ?? self::slugify($make)) : self::slugify($make);
 
-        // 1) Local override
+        // 1) Canonical OEM logos (MasterDirectory path: assets/logos/oems/{slug}.{ext})
         $base = defined('BASE_PATH') ? rtrim(BASE_PATH, '/\\') : '';
         if ($base !== '') {
+            foreach (['svg', 'png', 'webp'] as $ext) {
+                $rel = 'assets/logos/oems/' . $slug . '.' . $ext;
+                $abs = $base . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+                if (is_file($abs)) {
+                    return $rel . '?v=' . (string)@filemtime($abs);
+                }
+            }
+            // 1b) Legacy fallback: assets/cars/{slug}/logo.{ext}
             foreach (['png', 'svg', 'webp', 'jpg'] as $ext) {
                 $rel = self::LOCAL_ASSETS . '/' . $slug . '/logo.' . $ext;
                 $abs = $base . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
@@ -396,37 +404,8 @@ final class VehicleCatalog
                 }
             }
         }
-
-        // 2) Public CDN candidates (best-effort; browser will 404 → onerror can swap)
-        // simple-icons via jsDelivr (works for many global brands)
-        $si = [
-            'maruti-suzuki' => null, // often missing — skip
-            'hyundai' => 'hyundai',
-            'tata' => null,
-            'mahindra' => null,
-            'toyota' => 'toyota',
-            'honda' => 'honda',
-            'bmw' => 'bmw',
-            'mercedes-benz' => 'mercedes',
-            'audi' => 'audi',
-            'volkswagen' => 'volkswagen',
-            'kia' => 'kia',
-            'nissan' => 'nissan',
-            'volvo' => 'volvo',
-            'jaguar' => 'jaguar',
-            'land-rover' => 'landrover',
-            'lexus' => 'lexus',
-            'skoda' => 'skoda',
-            'renault' => 'renault',
-            'mg' => null,
-            'byd' => null,
-            'citroen' => 'citroen',
-        ];
-        if (!empty($si[$slug])) {
-            return 'https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/' . $si[$slug] . '.svg';
-        }
-
-        // Clearbit logo API (domain-based; many OEM domains resolve)
+        // 2) Domain → real brand mark (logo_proxy (Debounce/Google)). Avoid simple-icons
+        // (monochrome glyphs often look "unlinked" / wrong brand on dark UI).
         $domains = [
             'maruti-suzuki' => 'marutisuzuki.com',
             'hyundai' => 'hyundai.com',
@@ -438,20 +417,29 @@ final class VehicleCatalog
             'mercedes-benz' => 'mercedes-benz.co.in',
             'audi' => 'audi.co.in',
             'volkswagen' => 'volkswagen.co.in',
-            'kia' => 'kia.com/in',
+            'kia' => 'kia.com',
             'nissan' => 'nissan.co.in',
             'volvo' => 'volvocars.com',
             'jaguar' => 'jaguar.in',
             'land-rover' => 'landrover.in',
             'lexus' => 'lexusindia.co.in',
-            'skoda' => 'skoda.co.in',
+            'skoda' => 'skoda-auto.co.in',
             'renault' => 'renault.co.in',
             'mg' => 'mgmotor.co.in',
             'byd' => 'byd.com',
             'citroen' => 'citroen.in',
+            'force' => 'forcemotors.com',
+            'isuzu' => 'isuzu.in',
+            'jeep' => 'jeep-india.com',
+            'porsche' => 'porsche.com',
+            'mini' => 'mini.in',
+            'ashok-leyland' => 'ashokleyland.com',
+            'eicher' => 'eicher.in',
         ];
         if (!empty($domains[$slug])) {
-            return 'https://logo.clearbit.com/' . $domains[$slug];
+            $d = $domains[$slug];
+            // Prefer high-res mark via logo_proxy
+            return '/logo_proxy.php?d=' . rawurlencode($d) . '&sz=256';
         }
 
         // 3) Generic

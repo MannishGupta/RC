@@ -322,21 +322,7 @@ window.addEventListener('beforeprint', function(){
 
     <!-- Language toggle only in top action bar (avoid triple controls) -->
 
-    <!-- BUG FIX: this Light/Auto/Dark toggle predates the gold/obsidian
-         reskin (260916.04/05) — that reskin applies its colours with
-         !important, unconditionally, with no regard for this toggle's
-         state. Selecting "Light" produced no visible change (or a broken
-         partial one, since a few elements outside the reskin's scope still
-         DID respond), which is exactly the "odd scene" reported: a control
-         that visually implies it does something it no longer does. The
-         cards this report is meant to match (business/ID/visiting) have no
-         light/dark option at all — they are simply always the gold/obsidian
-         theme — so removing this now-non-functional toggle makes the report
-         consistent with that, rather than building out a second, separate
-         light theme nothing asked for. Verified nothing outside styling
-         depends on NumeroTheme before removing its only caller; the JS
-         object itself is left in place in head.php, harmlessly unused,
-         rather than risking a second edit for no benefit. -->
+    <!-- fixed -->
 
     <button onclick="NumeroUI.printAll()" class="cluster-btn">
         <i class="fa-solid fa-file-pdf text-indigo-400"></i>

@@ -72,6 +72,36 @@ document.addEventListener('alpine:init', () => {
         sortDir: 'asc',
         rankMap: {},
 
+        async importTeamCsv(ev) {
+            const input = ev && ev.target;
+            const file = input && input.files && input.files[0];
+            if (!file) return;
+            try {
+                const fd = new FormData();
+                fd.append('action', 'team_import');
+                fd.append('file', file);
+                const csrf = (window.APP && window.APP.csrf) || window.CSRF_TOKEN || '';
+                if (csrf) fd.append('csrf_token', csrf);
+                const r = await fetch('index.php', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-Token': csrf, 'Accept': 'application/json' },
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+                const j = await r.json().catch(() => ({}));
+                if (j.status === 'success') {
+                    alert('Import complete: ' + (j.imported || 0) + ' added, ' + (j.skipped || 0) + ' skipped.');
+                    location.reload();
+                } else {
+                    alert(j.message || 'Import failed.');
+                }
+            } catch (e) {
+                alert('Import failed: ' + (e.message || e));
+            } finally {
+                if (input) input.value = '';
+            }
+        },
+
         favKey() {
             const t = (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.auth && window.__DASHBOARD_STATE__.auth.tenantId)
                 || (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.tenantId)
@@ -135,6 +165,46 @@ document.addEventListener('alpine:init', () => {
             const d = this.dash();
             if (d && d.data) return d.data;
             return (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.data) || {};
+        },
+
+        /** True for empty labels or unresolved master keys (desig_2, dept_1, loc_hq, …). */
+        isMasterCode(v) {
+            const s = String(v == null ? '' : v).trim();
+            if (s === '' || s === '-' || s === '—') return true;
+            return /^(desig|dept|loc|location|designation|department)[_-]?\w*$/i.test(s);
+        },
+        isPendingField(v) {
+            const s = String(v == null ? '' : v).trim();
+            if (this.isMasterCode(s)) return true;
+            return /pending|unassigned/i.test(s);
+        },
+        labelDesig(i) {
+            const s = String((i && (i.designation_name || i.designation)) || '').trim();
+            if (this.isMasterCode(s)) return 'Designation Pending';
+            return s || 'Designation Pending';
+        },
+        labelDept(i) {
+            const s = String((i && (i.department_name || i.department)) || '').trim();
+            if (this.isMasterCode(s)) return 'Department Pending';
+            return s || 'Department Pending';
+        },
+        labelLoc(i) {
+            const s = String((i && (i.location_name || i.location)) || '').trim();
+            if (this.isMasterCode(s)) return 'Location Unassigned';
+            return s || 'Location Unassigned';
+        },
+        formPending(person, field) {
+            try {
+                const d = this.dash();
+                if (d && typeof d.openEditor === 'function') {
+                    d.openEditor('team', person);
+                    return;
+                }
+                if (d && typeof d.editRecord === 'function') {
+                    d.editRecord('team', person);
+                    return;
+                }
+            } catch (e) {}
         },
 
         designationRows() {
@@ -246,12 +316,6 @@ document.addEventListener('alpine:init', () => {
         },
 
         // BUG FIX: DOB was displayed raw as i.dob, which is always
-        // YYYY-MM-DD -- the format <input type="date"> is required to use,
-        // not a display choice. This project's stated convention is
-        // DD-MM-YYYY everywhere. Display-only: the underlying stored value
-        // and the date-picker binding both stay ISO, since the native
-        // picker requires that format to function at all -- only what
-        // renders on screen changes.
         formatDob(v) {
             if (!v) return '';
             const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v));
@@ -354,6 +418,29 @@ document.addEventListener('alpine:init', () => {
             if (!u) return;
             window.dispatchEvent(new CustomEvent('share-record', { detail: { type: 'team', item: u } }));
         },
+        /** Email the signature setup page link to the contact (or blank To:). */
+        shareSignatureEmail() {
+            const u = this.requireSelection();
+            if (!u) return;
+            const slug = String(u.slug || u.id || '').trim();
+            if (!slug) {
+                alert('This contact needs a slug/id before sharing a signature link.');
+                return;
+            }
+            const url = window.location.origin + '/cards/signature.php?slug=' + encodeURIComponent(slug);
+            const name = String(u.name || 'team member').trim();
+            const to = String(u.email || '').trim();
+            const subj = encodeURIComponent('Your email signature — ' + name);
+            const body = encodeURIComponent(
+                'Hi' + (name ? (' ' + name.split(' ')[0]) : '') + ',\n\n' +
+                'Here is your email signature setup page:\n' + url + '\n\n' +
+                '1. Open the link\n' +
+                '2. Click “Copy active signature”\n' +
+                '3. Paste into Gmail, Outlook, or Apple Mail\n' +
+                'Install steps for each mail app are on the page.\n'
+            );
+            window.location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + subj + '&body=' + body;
+        },
         editSelected() {
             const u = this.requireSelection();
             if (!u) return;
@@ -369,54 +456,66 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 
-<div class="w-full space-y-3" x-data="teamDirectory">
-    <!-- Primary list chrome: title + count + sort chips + card utilities (single row) -->
-    <div class="flex flex-wrap items-center gap-2">
-        <div class="flex items-center gap-2 min-w-0 mr-auto">
-            <h2 class="text-sm font-bold text-slate-800 truncate">Human Capital Index</h2>
-            <span class="inline-flex items-center rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 tabular-nums"
-                  x-text="totalCount + ' members'"></span>
-            <span class="text-[10px] text-slate-400" x-show="typeof window.__RC_TEAM_COUNT__ === 'number' && window.__RC_TEAM_COUNT__ !== totalCount"
-                  x-text="'· server ' + window.__RC_TEAM_COUNT__"></span>
+<div class="w-full space-y-2" x-data="teamDirectory">
+
+    <div x-show="totalCount === 0" x-cloak class="rc-card rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <i class="fa-solid fa-users text-3xl text-slate-300 mb-3" aria-hidden="true"></i>
+        <p class="text-sm font-bold text-slate-700">No team members yet</p>
+        <p class="text-xs text-slate-500 mt-1">Add your first person, or use <span class="font-semibold">Import CSV</span>.</p>
+    </div>
+
+    <!-- Primary list chrome: tools only (title+count live in main header — no duplicate) -->
+    <div class="rc-team-chrome sticky top-0 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-1.5 border-b border-slate-200 flex flex-nowrap items-center gap-1.5 overflow-x-auto" style="background:var(--rc-paper);border-color:var(--rc-border)">
+        <div class="flex flex-nowrap items-center gap-1 shrink-0">
+            <a href="/tools/export_team_csv.php" class="rc-team-chip inline-flex items-center gap-1 h-8 px-2.5 rounded-lg border text-[11px] font-bold whitespace-nowrap" title="Export team CSV">
+              <i class="fa-solid fa-file-csv text-xs" aria-hidden="true"></i> Export CSV
+            </a>
+            <?php if (!empty($isAdmin)): ?>
+            <label class="rc-team-chip inline-flex items-center gap-1 h-8 px-2.5 rounded-lg border text-[11px] font-bold cursor-pointer whitespace-nowrap" title="Import team CSV">
+              <i class="fa-solid fa-file-import text-xs" aria-hidden="true"></i> Import CSV
+              <input type="file" accept=".csv,text/csv" class="hidden" @change="importTeamCsv($event)">
+            </label>
+            <?php endif; ?>
         </div>
-        <div class="flex flex-wrap items-center gap-1" role="group" aria-label="Sort by">
+        <span class="w-px h-5 shrink-0 opacity-40" style="background:var(--rc-border)" aria-hidden="true"></span>
+        <div class="flex flex-nowrap items-center gap-1 shrink-0" role="group" aria-label="Sort by">
             <button type="button" @click="toggleSort('rank')"
-                    class="h-7 px-2.5 rounded-md text-[11px] font-bold border transition"
-                    :class="sortMode==='rank' ? 'bg-blue-600 text-white border-blue-600' : 'text-slate-600 bg-white border-slate-200 hover:border-blue-300'">
+                    class="rc-team-chip h-8 px-2.5 rounded-md text-[11px] font-bold border transition whitespace-nowrap"
+                    :class="sortMode==='rank' ? 'rc-team-chip--on' : ''">
                 Rank<span x-text="caret('rank')"></span>
             </button>
             <button type="button" @click="toggleSort('name')"
-                    class="h-7 px-2.5 rounded-md text-[11px] font-bold border transition"
-                    :class="sortMode==='name' ? 'bg-blue-600 text-white border-blue-600' : 'text-slate-600 bg-white border-slate-200 hover:border-blue-300'">
+                    class="rc-team-chip h-8 px-2.5 rounded-md text-[11px] font-bold border transition whitespace-nowrap"
+                    :class="sortMode==='name' ? 'rc-team-chip--on' : ''">
                 Name<span x-text="caret('name')"></span>
             </button>
             <button type="button" @click="toggleSort('location')"
-                    class="h-7 px-2.5 rounded-md text-[11px] font-bold border transition"
-                    :class="sortMode==='location' ? 'bg-blue-600 text-white border-blue-600' : 'text-slate-600 bg-white border-slate-200 hover:border-blue-300'">
+                    class="rc-team-chip h-8 px-2.5 rounded-md text-[11px] font-bold border transition whitespace-nowrap"
+                    :class="sortMode==='location' ? 'rc-team-chip--on' : ''">
                 Loc<span x-text="caret('location')"></span>
             </button>
             <button type="button" @click="toggleSort('department')"
-                    class="h-7 px-2.5 rounded-md text-[11px] font-bold border transition"
-                    :class="sortMode==='department' ? 'bg-blue-600 text-white border-blue-600' : 'text-slate-600 bg-white border-slate-200 hover:border-blue-300'">
+                    class="rc-team-chip h-8 px-2.5 rounded-md text-[11px] font-bold border transition whitespace-nowrap"
+                    :class="sortMode==='department' ? 'rc-team-chip--on' : ''">
                 Dept<span x-text="caret('department')"></span>
             </button>
         </div>
         <span class="w-px h-5 bg-slate-200 hidden sm:block"></span>
-        <div class="flex flex-wrap items-center gap-1">
-            <button type="button" @click="shareSelected()" class="rc-hit-lg h-11 px-3 rounded-md text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100" data-rc-tooltip="Opens WhatsApp with selected contacts" aria-label="Share selected contacts via WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></button>
-            <button type="button" @click="cardUrl('business')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open digital business card for selected person" aria-label="Open digital business card"><i class="fa-solid fa-id-badge text-xs" aria-hidden="true"></i></button>
-            <button type="button" @click="cardUrl('id')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open employee ID card" aria-label="Open employee ID card"><i class="fa-solid fa-id-card text-xs" aria-hidden="true"></i></button>
-            <button type="button" @click="cardUrl('visiting')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open visiting card" aria-label="Open visiting card"><i class="fa-solid fa-address-card text-xs" aria-hidden="true"></i></button>
-            <button type="button" @click="cardUrl('qr')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open QR contact card" aria-label="Open QR contact card"><i class="fa-solid fa-qrcode text-xs" aria-hidden="true"></i></button>
-            <button type="button" @click="cardUrl('signature')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open email signature block" aria-label="Open email signature card"><i class="fa-solid fa-signature text-xs" aria-hidden="true"></i></button>
-            <button type="button" @click="cardUrl('numero')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open Vedic numerology report" aria-label="Open numerology report"><i class="fa-solid fa-hashtag text-xs" aria-hidden="true"></i></button>
-            <!-- BUG FIX: Janam Patri / Kundli Milan was missing from this row
-                 entirely, even though it already exists as a real page
-                 (janam_patri.php) and is already linked from the sidebar
-                 nav. Placed immediately after Numero, matching where it
-                 already sits in that sidebar group. -->
-            <button type="button" @click="cardUrl('janam')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open Janam Patri / Kundli Milan" aria-label="Open Janam Patri and Kundli Milan"><i class="fa-solid fa-om text-xs" aria-hidden="true"></i></button>
-            <button type="button" @click="cardUrl('blood')" class="rc-hit-lg h-11 w-11 rounded-md text-slate-600 bg-white border border-slate-200" data-rc-tooltip="Open blood group report (team fun — not medical)" aria-label="Open blood group report"><i class="fa-solid fa-droplet text-xs" aria-hidden="true"></i></button>
+        <div class="flex flex-nowrap items-center gap-1 shrink-0" role="group" aria-label="Contact tools">
+            <!-- Share -->
+            <button type="button" @click="shareSelected()" class="rc-team-chip rc-team-chip--wa rc-hit-lg h-8 px-2.5 rounded-md text-[11px] font-bold border" data-rc-tooltip="Share selected contact via WhatsApp" aria-label="Share via WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></button>
+            <span class="w-px h-5 bg-slate-200 mx-0.5 hidden sm:inline-block" aria-hidden="true"></span>
+            <!-- Digital cards (person identity) -->
+            <button type="button" @click="cardUrl('business')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="Digital business card" aria-label="Digital business card"><i class="fa-solid fa-id-badge text-xs" aria-hidden="true"></i></button>
+            <button type="button" @click="cardUrl('visiting')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="Visiting card" aria-label="Visiting card"><i class="fa-solid fa-address-card text-xs" aria-hidden="true"></i></button>
+            <button type="button" @click="cardUrl('id')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="Employee ID card" aria-label="Employee ID card"><i class="fa-solid fa-id-card text-xs" aria-hidden="true"></i></button>
+            <button type="button" @click="cardUrl('qr')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="QR contact card" aria-label="QR contact card"><i class="fa-solid fa-qrcode text-xs" aria-hidden="true"></i></button>
+            <button type="button" @click="cardUrl('signature')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="Open email signature" aria-label="Open email signature"><i class="fa-solid fa-signature text-xs" aria-hidden="true"></i></button>
+            <span class="w-px h-5 bg-slate-200 mx-0.5 hidden sm:inline-block" aria-hidden="true"></span>
+            <!-- Reports (selection-based) -->
+            <button type="button" @click="cardUrl('numero')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="Numerology report" aria-label="Numerology report"><i class="fa-solid fa-hashtag text-xs" aria-hidden="true"></i></button>
+            <button type="button" @click="cardUrl('janam')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="Janam Patri / Kundli Milan" aria-label="Janam Patri"><i class="fa-solid fa-om text-xs" aria-hidden="true"></i></button>
+            <button type="button" @click="cardUrl('blood')" class="rc-team-chip rc-hit-lg h-8 w-8 rounded-md border" data-rc-tooltip="Blood group report" aria-label="Blood group report"><i class="fa-solid fa-droplet text-xs" aria-hidden="true"></i></button>
         </div>
     </div>
 
@@ -443,12 +542,36 @@ document.addEventListener('alpine:init', () => {
         transition: box-shadow .15s, border-color .15s;
         display: flex;
         flex-direction: column;
-        min-height: 168px;
+        min-height: 0;
       }
       .rc-vcard:hover { border-color: #cbd5e1; box-shadow: 0 8px 24px rgba(15,23,42,.08); }
-      .rc-vcard.is-selected { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.25); }
+      .rc-vcard.is-selected {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.45), 0 8px 24px rgba(37,99,235,.18) !important;
+        background: linear-gradient(180deg, #eff6ff 0%, #fff 48%) !important;
+        transform: translateY(-1px);
+        z-index: 2;
+      }
+      .rc-vcard.is-selected .rc-vcard-accent {
+        width: 6px !important;
+        background: #2563eb !important;
+      }
+      .rc-vcard.is-selected .rc-vcard-name { color: #1e3a8a !important; }
+      html[data-theme="dark"] .rc-vcard.is-selected,
+      [data-theme="dark"] .rc-vcard.is-selected {
+        background: linear-gradient(180deg, #1e3a5f 0%, #0f172a 55%) !important;
+        border-color: #60a5fa !important;
+        box-shadow: 0 0 0 3px rgba(96,165,250,.35), 0 8px 24px rgba(0,0,0,.35) !important;
+      }
+      html[data-theme="dark"] .rc-vcard.is-selected .rc-vcard-name,
+      [data-theme="dark"] .rc-vcard.is-selected .rc-vcard-name { color: #dbeafe !important; }
+      html[data-theme="reserve"] .rc-vcard.is-selected,
+      [data-theme="reserve"] .rc-vcard.is-selected {
+        background: linear-gradient(180deg, #f5efe6 0%, #faf8f5 50%) !important;
+        border-color: #0078d4 !important;
+      }
       .rc-vcard-accent { height: 4px; width: 100%; }
-      .rc-vcard-body { position: relative; padding: 14px 16px 16px; display: flex; gap: 12px; flex: 1; }
+      .rc-vcard-body { position: relative; padding: 10px 12px 10px; display: flex; gap: 10px; flex: 1; }
       .rc-vcard-photo {
         width: 72px; height: 72px; border-radius: 12px; object-fit: cover;
         background: #f1f5f9; border: 1px solid #e2e8f0; flex-shrink: 0;
@@ -460,12 +583,40 @@ document.addEventListener('alpine:init', () => {
       html[data-theme="dark"] .rc-vcard-name, [data-theme="dark"] .rc-vcard-name { color: #f8fafc !important; }
       html[data-theme="dark"] .rc-vcard-role, [data-theme="dark"] .rc-vcard-role { color: #93c5fd !important; }
       html[data-theme="dark"] .rc-vcard-line, [data-theme="dark"] .rc-vcard-line { color: #cbd5e1 !important; }
-      .rc-vcard-role { font-size: 0.75rem; font-weight: 600; color: #1d4ed8; margin: 0 0 6px; }
-      .rc-vcard-line { font-size: 0.7rem; color: #475569; margin: 2px 0; display: flex; gap: 6px; align-items: flex-start; }
+      .rc-vcard-role { font-size: 0.75rem; font-weight: 600; color: #1d4ed8; margin: 0 0 2px; }
+      .rc-vcard-line { font-size: 0.7rem; color: #475569; margin: 0; display: flex; gap: 6px; align-items: flex-start; line-height: 1.3; }
       .rc-vcard-line i { width: 12px; color: #94a3b8; margin-top: 2px; flex-shrink: 0; }
+      .rc-vcard-line,
+      .rc-vcard-line button,
+      .rc-vcard-line span,
+      .rc-vcard-role,
+      .rc-vcard-name {
+        min-height: 0 !important;
+        height: auto !important;
+        line-height: 1.25 !important;
+      }
+      .rc-vcard-line {
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 6px !important;
+      }
+      .rc-vcard-line button {
+        display: inline !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        color: inherit !important;
+        vertical-align: baseline !important;
+      }
+      .rc-vcard-body { gap: 10px !important; padding: 10px 12px !important; }
+      .rc-vcard-role { margin: 0 0 1px !important; }
+
       .rc-vcard-foot {
-        border-top: 1px solid #f1f5f9; padding: 8px 16px;
-        display: flex; flex-wrap: wrap; gap: 6px 10px;
+        border-top: 1px solid #f1f5f9; padding: 6px 12px;
+        display: flex; flex-wrap: wrap; gap: 4px 8px;
         font-size: 0.65rem; color: #64748b; background: #f8fafc;
       }
       .rc-vcard-pill {
@@ -509,7 +660,7 @@ document.addEventListener('alpine:init', () => {
       }
     </style>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2 items-start">
         <template x-for="(i, idx) in sortedUsers" :key="i.id || i.slug || idx">
             <article data-rc-vcard
                 @click="selectUser(i)"
@@ -531,7 +682,7 @@ document.addEventListener('alpine:init', () => {
                     </button>
                     <div class="rc-vcard-photo">
                         <template x-if="i.photo">
-                            <img :src="'images/' + i.photo" alt="" loading="lazy" width="72" height="72">
+                            <img :src="(window.rcMediaUrl ? rcMediaUrl(i.photo) : ('media_serve.php?f=' + encodeURIComponent(String(i.photo).replace(/^.*[\\\/]/,''))))" alt="" loading="lazy" width="72" height="72">
                         </template>
                         <template x-if="!i.photo">
                             <span x-text="(i.name || '?').charAt(0).toUpperCase()"></span>
@@ -541,26 +692,26 @@ document.addEventListener('alpine:init', () => {
                         <h3 class="rc-vcard-name" x-text="i.name || '—'"></h3>
                         <p class="rc-vcard-role">
                             <button type="button" class="text-left bg-transparent border-0 p-0 font-inherit cursor-pointer"
-                                :class="isPendingField(i.designation_name || i.designation) ? 'text-amber-700 underline decoration-amber-400 decoration-dotted font-semibold' : ''"
-                                :title="isPendingField(i.designation_name || i.designation) ? 'Click to set designation' : ''"
+                                :class="isPendingField(labelDesig(i)) ? 'text-amber-700 underline decoration-amber-400 decoration-dotted font-semibold' : ''"
+                                :title="isPendingField(labelDesig(i)) ? 'Click to set designation' : ''"
                                 @click.stop="fixPending(i, 'designation')"
-                                x-text="i.designation_name || i.designation || '—'"></button>
+                                x-text="labelDesig(i)"></button>
                         </p>
                         <div class="rc-vcard-line">
                             <i class="fa-solid fa-sitemap" aria-hidden="true"></i>
                             <button type="button" class="text-left bg-transparent border-0 p-0 font-inherit cursor-pointer"
-                                :class="isPendingField(i.department_name || i.department) ? 'text-amber-700 underline decoration-amber-400 decoration-dotted font-semibold' : ''"
-                                :title="isPendingField(i.department_name || i.department) ? 'Click to set department' : ''"
+                                :class="isPendingField(labelDept(i)) ? 'text-amber-700 underline decoration-amber-400 decoration-dotted font-semibold' : ''"
+                                :title="isPendingField(labelDept(i)) ? 'Click to set department' : ''"
                                 @click.stop="fixPending(i, 'department')"
-                                x-text="i.department_name || i.department || 'Department Pending'"></button>
+                                x-text="labelDept(i)"></button>
                         </div>
                         <div class="rc-vcard-line">
                             <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
                             <button type="button" class="text-left bg-transparent border-0 p-0 font-inherit cursor-pointer"
-                                :class="isPendingField(i.location_name || i.location) ? 'text-amber-700 underline decoration-amber-400 decoration-dotted font-semibold' : ''"
-                                :title="isPendingField(i.location_name || i.location) ? 'Click to set location' : ''"
+                                :class="isPendingField(labelLoc(i)) ? 'text-amber-700 underline decoration-amber-400 decoration-dotted font-semibold' : ''"
+                                :title="isPendingField(labelLoc(i)) ? 'Click to set location' : ''"
                                 @click.stop="fixPending(i, 'location')"
-                                x-text="i.location_name || i.location || 'Location Unassigned'"></button>
+                                x-text="labelLoc(i)"></button>
                         </div>
                         <template x-if="i.house_no || i.house_number">
                             <div class="rc-vcard-line"><i class="fa-solid fa-house" aria-hidden="true"></i><span x-text="'House ' + (i.house_no || i.house_number)"></span></div>

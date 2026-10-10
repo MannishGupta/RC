@@ -1,5 +1,5 @@
 /**
- * Fusion Resource Centre — WAI-ARIA Dialog (Modal) focus management
+ * Resource Centre — WAI-ARIA Dialog (Modal) focus management
  * APG: https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
  * Version: 260921.29
  *

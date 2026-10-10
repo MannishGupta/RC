@@ -1,26 +1,39 @@
-# Production & commercial launch checklist
+# Production launch checklist — Resource Centre
 
-**Build:** 260921.36
+**Build:** 20261006.0
 
-## Legal / DPDP
-- [ ] Client reviewed Terms, Privacy & DPDP, Location notice (`?tab=terms`)
-- [ ] Privacy officer / HR contact published internally
-- [ ] Location tracking designations documented and staff informed
-- [ ] Retention period for GPS / violation logs defined
-- [ ] Numerology treated as non-advisory entertainment/culture tool
+## A. Deploy
+- [ ] Backup every `tenants/*/data/` (and shared `data/` if used)
+- [ ] Upload release files in **binary** mode; do **not** overwrite `tenants/*/data/`
+- [ ] Deploy the **same** build to every tenant host
+- [ ] Hard-refresh (Ctrl+F5); confirm footer version **20261006.0**
+- [ ] `GET /health.php` → JSON `status: ok` and matching version
 
-## Security
-- [ ] HTTPS enforced; no default passwords
-- [ ] `data/` not publicly listable; secrets only server-side
-- [ ] Backup + restore tested
-- [ ] Admin-only settings / tracking / monitor verified
+## B. Security
+- [ ] HTTPS only
+- [ ] Complete `docs/AUTH_ROTATION.md` on each host
+- [ ] No public listing of `/data` or `/tenants`
+- [ ] Delete any `psi_token.txt` left from demos
+- [ ] GitHub Actions **RC Safety Check** green on the release commit
 
-## Accessibility
-- [ ] Keyboard smoke test (skip link, modal, search)
-- [ ] Nu Html Checker + axe on login, team, one card URL
-- [ ] Accessibility feedback channel monitored
+## C. Product smoke (per host)
+- [ ] Login (new portal) works
+- [ ] Theme: Light / Dark / Reserve / System readable
+- [ ] Sign out visible (sidebar bottom + mobile **Out**)
+- [ ] Organisation logo saves (PNG and/or SVG)
+- [ ] Team directory labels show names (not `desig_2`)
+- [ ] Directory print matches on-screen roles/locations
+- [ ] Email signature shows logo (not letter plate) after logo re-save if needed
+- [ ] Blood / numerology / janam open when signed in
 
-## Operations
-- [ ] Company logo, SMTP, maps key configured as needed
-- [ ] Demo data removed
+## D. Legal / DPDP
+- [ ] Privacy / DPDP page names real data types (DOB, blood, phone, etc.)
+- [ ] Named contact for access / erasure
+- [ ] Client sign-off on terms if required
+
+## E. Handover
+- [ ] Share `docs/TENANT_QUICKSTART.md` with tenant admins
 - [ ] Support owner named
+- [ ] Demo/sample data removed from production tenants
+
+When A–E are done, the host is **commercially live**.

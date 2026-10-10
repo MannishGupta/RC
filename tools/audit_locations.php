@@ -11,15 +11,6 @@ $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DI
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 // BUG FIX: this file defined DATA_PATH/IMG_PATH/DOC_PATH directly from
-// BASE_PATH, completely bypassing tenant resolution -- on a multi-tenant
-// deployment (tenants/{id}/data/, resolved by host in
-// app/tenant_bootstrap.php), every request to this file read and wrote
-// the WRONG tenant's data regardless of which domain it was requested on.
-// Fixed to require tenant_bootstrap.php first (as index.php and the
-// correctly-wired standalone entry points already do) and guard every
-// fallback define with if (!defined(...)) so tenant_bootstrap's
-// resolution always wins when available, with these as the fallback for
-// a genuine single-tenant install with no tenants/ folder at all.
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('IMG_PATH'))  if (!defined('IMG_PATH')) define('IMG_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/images');
 if (!defined('DOC_PATH'))  if (!defined('DOC_PATH')) define('DOC_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/documents');

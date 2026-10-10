@@ -1,6 +1,6 @@
 <?php
 /**
- * Version: 20260929.18
+ * Version: 20261003.04
  * Full Open Graph / Twitter / canonical SEO for share previews
  * India distribution, physiological highlights, awareness action plan + compatibility chart
  * Blood Group Intelligence Report — team compatibility + positive lore
@@ -12,13 +12,22 @@ $base = __DIR__;
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $base);
 }
-if (is_file($base . '/tenant_bootstrap.php')) {
-    require_once $base . '/tenant_bootstrap.php';
+// BUG FIX: checked for tenant_bootstrap.php at BASE_PATH root, which never
+if (is_file($base . '/app/tenant_bootstrap.php')) {
+    require_once $base . '/app/tenant_bootstrap.php';
 } elseif (is_file($base . '/app/bootstrap.php')) {
     require_once $base . '/app/bootstrap.php';
 }
 if (!defined('DATA_PATH')) {
     define('DATA_PATH', BASE_PATH . '/data');
+}
+
+
+if (session_status() === PHP_SESSION_NONE && class_exists('AppAuth')) { AppAuth::initSession(); }
+$__u = (string)($_SESSION['user'] ?? '');
+if ($__u === '' || !in_array($__u, ['admin','super_admin','public','crm'], true)) {
+    http_response_code(403); header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Access denied. Sign in via the Resource Centre first.'; exit;
 }
 
 date_default_timezone_set('Asia/Kolkata');
@@ -158,29 +167,24 @@ function bg_can_donate_to(string $donor, string $recipient): bool {
         };
     }
     // Exact matrix from standard chart (donor columns × recipient rows)
+    // CODE QUALITY FIX: this table was previously assigned twice -- a first
+    // block immediately overwritten by a second before anything ever read
+    // it, pure dead code. Verified both held the exact same sets (only
+    // reordered, which in_array() doesn't care about), so this was never a
+    // logic bug -- the actually-used table was and is correct, checked
+    // directly against the standard ABO+Rh donor compatibility chart for
+    // all 8 types. Removed the dead first block so a future edit to one
+    // table can't silently drift from the other while both look live.
     static $ok = null;
     if ($ok === null) {
         $ok = [
-            'O-'  => ['O-', 'O+', 'B-', 'B+', 'A-', 'A+', 'AB-', 'AB+'],
-            'O+'  => ['O+', 'B+', 'A+', 'AB+'],
-            'B-'  => ['B-', 'B+', 'AB-', 'AB+'],
-            'B+'  => ['B+', 'AB+'],
+            'O-'  => ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+            'O+'  => ['O+', 'A+', 'B+', 'AB+'],
             'A-'  => ['A-', 'A+', 'AB-', 'AB+'],
             'A+'  => ['A+', 'AB+'],
+            'B-'  => ['B-', 'B+', 'AB-', 'AB+'],
+            'B+'  => ['B+', 'AB+'],
             'AB-' => ['AB-', 'AB+'],
-            'AB+' => ['AB+'],
-        ];
-        // Invert: for each donor, set of recipients — build from recipient perspective of image:
-        // Image: recipient rows, donor columns — checkmark means that donor can give to that recipient
-        // So O- donor can give to all recipients; AB+ donor only to AB+ recipient
-        $ok = [
-            'O-'  => ['AB+', 'AB-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-'],
-            'O+'  => ['AB+', 'A+', 'B+', 'O+'],
-            'B-'  => ['AB+', 'AB-', 'B+', 'B-'],
-            'B+'  => ['AB+', 'B+'],
-            'A-'  => ['AB+', 'AB-', 'A+', 'A-'],
-            'A+'  => ['AB+', 'A+'],
-            'AB-' => ['AB+', 'AB-'],
             'AB+' => ['AB+'],
         ];
     }
@@ -471,9 +475,9 @@ function bg_members_with_group(array $team): array {
 function bg_css(): void {
     echo <<<'CSS'
 <style>
-:root{--bg-ink:#0f172a;--bg-muted:#64748b;--bg-card:#fff;--bg-line:#e2e8f0;--bg-accent:#be123c;--bg-ok:#15803d;--bg-warn:#b45309}
+:root{--bg-ink:#201F1E;--bg-muted:#605E5C;--bg-card:#FFFFFF;--bg-line:#E1DFDD;--bg-accent:#0078D4;--bg-ok:#107C10;--bg-warn:#8A6B00}
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(165deg,#0f172a 0%,#1e1b4b 40%,#4c0519 100%);color:var(--bg-ink);min-height:100vh}
+body{margin:0;font-family:"Segoe UI Variable Text","Segoe UI","Aptos","Inter","Noto Sans Devanagari",system-ui,sans-serif;background:#FAF9F8;color:var(--bg-ink);min-height:100vh}
 .wrap{max-width:960px;margin:0 auto;padding:1rem 1.1rem 3rem}
 .card{background:var(--bg-card);border:1px solid var(--bg-line);border-radius:16px;padding:1.1rem 1.2rem;margin:0 0 1rem;box-shadow:0 8px 28px rgba(15,23,42,.18)}
 h1,h2{margin:0 0 .5rem;color:#9f1239}
@@ -586,10 +590,11 @@ function bg_header(string $title, array $ctx = []): void {
     $photo = trim((string)($ctx['photo'] ?? ''));
     $ogImg = '';
     if ($photo !== '') {
-        if (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
+        if (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://') || str_starts_with($photo, 'data:')) {
             $ogImg = $photo;
         } else {
-            $ogImg = $base . '/images/' . rawurlencode(basename($photo));
+            $fn = basename(str_replace(['\\', '/'], '/', $photo));
+            $ogImg = $base . '/media_serve.php?f=' . rawurlencode($fn);
         }
     }
     if ($ogImg === '') {
@@ -717,6 +722,15 @@ bg_header($title, [
 // Hero
 echo '<div class="card">';
 echo '<div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">';
+$photoHero = trim((string)($focus['photo'] ?? ''));
+if ($photoHero !== '') {
+    if (str_starts_with($photoHero, 'http://') || str_starts_with($photoHero, 'https://') || str_starts_with($photoHero, 'data:')) {
+        $photoSrc = $photoHero;
+    } else {
+        $photoSrc = 'media_serve.php?f=' . rawurlencode(basename(str_replace(['\\', '/'], '/', $photoHero)));
+    }
+    echo '<img src="' . bg_h($photoSrc) . '" alt="" width="72" height="72" style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:1px solid #e2e8f0" loading="lazy">';
+}
 echo '<div><div class="hero-group">' . bg_h($g !== '' ? $g : '—') . '</div>';
 echo '<div class="meta">' . bg_h($lore['emoji'] . ' ' . $lore['title']) . '</div></div>';
 echo '<div style="flex:1;min-width:12rem">';
@@ -727,19 +741,17 @@ if ($focus['designation'] !== '') {
 echo '</div></div></div>';
 
 // Positive traits
-echo '<div class="grid2">';
-echo '<div class="card"><h2>✨ ' . bg_h(bg_t(['Positive highlights', 'सकारात्मक झलक'])) . '</h2>';
+echo '<div class="card"><h2>✨ ' . bg_h(bg_t(['Clinical & population highlights', 'नैदानिक व जनसंख्या झलक'])) . '</h2>';
+echo '<p class="meta" style="margin:0 0 .65rem">' . bg_h(bg_t([
+    'Population and evolutionary themes from published literature — not personal medical advice.',
+    'प्रकाशित साहित्य से जनसंख्या/विकासवादी विषय — व्यक्तिगत चिकित्सकीय सलाह नहीं।',
+])) . '</p>';
 foreach ($lore['traits'] as $tr) {
     echo '<div class="trait"><span aria-hidden="true">◆</span><span>' . bg_h($tr) . '</span></div>';
 }
 echo '</div>';
-echo '<div class="card"><h2>🧠 ' . bg_h(bg_t(['Wit & workplace lore', 'विट व वर्कप्लेस लोर'])) . '</h2>';
-foreach ($lore['wit'] as $w) {
-    echo '<p style="margin:.4rem 0;font-size:.92rem;line-height:1.45">“' . bg_h($w) . '”</p>';
-}
-echo '</div></div>';
 
-echo '<div class="card"><h2>📎 ' . bg_h(bg_t(['India & system facts', 'भारत व प्रणाली तथ्य'])) . '</h2>';
+echo '<div class="card"><h2>📎 ' . bg_h(bg_t(['India context & awareness', 'भारत संदर्भ व जागरूकता'])) . '</h2>';
 if (!empty($lore['india_share'])) {
     echo '<p style="margin:0 0 .5rem;font-weight:800;color:#9f1239">' . bg_h($lore['india_share']) . '</p>';
 }

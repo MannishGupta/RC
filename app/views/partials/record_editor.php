@@ -1,5 +1,10 @@
 <?php
-// Version: 1.4 — Executive record editor: photo preview/upload, social links, polished layout
+  if (!defined('BASE_PATH')) exit;
+  $__photoSpec = class_exists('AppMedia') ? AppMedia::imageSpec('photo') : ['hint' => 'Recommended 400×400 · PNG, JPG, WebP · ≤450 KB', 'accept' => 'image/jpeg,image/png,image/webp', 'maxKB' => 450];
+  $__locPhotoSpec = class_exists('AppMedia') ? AppMedia::imageSpec('location_photo') : $__photoSpec;
+?>
+<?php
+// Version: 1.5 — Executive record editor + locations image restore: photo preview/upload, social links, polished layout
 if (!defined('BASE_PATH')) {
     exit;
 }
@@ -208,11 +213,11 @@ if (!defined('BASE_PATH')) {
                 <label class="rc-ed-file">
                   <i class="fa-solid fa-upload"></i>
                   <span x-text="photoFileName || 'Upload image'"></span>
-                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" @change="onPhotoPick($event)">
+                  <input type="file" accept="<?= htmlspecialchars((string)($__photoSpec['accept'] ?? 'image/jpeg,image/png,image/webp'), ENT_QUOTES, 'UTF-8') ?>" @change="onPhotoPick($event)">
                 </label>
                 <button type="button" class="rc-ed-btn" style="margin-left:0.4rem;height:2.35rem"
                         x-show="photoPreview || form.photo" @click="clearPhoto()">Clear Image</button>
-                <span class="rc-ed-hint">JPG / PNG / WebP · saved as images/{slug}.ext · shown on cards &amp; directory</span>
+                <span class="rc-ed-hint"><?= htmlspecialchars((string)($__photoSpec['hint'] ?? 'PNG, JPG, WebP · ≤450 KB'), ENT_QUOTES, 'UTF-8') ?></span>
                 <label style="margin-top:0.65rem">
                   <span class="rc-ed-lbl">Or filename in /images</span>
                   <input type="text" class="rc-ed-input" x-model="form.photo" @input="syncPhotoFromName()" placeholder="e.g. personnel-id.jpg">
@@ -495,7 +500,12 @@ if (!defined('BASE_PATH')) {
             <div class="rc-ed-grid">
               <label class="span-2">
                 <span class="rc-ed-lbl">Financial institution</span>
-                <input type="text" class="rc-ed-input" x-model="form.bank_name" placeholder="e.g. HDFC Bank · State Bank of India" autocomplete="organization">
+                <?php $masterKind = 'banks'; $masterModel = 'form.bank_name'; $masterInputClass = 'rc-ed-input';
+            $md = __DIR__ . '/master_dropdown.php';
+            if (is_file($md)) { include $md; }
+            else { ?>
+            <input type="text" class="rc-ed-input" x-model="form.bank_name" placeholder="e.g. HDFC Bank" autocomplete="organization">
+            <?php } ?>
               </label>
               <label class="span-2">
                 <span class="rc-ed-lbl">Account principal (beneficiary)</span>
@@ -611,11 +621,30 @@ if (!defined('BASE_PATH')) {
             <div class="rc-ed-section-title"><i class="fa-solid fa-building"></i> Facility identity</div>
             <div class="rc-ed-grid">
               <label class="span-2"><span class="rc-ed-lbl">Facility name</span><input type="text" class="rc-ed-input" x-model="form.name" placeholder="Head office · Regional hub"></label>
-              <label class="span-2"><span class="rc-ed-lbl">Site logo / image</span>
-                <input type="file" accept="image/*" class="rc-ed-input" @change="onPhotoPick($event, 'logo')">
-                <span class="rc-ed-hint">Shown on premises cards and title bar · JPG/PNG/WebP</span>
-                <div x-show="form.logo || form._logoPreview" style="margin-top:0.5rem">
-                  <img :src="form._logoPreview || (form.logo ? ('media_serve.php?f=' + encodeURIComponent(String(form.logo).replace(/^.*[\\\/]/,''))) : '')" alt="" style="height:48px;width:auto;max-width:160px;object-fit:contain;border-radius:8px;border:1px solid #e2e8f0;background:#fff;padding:4px">
+                            <label class="span-2"><span class="rc-ed-lbl">Site logo / image</span>
+                <div class="rc-ed-photo" style="margin-top:0.35rem">
+                  <div class="rc-ed-avatar" style="width:72px;height:72px;border-radius:12px;overflow:hidden;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <template x-if="form._logoPreview || form.logo || form.photo">
+                      <img :src="form._logoPreview || (form.logo || form.photo ? ('media_serve.php?f=' + encodeURIComponent(String(form.logo || form.photo).replace(/^.*[\\/]/,''))) : '')" alt="" style="width:100%;height:100%;object-fit:contain;background:#fff" @error="$el.style.display='none'">
+                    </template>
+                    <template x-if="!(form._logoPreview || form.logo || form.photo)">
+                      <i class="fa-solid fa-image" style="color:#94a3b8;font-size:1.25rem"></i>
+                    </template>
+                  </div>
+                  <div class="rc-ed-photo-meta">
+                    <label class="rc-ed-file" style="display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;padding:0.45rem 0.85rem;border-radius:0.5rem;background:#0f172a;color:#fff;font-size:0.8rem;font-weight:700">
+                      <i class="fa-solid fa-upload"></i>
+                      <span x-text="photoFileName || (form.logo || form.photo ? 'Replace image' : 'Upload image')"></span>
+                      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/*" @change="onPhotoPick($event, 'logo')">
+                    </label>
+                    <button type="button" class="rc-ed-btn-ghost" style="margin-left:0.35rem"
+                      x-show="form._logoPreview || form.logo || form.photo || photoFile"
+                      @click="clearLocationImage()">Clear image</button>
+                    <span class="rc-ed-hint" style="display:block;margin-top:0.4rem">Shown on Shared Locations cards · JPG / PNG / WebP · saved with Commit</span>
+                    <input type="text" class="rc-ed-input" style="margin-top:0.4rem" x-model="form.logo"
+                      @input="form.photo = form.logo; form._logoPreview = ''"
+                      placeholder="Or type existing filename e.g. head-office.webp">
+                  </div>
                 </div>
               </label>
               <label class="span-2"><span class="rc-ed-lbl">Street address</span><input type="text" class="rc-ed-input" x-model="form.address" placeholder="Plot / street / landmark"></label>
@@ -734,6 +763,73 @@ if (!defined('BASE_PATH')) {
         </div>
       </template>
 
+      
+      <!-- MEDIA KIT ASSET -->
+      <template x-if="type === 'mediakit'">
+        <div>
+          <div class="rc-ed-section">
+            <div class="rc-ed-section-title"><i class="fa-solid fa-photo-film"></i> Media asset</div>
+            <div class="rc-ed-grid">
+              <label class="span-2">
+                <span class="rc-ed-lbl">Display name</span>
+                <input type="text" class="rc-ed-input" x-model="form.name" placeholder="e.g. Fusion Homes hero · Brand logo" autocomplete="off">
+              </label>
+              <label>
+                <span class="rc-ed-lbl">Category</span>
+                <select class="rc-ed-input" x-model="form.category">
+                  <option value="promo">Promotional creatives</option>
+                  <option value="logo">Logos (SVG)</option>
+                  <option value="print">Print (high-res)</option>
+                  <option value="whatsapp">WhatsApp status</option>
+                  <option value="social">Social posts</option>
+                  <option value="video">Video / Reels</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label>
+                <span class="rc-ed-lbl">Platform</span>
+                <input type="text" class="rc-ed-input" x-model="form.platform" placeholder="Instagram · LinkedIn · Print · All">
+              </label>
+              <label class="span-2">
+                <span class="rc-ed-lbl">Caption / notes</span>
+                <textarea class="rc-ed-input" rows="3" x-model="form.caption" placeholder="Share text · WhatsApp-style *bold* _italic_"></textarea>
+              </label>
+              <label class="span-2">
+                <span class="rc-ed-lbl">Notes (internal)</span>
+                <input type="text" class="rc-ed-input" x-model="form.notes" placeholder="Optional internal note">
+              </label>
+            </div>
+          </div>
+          <div class="rc-ed-section">
+            <div class="rc-ed-section-title"><i class="fa-solid fa-cloud-arrow-up"></i> File</div>
+            <div class="rc-ed-photo">
+              <div class="rc-ed-avatar" style="width:5.5rem;height:5.5rem;border-radius:0.75rem;overflow:hidden;background:#f1f5f9;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0">
+                <template x-if="photoPreview || form.photo || form.file">
+                  <img :src="photoPreview || (form.photo || form.file ? ('/media_serve.php?f=' + encodeURIComponent(String(form.photo || form.file).replace(/^.*[\\/]/,''))) : '')" alt="" style="width:100%;height:100%;object-fit:contain" @error="$el.style.display='none'">
+                </template>
+                <template x-if="!(photoPreview || form.photo || form.file)">
+                  <i class="fa-solid fa-file-image" style="font-size:1.5rem;color:#94a3b8"></i>
+                </template>
+              </div>
+              <div class="rc-ed-photo-meta">
+                <label class="rc-ed-btn-ghost" style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer">
+                  <i class="fa-solid fa-upload"></i>
+                  <span x-text="photoFileName || ((form.photo || form.file) ? 'Replace file' : 'Upload file')"></span>
+                  <input type="file" class="hidden" accept="image/*,.svg,.pdf,.mp4,.webm,.mov,image/svg+xml,image/webp,application/pdf"
+                         @change="onPhotoPick($event, 'photo')">
+                </label>
+                <button type="button" class="rc-ed-btn-ghost" x-show="photoPreview || form.photo || form.file || photoFile" @click="clearPhoto(); form.file=''; form.photo=''">Clear</button>
+                <span class="rc-ed-hint">PNG, JPG, WebP, SVG, PDF, MP4 · up to 12 MB · server optimises images</span>
+                <div class="rc-ed-hint" x-show="form.file || form.photo" style="margin-top:0.25rem">
+                  Stored as: <code x-text="form.file || form.photo"></code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+
       <!-- CAR TAGS (fallback if global modal used) -->
       <template x-if="type === 'cartags'">
         <div class="rc-ed-section">
@@ -752,7 +848,7 @@ if (!defined('BASE_PATH')) {
       </template>
 
       <!-- GENERIC residual -->
-      <template x-if="!['team','designations','company','bank','docs','locations','events','departments','statutory','leads','cartags'].includes(type)">
+      <template x-if="!['team','designations','company','bank','docs','locations','events','departments','statutory','leads','cartags','mediakit'].includes(type)">
         <div class="rc-ed-section">
           <div class="rc-ed-section-title"><i class="fa-solid fa-pen-to-square"></i> Entity attributes</div>
           <div class="rc-ed-grid">
@@ -864,7 +960,7 @@ if (!defined('BASE_PATH')) {
       },
 
       get typeLabel() {
-        var m = { team: 'Personnel Record', designations: 'Role Taxonomy Entry', departments: 'Organizational Unit', bank: 'Treasury Instrument', locations: 'Premises Record', events: 'Calendar Observance', docs: 'Vault Artefact', cartags: 'Fleet Asset', company: 'Organizational Configuration', statutory: 'Compliance Register Entry', leads: 'Opportunity Record' };
+        var m = { team: 'Personnel Record', designations: 'Role Taxonomy Entry', departments: 'Organizational Unit', bank: 'Treasury Instrument', locations: 'Premises Record', events: 'Calendar Observance', docs: 'Vault Artefact', cartags: 'Fleet Asset', company: 'Organizational Configuration', statutory: 'Compliance Register Entry', leads: 'Opportunity Record', mediakit: 'Media Kit Asset' };
         return m[this.type] || this.type;
       },
       get designationOptions() {
@@ -909,7 +1005,12 @@ if (!defined('BASE_PATH')) {
       onPhotoPick(ev, field) {
         var f = ev.target && ev.target.files && ev.target.files[0];
         if (!f) return;
-        if (!/^image\//.test(f.type)) { this.error = 'Please choose an image file'; return; }
+        if (this.type !== 'mediakit' && !/^image\//.test(f.type) && f.type !== 'image/svg+xml') {
+          this.error = 'Please choose an image file'; return;
+        }
+        if (this.type === 'mediakit' && f.size > 12 * 1024 * 1024) {
+          this.error = 'File must be ≤ 12 MB'; return;
+        }
         this.photoFile = f;
         this.photoFileName = f.name;
         this._photoField = field || 'photo';
@@ -1012,6 +1113,26 @@ if (!defined('BASE_PATH')) {
             branch: item.branch || '',
             upi_id: item.upi_id || item.upi || ''
           };
+        } else if (this.type === 'mediakit') {
+          item = item || {};
+          this.form = {
+            id: item.id || '',
+            name: item.name || item.title || '',
+            title: item.title || item.name || '',
+            category: item.category || 'promo',
+            platform: item.platform || '',
+            caption: item.caption || '',
+            notes: item.notes || '',
+            file: item.file || item.photo || item.filename || '',
+            photo: item.photo || item.file || item.filename || '',
+            file_type: item.file_type || '',
+            width: item.width || '',
+            height: item.height || '',
+            bytes: item.bytes || ''
+          };
+          this.photoPreview = photoUrl(this.form.photo || this.form.file);
+          this.photoFile = null;
+          this.photoFileName = '';
         } else if (this.type === 'docs') {
           this.form = {
             id: item.id || '',
@@ -1077,7 +1198,8 @@ if (!defined('BASE_PATH')) {
             departments: { id: '', code: '', name: '', slug: '' },
             cartags: { id: '', tag_id: '', registration_number: '', plate: '', make_model: '', colour: '', vehicle_class: '', owner_name: '', member_id: '' },
             statutory: { id: '', company_name: '', cin: '', pan: '', tan: '', gst: '' },
-            leads: { id: '', name: '', email: '', phone: '', status: 'new' }
+            leads: { id: '', name: '', email: '', phone: '', status: 'new' },
+            mediakit: { id: '', name: '', title: '', category: 'promo', platform: '', caption: '', notes: '', file: '', photo: '', file_type: '', width: '', height: '', bytes: '' }
           };
           var base = defaults[this.type] ? Object.assign({}, defaults[this.type]) : { id: '', name: '' };
           this.form = Object.assign(base, item || {});
@@ -1105,7 +1227,7 @@ if (!defined('BASE_PATH')) {
           bank_name: 'Financial institution', holder_name: 'Account principal', acc_no: 'Account number',
           ifsc: 'IFSC', branch: 'Branch', upi_id: 'UPI address', doc_file: 'Vault file',
           file_type: 'Classification', external_url: 'External URL', updated_at: 'Last revised',
-          map_url: 'Map link', pincode: 'PIN code'
+          map_url: 'Map link', pincode: 'PIN code', category: 'Category', caption: 'Caption', platform: 'Platform', file: 'File', file_type: 'Type'
         };
         if (map[key]) return map[key];
         return String(key || '').replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
@@ -1284,6 +1406,15 @@ if (!defined('BASE_PATH')) {
             if (!String(this.form.acc_no || '').trim()) throw new Error('Account number is required');
             if (this.form.ifsc) this.form.ifsc = String(this.form.ifsc).toUpperCase().replace(/\s+/g, '');
           }
+          if (this.type === 'mediakit') {
+            if (!String(this.form.name || this.form.title || '').trim()) throw new Error('Display name is required');
+            if (!this.photoFile && !String(this.form.file || this.form.photo || '').trim()) {
+              throw new Error('Upload a file or keep the existing stored filename');
+            }
+            if (!this.form.name && this.form.title) this.form.name = this.form.title;
+            if (this.form.file && !this.form.photo) this.form.photo = this.form.file;
+            if (this.form.photo && !this.form.file) this.form.file = this.form.photo;
+          }
           if (this.type === 'docs') {
             if (!String(this.form.name || this.form.title || '').trim()) throw new Error('Display title is required');
             if (!this.docFile && !String(this.form.doc_file || '').trim() && !String(this.form.external_url || '').trim()) {
@@ -1338,7 +1469,14 @@ if (!defined('BASE_PATH')) {
           if (id && !payloadObj.id) payloadObj.id = id;
 
           var res, data;
-          if (this.photoFile && (this.type === 'team' || this.type === 'locations')) {
+          // Never persist client-only preview blobs into JSON
+          ['_logoPreview', '_photoPreview', 'photoPreview'].forEach(function (k) { delete payloadObj[k]; });
+          if (payloadObj.logo && String(payloadObj.logo).indexOf('data:') === 0) delete payloadObj.logo;
+          if (payloadObj.photo && String(payloadObj.photo).indexOf('data:') === 0) delete payloadObj.photo;
+          if (payloadObj.favicon && String(payloadObj.favicon).indexOf('data:') === 0) delete payloadObj.favicon;
+          if (payloadObj.cover && String(payloadObj.cover).indexOf('data:') === 0) delete payloadObj.cover;
+
+          if (this.photoFile && (this.type === 'team' || this.type === 'locations' || this.type === 'company' || this.type === 'mediakit')) {
             var fd = new FormData();
             fd.append('action', 'save');
             fd.append('ns', this.type);
@@ -1346,7 +1484,20 @@ if (!defined('BASE_PATH')) {
             fd.append('__edit_mode', this.isEdit ? '1' : '0');
             fd.append('payload', JSON.stringify(payloadObj));
             fd.append('csrf_token', csrf);
-            fd.append('photo', this.photoFile, this.photoFile.name);
+            if (this.type === 'company') {
+              fd.append('company_id', id || payloadObj.id || 'company');
+              // Company logo picker stores file in photoFile; field name is logo
+              fd.append('logo', this.photoFile, this.photoFile.name);
+            } else if (this.type === 'mediakit') {
+              fd.append('photo', this.photoFile, this.photoFile.name);
+              fd.append('file', this.photoFile, this.photoFile.name);
+            } else {
+              fd.append('photo', this.photoFile, this.photoFile.name);
+              if (this.type === 'locations') {
+                fd.append('logo', this.photoFile, this.photoFile.name);
+              }
+            }
+
             res = await fetch('index.php', {
               method: 'POST',
               headers: { 'X-CSRF-Token': csrf, 'Accept': 'application/json' },

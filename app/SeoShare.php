@@ -30,7 +30,11 @@ class SeoShare
     public static function tags(array $m): string
     {
         $title = self::h((string)($m['title'] ?? 'Resource Centre'));
-        $desc = self::h((string)($m['description'] ?? ''));
+        $rawDesc = trim((string)($m['description'] ?? ''));
+        if ($rawDesc === '') {
+            $rawDesc = (string)($m['site_name'] ?? 'Resource Centre') . ' — official directory and digital contact portal.';
+        }
+        $desc = self::h($rawDesc);
         $url = self::h((string)($m['url'] ?? self::baseUrl()));
         $img = self::h((string)($m['image'] ?? ''));
         $type = self::h((string)($m['type'] ?? 'profile'));
@@ -40,16 +44,12 @@ class SeoShare
 
         $out = [];
         $out[] = '<title>' . $title . '</title>';
-        if ($desc !== '') {
-            $out[] = '<meta name="description" content="' . $desc . '">';
-        }
+        $out[] = '<meta name="description" content="' . $desc . '">';
         $out[] = '<meta name="robots" content="' . $robots . '">';
         $out[] = '<link rel="canonical" href="' . $url . '">';
         $out[] = '<meta property="og:type" content="' . $type . '">';
         $out[] = '<meta property="og:title" content="' . $title . '">';
-        if ($desc !== '') {
-            $out[] = '<meta property="og:description" content="' . $desc . '">';
-        }
+        $out[] = '<meta property="og:description" content="' . $desc . '">';
         $out[] = '<meta property="og:url" content="' . $url . '">';
         $out[] = '<meta property="og:site_name" content="' . $site . '">';
         $out[] = '<meta property="og:locale" content="' . $locale . '">';
@@ -59,9 +59,7 @@ class SeoShare
         }
         $out[] = '<meta name="twitter:card" content="' . ($img !== '' ? 'summary_large_image' : 'summary') . '">';
         $out[] = '<meta name="twitter:title" content="' . $title . '">';
-        if ($desc !== '') {
-            $out[] = '<meta name="twitter:description" content="' . $desc . '">';
-        }
+        $out[] = '<meta name="twitter:description" content="' . $desc . '">';
         if ($img !== '') {
             $out[] = '<meta name="twitter:image" content="' . $img . '">';
         }
@@ -90,6 +88,13 @@ class SeoShare
                 ? $logo
                 : ($base . '/images/' . rawurlencode(basename($logo)));
         }
+        $labels = [
+            'business' => 'Digital Business Card',
+            'id' => 'Employee ID Card',
+            'visiting' => 'Visiting Card',
+            'qr' => 'QR Contact Card',
+            'numero' => 'Vedic Numerology Report',
+        ];
         // Dynamic SVG OG card when no photo/logo — strong WhatsApp/LinkedIn preview
         if ($img === '') {
             $q = http_build_query([
@@ -100,12 +105,6 @@ class SeoShare
             ]);
             $img = $base . '/tools/og_card.php?' . $q;
         }
-        $labels = [
-            'business' => 'Digital Business Card',
-            'id' => 'Employee ID Card',
-            'visiting' => 'Visiting Card',
-            'qr' => 'QR Contact Card',
-        ];
         $label = $labels[$kind] ?? 'Contact Card';
         $title = $name . ($role !== '' && $role !== '-' ? ' · ' . $role : '') . ($comp !== '' ? ' | ' . $comp : '');
         if (mb_strlen($title) > 65) {

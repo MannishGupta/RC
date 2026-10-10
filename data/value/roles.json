@@ -3,23 +3,69 @@
     "packs": [
         {
             "id": "admin",
-            "label": "Administrator",
-            "tabs": ["*"]
+            "label": "Company Admin",
+            "tabs": [
+                "*"
+            ]
         },
         {
-            "id": "hr",
-            "label": "HR",
-            "tabs": ["team", "docs", "expiry", "org", "ops", "terms", "events", "bank", "locations"]
+            "id": "general_hr",
+            "label": "General HR",
+            "tabs": [
+                "team",
+                "locations",
+                "bank",
+                "docs",
+                "events",
+                "statutory",
+                "numero",
+                "cctv",
+                "terms",
+                "access",
+                "statistics",
+                "cartags",
+                "assets"
+            ]
         },
         {
             "id": "logistics",
             "label": "Logistics",
-            "tabs": ["team", "tracking", "dispatch", "ops", "assets", "locations", "cartags", "expiry", "terms"]
+            "tabs": [
+                "team",
+                "tracking",
+                "dispatch",
+                "ops",
+                "assets",
+                "locations",
+                "cartags",
+                "expiry",
+                "terms"
+            ]
         },
         {
             "id": "readonly",
             "label": "Read Only",
-            "tabs": ["team", "locations", "events", "terms"]
+            "tabs": [
+                "team",
+                "locations",
+                "events",
+                "terms"
+            ]
+        },
+        {
+            "id": "hr",
+            "label": "HR",
+            "tabs": [
+                "team",
+                "docs",
+                "expiry",
+                "org",
+                "ops",
+                "terms",
+                "events",
+                "bank",
+                "locations"
+            ]
         }
     ]
 }

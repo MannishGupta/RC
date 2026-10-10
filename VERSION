@@ -1,1 +1,11 @@
-20260929.13
+20261009.32
+
+## 20261009.32 — 10 Oct 2026
+
+### Restore GitHub Actions (excluded by bad zip filter)
+- Packaging used -x '*.git*' which also dropped .github/
+- Restored .github/workflows/rc-safety-check.yml (PHP 8.2/8.3/8.4)
+- Restored .github/workflows/php-composer.yml (matrix + skip if no composer.json)
+- Restored .gitignore (secrets + runtime paths)
+
+---

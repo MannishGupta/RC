@@ -1,0 +1,32 @@
+# Secrets & local auth (never commit real passwords)
+data/auth_config.php
+data/config/auth_config.php
+tenants/*/data/auth_config.php
+tenants/*/data/config/auth_config.php
+**/psi_token.txt
+**/*credentials*
+**/.env
+**/.env.*
+
+# Runtime / uploads (per-tenant data stays local)
+data/sessions/
+data/logs/
+data/backups/
+data/media/
+tenants/*/data/sessions/
+tenants/*/data/logs/
+tenants/*/data/backups/
+tenants/*/data/media/
+tenants/*/data/cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*~
+.idea/
+.vscode/
+
+# Composer (if added later)
+/vendor/

@@ -352,59 +352,66 @@ $diagnostics['env']['Webfont files'] = $h((string) count($seenFonts));
 
 // 3. Directory Permissions — all paths the app must write at runtime
 // Live Tracking writes policy / state / violations / daily history under data/runners/
-$dirs = [
-    'data',
-    'data/sessions',
-    'data/logs',
-    'data/runners',
-    'images',
-    'docs',
-    'status/data',
+// Tenant-isolated paths only (no legacy root /data, /images, /docs)
+$_dataRoot = defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data');
+$_permChecks = [
+    'data' => $_dataRoot,
+    'data/sessions' => $_dataRoot . '/sessions',
+    'data/logs' => $_dataRoot . '/logs',
+    'data/runners' => $_dataRoot . '/runners',
+    'data/media/images' => $_dataRoot . '/media/images',
+    'data/media/docs' => $_dataRoot . '/media/docs',
+    'data/config' => $_dataRoot . '/config',
+    'data/cache/logos' => $_dataRoot . '/cache/logos',
 ];
-foreach ($dirs as $dir) {
-    $path = BASE_PATH . '/' . $dir;
-    // Auto-create mandated folders when missing (so Monitor can re-check after refresh)
-    if (!file_exists($path) && in_array($dir, ['data/runners', 'data/sessions', 'data/logs', 'status/data'], true)) {
+foreach ($_permChecks as $label => $path) {
+    if (!is_dir($path)) {
         @mkdir($path, 0775, true);
     }
-    if (!file_exists($path)) {
-        $diagnostics['perms'][$dir] = '<span class="text-rose-500 font-bold">Missing</span>';
+    if (!is_dir($path)) {
+        $diagnostics['perms'][$label] = '<span class="text-rose-500 font-bold">Missing</span>';
     } elseif (!is_writable($path)) {
-        $diagnostics['perms'][$dir] = '<span class="text-amber-500 font-bold">Read-Only</span>'
-            . ' <span class="text-[10px] text-slate-400 font-normal">(chmod 775 or IIS write ACL)</span>';
+        $diagnostics['perms'][$label] = '<span class="text-amber-500 font-bold">Read-Only</span>'
+            . ' <span class="text-[10px] text-slate-400 font-normal">(chmod 775 or IIS Modify)</span>';
     } else {
-        $diagnostics['perms'][$dir] = '<span class="text-emerald-600 font-bold">Writable</span>';
+        $diagnostics['perms'][$label] = '<span class="text-emerald-600 font-bold">Writable</span>';
     }
 }
-// Spot-check critical runner JSON files (create empty shells if folder is writable)
 $runnerFiles = [
-    'data/runners/policy_settings.json',
-    'data/runners/runners_state.json',
-    'data/runners/location_violations_log.json',
+    'runners/policy_settings.json',
+    'runners/runners_state.json',
+    'runners/location_violations_log.json',
+    'config/modules.json',
 ];
 foreach ($runnerFiles as $rel) {
-    $path = BASE_PATH . '/' . $rel;
-    if (!file_exists($path)) {
-        $parent = dirname($path);
-        if (is_dir($parent) && is_writable($parent)) {
-            $seed = ($rel === 'data/runners/policy_settings.json')
-                ? json_encode([
-                    'master_tracking_email' => 'admin.logistics@company.com',
-                    'working_hours' => ['start' => '09:00', 'end' => '19:00', 'timezone' => 'Asia/Kolkata'],
-                    'mandatory_designations' => ['Driver', 'Office Runner'],
-                    'mandatory_departments' => ['Logistics', 'Operations', 'Administration'],
-                    'heartbeat_timeout_minutes' => 10,
-                ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                : '[]';
-            @file_put_contents($path, $seed !== false ? $seed : '[]');
-        }
+    $path = $_dataRoot . '/' . $rel;
+    $parent = dirname($path);
+    if (!is_dir($parent)) {
+        @mkdir($parent, 0775, true);
     }
-    if (!file_exists($path)) {
-        $diagnostics['perms'][$rel] = '<span class="text-rose-500 font-bold">Missing</span>';
+    if (!is_file($path) && is_dir($parent) && is_writable($parent)) {
+        if (str_ends_with($rel, 'policy_settings.json')) {
+            $seed = json_encode([
+                'master_tracking_email' => 'admin.logistics@company.com',
+                'working_hours' => ['start' => '09:00', 'end' => '19:00', 'timezone' => 'Asia/Kolkata'],
+                'mandatory_designations' => ['Driver', 'Office Runner'],
+                'mandatory_departments' => ['Logistics', 'Operations', 'Administration'],
+                'heartbeat_timeout_minutes' => 10,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        } elseif (str_ends_with($rel, 'modules.json')) {
+            $seed = '{}';
+        } else {
+            $seed = '[]';
+        }
+        @file_put_contents($path, $seed);
+    }
+    $label = 'data/' . $rel;
+    if (!is_file($path)) {
+        $diagnostics['perms'][$label] = '<span class="text-rose-500 font-bold">Missing</span>';
     } elseif (!is_writable($path)) {
-        $diagnostics['perms'][$rel] = '<span class="text-amber-500 font-bold">Read-Only</span>';
+        $diagnostics['perms'][$label] = '<span class="text-amber-500 font-bold">Read-Only</span>';
     } else {
-        $diagnostics['perms'][$rel] = '<span class="text-emerald-600 font-bold">Writable</span>';
+        $diagnostics['perms'][$label] = '<span class="text-emerald-600 font-bold">Writable</span>';
     }
 }
 
@@ -445,15 +452,6 @@ foreach ($jsonFiles as $file) {
     $statusHtml = '';
     if ($isOrphan) {
         // BUG FIX: the previous version built this as one single-quoted
-        // PHP string containing both \" (not a real escape in single-
-        // quoted PHP -- both characters stayed literal, producing visible
-        // backslashes in the rendered HTML) and \' sequences that
-        // terminated the string early, leaving bareword text like
-        // "Delete" and "orphaned" outside any string -- an undefined-
-        // constant FATAL under PHP 8, not merely garbled output.
-        // Confirmed with a small PHP string tokenizer rather than by eye
-        // a second time. Rebuilt with clean double-quoted PHP strings and
-        // htmlspecialchars() on every interpolated value.
                 $confirmMsg = "Delete orphaned data: {$safeName}?";
         $statusHtml = '<button type="button" class="ml-2 text-[10px] bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded font-bold hover:bg-rose-600 hover:text-white transition"'
                     . ' data-orphan-file="' . htmlspecialchars($safeName, ENT_QUOTES) . '"'
@@ -511,16 +509,13 @@ if (file_exists($logFile)) {
 ?>
 
 
+<!-- System Optimizer — full panel inline (no second click / ?tab=opt hop) -->
 <section class="mb-6 max-w-4xl" id="platform-optimization">
-  <div class="mb-3">
-    <div class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Maintenance</div>
-    <h2 class="text-lg font-extrabold text-slate-800">Platform Optimization Suite</h2>
-    <p class="text-xs text-slate-500">Runs integrity checks and optimisers. Nested under Infrastructure Telemetry so field operators have one diagnostics home.</p>
-  </div>
   <?php
-    $optPanelCompact = false;
-    if (is_file(__DIR__ . '/../partials/optimizer_panel.php')) {
-        require __DIR__ . '/../partials/optimizer_panel.php';
+    $optPanelCompact = true;
+    $optPanelPartial = __DIR__ . '/../partials/optimizer_panel.php';
+    if (is_file($optPanelPartial)) {
+        require $optPanelPartial;
     }
   ?>
 </section>
@@ -553,7 +548,15 @@ if (file_exists($logFile)) {
             </div>
             <div class="text-2xl" title="India">🇮🇳</div>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+        
+<div class="rc-monitor-tools mb-4 flex flex-wrap gap-2" role="toolbar" aria-label="Platform tools">
+  <a href="?tab=health" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-screwdriver-wrench"></i> Health &amp; Tools</a>
+  <a href="?tab=opt" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-gauge-high"></i> Optimisation</a>
+  <a href="?tab=tenants" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-building-user"></i> Tenants / Installers</a>
+  <a href="/health.php" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-800 hover:bg-emerald-100"><i class="fa-solid fa-heart-pulse"></i> Uptime JSON</a>
+  <a href="/flush_cache.php" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-amber-200 bg-amber-50 text-xs font-bold text-amber-900 hover:bg-amber-100"><i class="fa-solid fa-broom"></i> Flush OPcache</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             <div class="bg-white/80 rounded-xl border border-slate-100 px-3 py-2">
                 <div class="text-[9px] font-bold text-slate-400 uppercase">Language</div>
                 <div class="font-bold text-slate-800">en-IN · Indian English</div>
@@ -794,22 +797,7 @@ if (file_exists($logFile)) {
     }
     </script>
 
-    <!-- The System Optimizer panel intentionally lives ONLY on the Optimise
-         tab. It previously rendered here too — same panel, same action —
-         which made it look like two different tools and meant a destructive
-         operation had two entry points. One tool, one place. -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100 shrink-0">
-            <i class="fa-solid fa-wrench"></i>
-        </div>
-        <div class="min-w-0 flex-1">
-            <h3 class="text-sm font-bold text-slate-800">System Optimizer &amp; Cleanup</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Schema normalisation, slug migration and the server cleanup scanner.</p>
-        </div>
-        <a href="?tab=opt" class="shrink-0 px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition flex items-center gap-2">
-            Open <i class="fa-solid fa-arrow-right text-[10px]"></i>
-        </a>
-    </div>
+<!-- single optimizer entry is above (#platform-optimization) -->
 
     <!-- ── Third-party library audit ───────────────────────────────────────
          Installed versions are parsed from the actual <script>/<link> tags in
@@ -861,26 +849,37 @@ if (file_exists($logFile)) {
     $_libs = [];
     foreach ($_libDefs as $_d) {
         $_found = [];
-        if (preg_match_all($_d['rx'], $_libSrc, $_m)) {
-            $_found = !empty($_m[1]) ? array_values(array_unique(array_filter($_m[1]))) : ['(unversioned)'];
+        if (!empty($_d['rx']) && is_string($_libSrc) && $_libSrc !== '') {
+            if (preg_match_all($_d['rx'], $_libSrc, $_m)) {
+                $_found = !empty($_m[1]) ? array_values(array_unique(array_filter($_m[1]))) : ['(unversioned)'];
+            }
+        }
         // Self-hosted fallback: parse version from vendor file when URL regex misses
-        if ($_lib['key'] === 'font-awesome' || $_lib['name'] === 'Font Awesome') {
+        $_libName = (string)($_d['name'] ?? '');
+        $_libKey = (string)($_d['key'] ?? '');
+        if (($_libKey === 'font-awesome' || stripos($_libName, 'Font Awesome') !== false)
+            && function_exists('rc_parse_vendor_version')) {
             $v = rc_parse_vendor_version(BASE_PATH . '/assets/vendor/fontawesome.min.css', 'fontawesome');
-            if ($v !== '') { $_found = [$v]; }
+            if (is_string($v) && $v !== '') {
+                $_found = [$v];
+            }
         }
-        if ($_lib['key'] === 'alpinejs' || stripos($_lib['name'], 'Alpine') !== false) {
+        if (($_libKey === 'alpinejs' || stripos($_libName, 'Alpine') !== false)
+            && function_exists('rc_parse_vendor_version')) {
             $v = rc_parse_vendor_version(BASE_PATH . '/assets/vendor/alpine.min.js', 'alpine');
-            if ($v !== '') { $_found = [$v]; }
+            if (is_string($v) && $v !== '') {
+                $_found = [$v];
+            }
         }
-
+        if (empty($_found)) {
+            continue;
         }
-        if (empty($_found)) continue;
         $_libs[] = [
-            'name'      => $_d['name'],
+            'name'      => $_libName,
             'installed' => implode(', ', $_found),
             'multiple'  => count($_found) > 1,
-            'src'       => $_d['src'],
-            'pkg'       => $_d['pkg'],
+            'src'       => $_d['src'] ?? '',
+            'pkg'       => $_d['pkg'] ?? '',
         ];
     }
     ?>
@@ -1036,16 +1035,118 @@ if (file_exists($logFile)) {
                 </div>
             </div>
             
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 text-sm font-bold text-slate-700 uppercase tracking-wider">Environment</div>
-                <div class="divide-y divide-slate-100">
-                    <?php foreach($diagnostics['env'] as $k => $v): ?>
-                    <div class="px-6 py-3 flex justify-between items-center text-xs">
-                        <span class="text-slate-500"><?= $k ?></span>
-                        <span class="font-bold text-slate-800"><?= $v ?></span>
+            <?php
+            /* Windows 11 Settings → System → About style groupings */
+            $__win11Groups = [
+                'Device specifications' => [
+                    'icon' => 'fa-microchip',
+                    'keys' => ['Hostname','OS','Architecture','Server Software','Server Name','HTTP Host','Server Addr','Server Port','Document Root'],
+                ],
+                'Windows specifications' => [ /* server runtime analog */
+                    'icon' => 'fa-server',
+                    'keys' => ['PHP Version','PHP Floor','PHP SAPI','Zend Version','OPcache','intl extension','intl (INR)'],
+                ],
+                'Related settings' => [
+                    'icon' => 'fa-sliders',
+                    'keys' => ['Memory Limit','Memory Usage','Memory Peak','Upload Max','Post Max','Max Exec Time','Max Input Time','Max Input Vars','Timezone','Server Time','HTTPS','Remote Addr'],
+                ],
+                'Storage' => [
+                    'icon' => 'fa-hard-drive',
+                    'keys' => ['Disk Free','Disk Total','Disk Used %'],
+                ],
+            ];
+            $__win11Labels = [
+                'Hostname' => 'Device name',
+                'OS' => 'Edition',
+                'Architecture' => 'System type',
+                'Server Software' => 'Processor (web stack)',
+                'Server Name' => 'Computer name',
+                'HTTP Host' => 'Host name',
+                'Server Addr' => 'IP address',
+                'Server Port' => 'Port',
+                'Document Root' => 'Install location',
+                'PHP Version' => 'Version',
+                'PHP Floor' => 'Minimum version',
+                'PHP SAPI' => 'Experience (SAPI)',
+                'Zend Version' => 'Engine',
+                'OPcache' => 'Installed on',
+                'intl extension' => 'Internationalization',
+                'intl (INR)' => 'Regional format',
+                'Memory Limit' => 'Memory capacity',
+                'Memory Usage' => 'Memory in use',
+                'Memory Peak' => 'Peak memory',
+                'Upload Max' => 'Max upload size',
+                'Post Max' => 'Max POST size',
+                'Max Exec Time' => 'Execution time limit',
+                'Max Input Time' => 'Input time limit',
+                'Max Input Vars' => 'Max input variables',
+                'Timezone' => 'Time zone',
+                'Server Time' => 'Current time',
+                'HTTPS' => 'Secure connection',
+                'Remote Addr' => 'Your IP',
+                'Disk Free' => 'Available storage',
+                'Disk Total' => 'Total storage',
+                'Disk Used %' => 'Storage used',
+            ];
+            $__envUsed = [];
+            ?>
+            <div class="rc-win11-about bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#0078D4] text-white flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-display text-lg" aria-hidden="true"></i>
                     </div>
-                    <?php endforeach; ?>
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-800 m-0 tracking-tight">System → About</h2>
+                        <p class="text-[11px] text-slate-500 m-0">Device specifications · Windows 11 style</p>
+                    </div>
                 </div>
+                <?php foreach ($__win11Groups as $gTitle => $gMeta):
+                    $rows = [];
+                    foreach ($gMeta['keys'] as $ek) {
+                        if (isset($diagnostics['env'][$ek])) {
+                            $rows[$ek] = $diagnostics['env'][$ek];
+                            $__envUsed[$ek] = true;
+                        }
+                    }
+                    if (!$rows) continue;
+                ?>
+                <div class="border-b border-slate-100 last:border-0">
+                    <div class="px-5 py-2.5 flex items-center gap-2 bg-slate-50/80">
+                        <i class="fa-solid <?= htmlspecialchars($gMeta['icon'], ENT_QUOTES, 'UTF-8') ?> text-slate-500 text-xs w-4 text-center" aria-hidden="true"></i>
+                        <h3 class="text-[11px] font-bold text-slate-600 uppercase tracking-wider m-0"><?= htmlspecialchars($gTitle, ENT_QUOTES, 'UTF-8') ?></h3>
+                    </div>
+                    <div class="divide-y divide-slate-50">
+                        <?php foreach ($rows as $ek => $ev): ?>
+                        <div class="px-5 py-2.5 flex justify-between items-baseline gap-4 text-xs hover:bg-slate-50/60">
+                            <span class="text-slate-500 shrink-0"><?= htmlspecialchars($__win11Labels[$ek] ?? $ek, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="font-semibold text-slate-800 text-right break-all"><?= $ev ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <?php
+                $__rest = [];
+                foreach ($diagnostics['env'] as $ek => $ev) {
+                    if (empty($__envUsed[$ek])) $__rest[$ek] = $ev;
+                }
+                if ($__rest):
+                ?>
+                <div class="border-b border-slate-100 last:border-0">
+                    <div class="px-5 py-2.5 flex items-center gap-2 bg-slate-50/80">
+                        <i class="fa-solid fa-ellipsis text-slate-500 text-xs w-4 text-center" aria-hidden="true"></i>
+                        <h3 class="text-[11px] font-bold text-slate-600 uppercase tracking-wider m-0">Additional details</h3>
+                    </div>
+                    <div class="divide-y divide-slate-50">
+                        <?php foreach ($__rest as $ek => $ev): ?>
+                        <div class="px-5 py-2.5 flex justify-between items-baseline gap-4 text-xs hover:bg-slate-50/60">
+                            <span class="text-slate-500 shrink-0"><?= htmlspecialchars($__win11Labels[$ek] ?? $ek, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="font-semibold text-slate-800 text-right break-all"><?= $ev ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -1181,20 +1282,7 @@ if (file_exists($logFile)) {
                              from the viewer. -->
                         <div class="text-slate-500 border-b border-white/5 py-1"><?= htmlspecialchars((string)$log) ?></div>
                     <?php else: ?>
-                    <!-- BUG FIX: the previous version built this row's onclick
-                         attribute as a PHP string with nested single quotes
-                         that were never actually escaped ('' instead of \'),
-                         which terminates a single-quoted PHP string early —
-                         the bareword `hidden` that fell outside any string as
-                         a result is, under PHP 8, a fatal "Undefined constant"
-                         error, not a syntax warning. This is exactly the class
-                         of bug the brace/div counting checks used throughout
-                         this session cannot catch: everything balances, the
-                         break is purely inside a string literal. Fixed by
-                         removing the nested-quote construction entirely — a
-                         plain data attribute plus ONE delegated click listener
-                         (below) rather than an inline onclick built from
-                         concatenated PHP strings. -->
+                    <!-- fixed -->
                     <div class="border-b border-white/5 <?= $hasDetail ? 'cursor-pointer hover:bg-white/5' : 'hover:bg-white/5' ?> transition-colors"
                          data-log-level="<?= htmlspecialchars($dataLevel ?? 'other') ?>"
                          data-log-raw="<?= htmlspecialchars((string)$log, ENT_QUOTES) ?>"

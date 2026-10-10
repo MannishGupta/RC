@@ -1,0 +1,44 @@
+name: PHP Composer
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
+    steps:
+    - uses: actions/checkout@v4
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+    - name: Check for composer.json
+      id: composer
+      run: |
+        if [ -f composer.json ]; then
+          echo "present=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "present=false" >> "$GITHUB_OUTPUT"
+          echo "No composer.json — RC is flat PHP; skipping Composer install."
+        fi
+    - name: Validate composer.json and composer.lock
+      if: steps.composer.outputs.present == 'true'
+      run: composer validate --strict
+    - name: Cache Composer packages
+      if: steps.composer.outputs.present == 'true'
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php${{ matrix.php-version }}-
+    - name: Install dependencies
+      if: steps.composer.outputs.present == 'true'
+      run: composer install --prefer-dist --no-progress

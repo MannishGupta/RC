@@ -25,8 +25,12 @@ if (!isset($viewData) || !is_array($viewData)) die('Critical Error: View Contrac
 
 class DashboardEngine {
     public static function normalizeData(array $raw): array {
-        $data = $raw; 
-        
+        $data = $raw;
+        // Preserve nav badge counts when full datasets are omitted for perf
+        if (isset($raw['_counts']) && is_array($raw['_counts'])) {
+            $data['_counts'] = $raw['_counts'];
+        }
+
         // Force list namespaces to sequential arrays (associative JSON breaks Alpine x-for)
         $asList = static function ($v): array {
             if (!is_array($v)) return [];
@@ -114,6 +118,22 @@ class DashboardEngine {
         $data['designations'] = $desigRows;
         $data['_designationHierarchy'] = $hierarchyByKey;
 
+        // Master-key codes must never appear as human labels (desig_2, dept_1, loc_hq, …)
+        $rcIsMasterCode = static function (string $s): bool {
+            $s = trim($s);
+            if ($s === '' || $s === '-') {
+                return true;
+            }
+            return (bool) preg_match('/^(desig|dept|loc|location|designation|department)[_-]?\w*$/i', $s);
+        };
+        $rcHumanOrPending = static function (string $label, string $pending) use ($rcIsMasterCode): string {
+            $label = trim($label);
+            if ($label === '' || $rcIsMasterCode($label)) {
+                return $pending;
+            }
+            return $label;
+        };
+
         if (!empty($data['team']) && is_array($data['team'])) {
             foreach ($data['team'] as &$member) {
                 if (!is_array($member)) continue;
@@ -134,13 +154,11 @@ class DashboardEngine {
                 if ($desigRow) {
                     $member['designation_id'] = (string)($desigRow['id'] ?? $desigRow['code'] ?? $desigRaw);
                     $member['designation_code'] = (string)($desigRow['code'] ?? $member['designation_code'] ?? '');
-                    $member['designation_name'] = (string)($desigRow['name'] ?? $desigRaw);
-                    if ($member['designation_name'] === '') {
-                        $member['designation_name'] = 'Designation Pending';
-                    }
+                    $resolved = trim((string)($desigRow['name'] ?? $desigRow['title'] ?? ''));
+                    $member['designation_name'] = $rcHumanOrPending($resolved !== '' ? $resolved : $desigRaw, 'Designation Pending');
                 } else {
-                    // Keep raw human label if present; only show Pending when truly empty
-                    $member['designation_name'] = $desigRaw !== '' ? $desigRaw : 'Designation Pending';
+                    // Never show unresolved codes (desig_2 etc.)
+                    $member['designation_name'] = $rcHumanOrPending($desigRaw, 'Designation Pending');
                 }
 
                 // Display rank: person.rank if real, else designation hierarchy.
@@ -179,10 +197,10 @@ class DashboardEngine {
                 }
                 if ($dept) {
                     $member['department_id'] = (string)($dept['id'] ?? $dept['code'] ?? $member['department_id'] ?? '');
-                    $member['department_name'] = (string)($dept['name'] ?? $deptRaw);
-                    if ($member['department_name'] === '') $member['department_name'] = 'Department Pending';
+                    $resolved = trim((string)($dept['name'] ?? $dept['title'] ?? ''));
+                    $member['department_name'] = $rcHumanOrPending($resolved !== '' ? $resolved : $deptRaw, 'Department Pending');
                 } else {
-                    $member['department_name'] = $deptRaw !== '' ? $deptRaw : 'Department Pending';
+                    $member['department_name'] = $rcHumanOrPending($deptRaw, 'Department Pending');
                 }
 
                 $locId = strtolower(trim((string)($member['location_id'] ?? $member['location'] ?? '')));
@@ -207,7 +225,7 @@ class DashboardEngine {
                 if ($locName === '' && !empty($member['location']) && !is_numeric($member['location'])) {
                     $locName = trim((string)$member['location']);
                 }
-                $member['location_name'] = $locName !== '' ? $locName : 'Location Unassigned';
+                $member['location_name'] = $rcHumanOrPending($locName, 'Location Unassigned');
 
                 // House / premise number for search (optional field)
                 if (empty($member['house_no']) && !empty($member['house_number'])) {
@@ -295,24 +313,23 @@ DashboardEngine::injectBirthdays($normalizedData['events'], $normalizedData['tea
 // Super Admin: control plane + full active-tenant modules (so ?tab=team works on current host)
 // Co. Admin: full tenant CRUD. Visitor: read-only operational modules.
 $tenantOpsTabs = [
-    'team', 'bank', 'docs', 'events', 'locations', 'statutory', 'numero', 'terms',
+    'team', 'bank', 'docs', 'mediakit', 'events', 'locations', 'statutory', 'numero', 'terms',
     'cartags', 'status', 'tracking', 'dispatch', 'ops', 'assets', 'expiry', 'org',
     'audit', 'health', 'leads', 'settings', 'company', 'designations', 'departments',
-    'opt', 'cctv', 'access', 'statistics',
+    'opt', 'cctv', 'access', 'statistics', 'janam',
 ];
 if ($isSuperAdmin) {
     $validTabs = array_values(array_unique(array_merge(
-        ['tenants', 'monitor', 'opt', 'access'],
+        ['tenants', 'monitor', 'opt', 'health', 'access', 'brandlogos'],
         $tenantOpsTabs
     )));
 } elseif ($isAdmin) {
     $validTabs = $tenantOpsTabs;
 } else {
-    // Visitor — view / share / print; no company/setup panels
+    // General HR / Visitor — view + share (no company/setup/control-plane)
     $validTabs = [
-        'team', 'bank', 'docs', 'events', 'locations', 'statutory', 'numero', 'terms',
-        'cartags', 'status', 'tracking', 'dispatch', 'ops', 'assets', 'expiry', 'org',
-        'health', 'access', 'statistics',
+        'team', 'locations', 'bank', 'docs', 'mediakit', 'events', 'statutory', 'numero', 'cctv', 'terms',
+        'access', 'statistics', 'cartags', 'assets', 'expiry', 'org', 'status', 'janam',
     ];
 }
 if (class_exists('RolePack') && !$isSuperAdmin) {
@@ -321,8 +338,25 @@ if (class_exists('RolePack') && !$isSuperAdmin) {
         $validTabs[] = 'terms';
     }
 }
+// Per-tenant module matrix (Super Admin disables modules for this tenant).
+// Company Admin / Visitor must never see or open disabled modules.
+if (!class_exists('ModuleRegistry') && is_file(BASE_PATH . '/app/ModuleRegistry.php')) {
+    require_once BASE_PATH . '/app/ModuleRegistry.php';
+}
+if (class_exists('ModuleRegistry') && !$isSuperAdmin) {
+    $validTabs = ModuleRegistry::filterTabs($validTabs, false);
+    // Never expose control-plane to Co. Admin / Visitor
+    $validTabs = array_values(array_filter($validTabs, static function ($t) {
+        return !in_array($t, ['tenants', 'monitor', 'opt'], true);
+    }));
+}
 if (!in_array($currentTab, $validTabs, true)) {
-    $currentTab = $validTabs[0] ?? 'team';
+    if (class_exists('ModuleRegistry') && !$isSuperAdmin) {
+        $res = ModuleRegistry::resolveTab((string)$currentTab, $validTabs);
+        $currentTab = $res['tab'] ?? ($validTabs[0] ?? 'team');
+    } else {
+        $currentTab = $validTabs[0] ?? 'team';
+    }
 }
 
 
@@ -330,14 +364,16 @@ $titles = [
     'team' => 'Human Capital Index',
     'bank' => 'Treasury & Banking Ledger',
     'docs' => 'Corporate Document Vault',
+    'mediakit' => 'Media Kit',
     'events' => 'Corporate Calendar & Observances',
-    'locations' => 'Enterprise Premises Registry',
+    'locations' => 'Shared Locations',
     'statutory' => 'Regulatory Compliance Register',
     'terms' => 'Governance & Acceptable Use Policy',
     'company' => 'Organizational Configuration',
     'designations' => 'Role Taxonomy & Hierarchy',
     'departments' => 'Organizational Units',
     'numero' => 'Numerological Intelligence Report',
+    'janam' => 'Janam Patri',
     'opt' => 'Platform Optimization Suite',
     'monitor' => 'Infrastructure Telemetry & Diagnostics',
     'cartags' => 'Fleet Asset Registry',
@@ -349,12 +385,14 @@ $titles = [
     'dispatch' => 'Dispatch & Live Routes',
     'ops' => 'Field Operations Hub',
     'assets' => 'Asset Checkout Registry',
+    'brandlogos' => 'Brand Logos',
     'expiry' => 'Document Expiry Radar',
     'org' => 'Organizational Chart',
     'audit' => 'Audit Ledger',
     'health' => 'Platform Health & Backup',
     'tenants' => 'Tenant Setup',
     'access' => 'Access Mode',
+    'statistics' => 'Statistics Panel',
 ];
 
 
@@ -385,7 +423,8 @@ $DASHBOARD_STATE = [
         'isSuperAdmin' => $isSuperAdmin,
         'isPublic'     => $isPublic,
         'pack'         => class_exists('RolePack') ? RolePack::packIdForUser($rcUser ?? null) : ($isAdmin ? 'admin' : 'public'),
-        'allowedTabs'  => class_exists('RolePack') ? RolePack::allowedTabs($rcUser ?? null) : null,
+        'allowedTabs'  => $validTabs,
+        'modules'     => (class_exists('ModuleRegistry') ? ModuleRegistry::clientPayload() : ['enabled' => []]),
     ],
     'data'    => $normalizedData,
     'company' => $viewData['company'] ?? [],
@@ -403,22 +442,36 @@ $DASHBOARD_STATE = [
         var stored = null;
         try { stored = localStorage.getItem(k); } catch (e) {}
         // Default = device preference when user has not chosen
-        var theme = (stored === 'light' || stored === 'dark')
-          ? stored
-          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        var allowed = {system:1,light:1,dark:1,reserve:1};
+        function rcResolve(p){
+          if (p==='light'||p==='dark'||p==='reserve') return p;
+          try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e){ return 'light'; }
+        }
+        var stored = null; try { stored = localStorage.getItem(k); } catch(e){}
+        if (!stored || !allowed[stored]) stored = 'system';
+        var theme = rcResolve(stored);
         document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-        window.rcSetTheme = function(t) {
-          if (t !== 'light' && t !== 'dark') t = 'light';
+        document.documentElement.setAttribute('data-theme-pref', stored);
+        document.documentElement.classList.toggle('dark', theme==='dark');
+        window.rcSetTheme = function(pref){
+          if (!allowed[pref]) pref='system';
+          try { localStorage.setItem(k, pref); } catch(e){}
+          var t = rcResolve(pref);
           document.documentElement.setAttribute('data-theme', t);
-          document.documentElement.classList.toggle('dark', t === 'dark');
-          try { localStorage.setItem(k, t); } catch (e) {}
+          document.documentElement.setAttribute('data-theme-pref', pref);
+          document.documentElement.classList.toggle('dark', t==='dark');
+          document.querySelectorAll('[data-rc-theme-opt]').forEach(function(btn){
+            var on = btn.getAttribute('data-rc-theme-opt')===pref;
+            btn.setAttribute('aria-pressed', on?'true':'false');
+            btn.classList.toggle('is-active', on);
+          });
         };
-        window.rcToggleTheme = function() {
-          var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-          window.rcSetTheme(cur === 'dark' ? 'light' : 'dark');
+        window.rcToggleTheme = function(){
+          var order=['system','light','dark','reserve'];
+          var cur='system'; try{cur=localStorage.getItem(k)||'system';}catch(e){}
+          var i=order.indexOf(cur); window.rcSetTheme(order[(i+1)%order.length]);
         };
-        // Follow OS changes only when user has not manually overridden
+// Follow OS changes only when user has not manually overridden
         if (!stored && window.matchMedia) {
           try {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
@@ -434,17 +487,46 @@ $DASHBOARD_STATE = [
     })();
     </script>
 
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta charset="UTF-8">
+<?php
+    /* Browser icon: tenant favicon → tenant logo → (no hardcoded triangle product mark) */
+    $__co = is_array($viewData['company'] ?? null) ? $viewData['company'] : [];
+    $__iconFile = trim((string)($__co['favicon'] ?? ''));
+    if ($__iconFile === '') {
+        $__iconFile = trim((string)($__co['logo'] ?? ''));
+    }
+    $__iconHref = '';
+    if ($__iconFile !== '') {
+        if (preg_match('~^(https?:)?//~i', $__iconFile) || str_starts_with($__iconFile, '/')) {
+            $__iconHref = $__iconFile;
+        } else {
+            $__iconHref = '/media_serve.php?f=' . rawurlencode($__iconFile);
+            if (!str_contains($__iconFile, '/')) {
+                $__iconHref = '/images/' . rawurlencode($__iconFile);
+            }
+        }
+        $__iconHref .= (str_contains($__iconHref, '?') ? '&' : '?') . 'v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1');
+    }
+    if ($__iconHref !== ''): ?>
+    <link rel="icon" href="<?= htmlspecialchars($__iconHref, ENT_QUOTES, 'UTF-8') ?>" sizes="any">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($__iconHref, ENT_QUOTES, 'UTF-8') ?>">
+    <?php else: ?>
+    <link rel="icon" type="image/svg+xml" href="/assets/brand/arthsathi-icon.svg?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+    <link rel="apple-touch-icon" href="/assets/brand/arthsathi-icon.svg?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+    <?php endif; ?>
+<meta name="format-detection" content="telephone=no,date=no,email=no,address=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
     
-    <?= class_exists('AppSEO') ? AppSEO::generateTags(['tab' => $currentTab], true) : '<title>' . htmlspecialchars(($titles[$currentTab] ?? 'Portal') . ' · Fusion Resource Centre', ENT_QUOTES) . '</title>' ?>
+    <?= class_exists('AppSEO') ? AppSEO::generateTags(['tab' => $currentTab], true) : ('<title>' . htmlspecialchars(($titles[$currentTab] ?? 'Portal') . ' · ' . ($viewData['company']['name'] ?? 'Resource Centre'), ENT_QUOTES) . '</title><meta name="description" content="' . htmlspecialchars(($viewData['company']['name'] ?? 'Resource Centre') . ' — official corporate directory and portal.', ENT_QUOTES) . '">') ?>
     
     <!-- ── Installable-web-app metadata ───────────────────────────────────
          Makes the dashboard installable via "Add to Home Screen" on iOS and
          Android today: home-screen icon, standalone window, no browser chrome.
          Offline access and push additionally require a service worker, which
          is intentionally not registered yet — see PWA.md. -->
-    <link rel="manifest" href="/manifest.php">
-    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="/manifest.php?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+    <meta name="application-name" content="<?= htmlspecialchars((string)($viewData['company']['name'] ?? 'Resource Centre'), ENT_QUOTES) ?>">
+    <meta name="theme-color" id="rc-theme-color" content="#FAF9F8">
     <meta name="mobile-web-app-capable" content="yes">
     <!-- iOS ignores the manifest for standalone mode and needs its own tags. -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -706,15 +788,23 @@ $DASHBOARD_STATE = [
             };
             tryOpen();
             if (!opened) {
-                // Alpine may still be booting (defer) — retry briefly
                 var n = 0;
                 var t = setInterval(function () {
                     n++;
                     tryOpen();
-                    if (opened || n >= 20) {
+                    if (opened || n >= 40) {
                         clearInterval(t);
                         if (!opened) {
-                            alert('Editor failed to load. Hard-refresh (Ctrl+Shift+R). Ensure app/views/partials/record_editor.php is uploaded.');
+                            // Last resort: re-register factory then try once more
+                            try {
+                              if (window.__enterpriseEditorFactory && window.Alpine && Alpine.data) {
+                                Alpine.data('enterpriseEditor', window.__enterpriseEditorFactory);
+                              }
+                            } catch (e3) {}
+                            tryOpen();
+                            if (!opened) {
+                              alert('Editor failed to load. Hard-refresh (Ctrl+Shift+R). Ensure app/views/partials/record_editor.php is uploaded.');
+                            }
                         }
                     }
                 }, 100);
@@ -805,14 +895,101 @@ $DASHBOARD_STATE = [
     </script>
     
     <link rel="stylesheet" href="/assets/dashboard.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>">
+    <link rel="stylesheet" href="/assets/rc-layout-lock.css?v=20261003.24">
 
     <link rel="stylesheet" href="/assets/a11y.css?v=20260928.07">
-    <link rel="stylesheet" href="/assets/contrast-lock.css?v=20260928.07">
+    <link rel="stylesheet" href="/assets/contrast-lock.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+    <link rel="stylesheet" href="/assets/rc-compat.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
     <script src="assets/a11y-focus-trap.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
     <script src="assets/a11y-tooltip.js?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" defer></script>
+<style id="rc-bank-qr-cap">
+.rc-bank-qr-box, [data-bank-id], [data-bank-id] canvas, [data-bank-id] img {
+  max-width: 120px !important; max-height: 120px !important;
+}
+[data-bank-id] { width: 120px !important; height: 120px !important; }
+</style>
+<style id="rc-theme-seg-css">
+
+/* Sign out = power icon only, never underlined */
+.rc-sidebar-logout,
+.rc-sidebar-logout:hover,
+.rc-sidebar-logout:focus,
+button.rc-sidebar-logout span {
+  text-decoration: none !important;
+}
+.rc-sidebar-logout .link-text { display: none !important; }
+
+/* Theme + logout — match sidebar surface (no fixed navy plate) */
+.rc-theme-seg{
+  display:grid; grid-template-columns:1fr 1fr; gap:4px; width:100%;
+  border:0; background:transparent; height:auto; overflow:visible;
+}
+.rc-theme-seg__btn{
+  border:1px solid var(--rc-side-border, var(--rc-border, #e2e8f0));
+  border-radius:8px; padding:5px 4px;
+  font-size:11px; font-weight:700; line-height:1.15;
+  color:var(--rc-side-ink, var(--rc-ink, #0f172a)) !important;
+  background:transparent; cursor:pointer; text-align:center; min-height:28px;
+}
+.rc-theme-seg__btn:hover{
+  background:var(--rc-side-active-bg, rgba(0,0,0,.06));
+  border-color:var(--rc-accent, #0078d4);
+}
+.rc-theme-seg__btn.is-active,
+.rc-theme-seg__btn[aria-pressed="true"]{
+  background:var(--rc-side-active-bg, #eff6fc) !important;
+  color:var(--rc-side-active-ink, var(--rc-accent, #005a9e)) !important;
+  border-color:var(--rc-accent, #0078d4) !important;
+}
+.rc-sidebar-logout{
+  background:transparent !important;
+  color:var(--rc-side-ink, var(--rc-ink)) !important;
+  border:1px solid var(--rc-side-border, var(--rc-border, #e2e8f0)) !important;
+}
+.rc-sidebar-logout:hover{
+  background:color-mix(in srgb, #ef4444 12%, transparent) !important;
+  border-color:#f87171 !important;
+  color:#b91c1c !important;
+}
+.rc-sidebar-foot{
+  border-color:var(--rc-side-border, var(--rc-border)) !important;
+  background:transparent !important;
+}
+aside.collapsed .rc-theme-seg{ grid-template-columns:1fr; }
+aside.collapsed .rc-theme-seg__btn{ font-size:10px; padding:4px 2px; min-height:26px; }
+</style>
+<style id="rc-btn-contrast-lock">
+/* Never white text on white / light fills */
+.rc-ed-btn-primary,button.rc-ed-btn-primary,[type=submit].rc-ed-btn-primary{color:#fff!important}
+.rc-chrome-btn:not(.pri){color:#9a3412!important}
+button.bg-white,a.bg-white{color:#0f172a!important}
+</style>
+
+<script>
+(function(){
+  var map = { light:'#FAF9F8', dark:'#1B1A19', reserve:'#F5F0E8' };
+  function apply(){
+    var th = (document.documentElement.getAttribute('data-theme')||'light');
+    if (th === 'system') {
+      th = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    var el = document.getElementById('rc-theme-color');
+    if (el) el.setAttribute('content', map[th] || map.light);
+  }
+  apply();
+  document.addEventListener('DOMContentLoaded', apply);
+  try {
+    var _s = localStorage.getItem('rc-theme');
+    if (_s) { /* theme already applied by head script */ }
+  } catch(e) {}
+  var obs = new MutationObserver(apply);
+  obs.observe(document.documentElement, { attributes:true, attributeFilter:['data-theme','class'] });
+})();
+</script>
+
 </head>
 
-<body x-data="dashboardApp" 
+<body class="rc-app-shell" x-data="dashboardApp" 
       @company-updated.window="company = JSON.parse(JSON.stringify($event.detail))" 
       @keydown.window.cmd.k.prevent="$refs.searchInput.focus()"
       @delete-record.window="deleteItem($event.detail.id, $event.detail.ns)"
@@ -879,18 +1056,15 @@ $DASHBOARD_STATE = [
         <?php endif; ?>
 
 <a class="rc-skip-link" href="#rc-main-content">Skip to main content</a>
-
-<?php if (!empty($psiPreviewActive)): ?>
-<div class="no-print" style="position:sticky;top:0;z-index:9999;background:#b45309;color:#fff;text-align:center;font:600 12px/1.4 system-ui,sans-serif;padding:6px 10px">
-  PSI PREVIEW MODE — read-only · noindex · delete data/psi_token.txt when finished
-</div>
-<?php endif; ?>
-
-    
-    <!-- ═══════════════════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════════════════════
          SIDEBAR
     ═══════════════════════════════════════════════════════════════ -->
-    <aside id="rc-sidebar" class="sidebar no-print" role="complementary" aria-label="Application modules" :class="sidebarOpen ? 'w-60' : 'w-[4.5rem] collapsed'">
+    <aside id="rc-sidebar" class="sidebar no-print flex flex-col h-screen" role="complementary" aria-label="Application modules"
+           :class="[
+             sidebarOpen ? 'w-60' : 'w-[4.5rem] collapsed',
+             sidebarMobileOpen ? 'rc-sidebar-mobile-open' : ''
+           ]"
+           @click.outside="if (window.innerWidth < 768) sidebarMobileOpen = false">
         
         <!-- Logo Area -->
         <div class="h-16 flex items-center justify-between border-b border-[#1e293b] px-4 shrink-0 overflow-hidden">
@@ -898,7 +1072,7 @@ $DASHBOARD_STATE = [
                 <a :href="company.website || '#'" target="_blank" class="block w-full h-full flex items-center">
                     <template x-if="company.logo">
                         <span class="rc-logo-shell inline-flex items-center justify-center max-h-10 max-w-full px-2 py-1 rounded-lg bg-white/95 border border-slate-200/80 shadow-sm">
-                            <img :src="'images/'+company.logo+'?v='+ts" alt="" class="max-h-7 max-w-[140px] object-contain object-left">
+                            <span class="rc-logo-plate" :data-bg="(company.logo_bg==='dark'||company.logo_bg==='light')?company.logo_bg:'light'"><img :src="'images/'+company.logo+'?v='+ts" alt="" class="max-h-7 max-w-[140px] object-contain object-left"></span>
                         </span>
                     </template>
                     <template x-if="!company.logo">
@@ -931,7 +1105,8 @@ $DASHBOARD_STATE = [
                     <template x-for="n in group.items" :key="n.id">
                         <a :href="n.url ? n.url : '?tab='+n.id" 
                            class="sidebar-link" 
-                           :class="cur===n.id ? 'active' : ''">
+                           :class="cur===n.id ? 'active' : ''"
+                           @click="if (window.innerWidth < 768) sidebarMobileOpen = false">
                             <i :class="n.icon" class="w-4 text-center shrink-0" :class="sidebarOpen ? 'mr-3' : 'mx-auto'"></i>
                             <span x-show="sidebarOpen" x-text="n.label" class="link-text truncate"></span>
                             <span x-show="sidebarOpen && counts[n.id] > 0" class="count-badge" x-text="counts[n.id]"></span>
@@ -941,41 +1116,35 @@ $DASHBOARD_STATE = [
             </template>
         </nav>
         
-        <!-- Footer -->
-        <div class="border-t border-[#1e293b] p-4 flex items-center justify-between shrink-0">
-            <div x-show="sidebarOpen" class="px-2 py-1 space-y-1 min-w-0 flex-1">
-                <div x-show="isSuperAdmin" class="px-2 pb-1 text-[9px] leading-snug text-slate-500" x-cloak>
-                Site Developer: Arthsathi Limited
+        <!-- Footer control bar: theme grid + Sign out (bottom of left pane) -->
+        <div class="rc-sidebar-foot border-t p-3 flex flex-col gap-2 shrink-0 mt-auto" id="rc-sidebar-foot" style="display:flex;flex-direction:column;flex-shrink:0;margin-top:auto">
+            <p class="rc-sidebar-foot__label text-[10px] font-bold uppercase tracking-wide mb-0.5 opacity-70" x-show="sidebarOpen">Theme</p>
+            <div class="rc-theme-seg w-full" role="group" aria-label="Colour theme">
+                <button type="button" data-rc-theme-opt="light" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('light')" title="Light theme" aria-label="Light theme">Light</button>
+                <button type="button" data-rc-theme-opt="dark" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('dark')" title="Dark theme" aria-label="Dark theme">Dark</button>
+                <button type="button" data-rc-theme-opt="reserve" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('reserve')" title="Reserve theme" aria-label="Reserve theme">Reserve</button>
+                <button type="button" data-rc-theme-opt="system" class="rc-theme-seg__btn" onclick="window.rcSetTheme&&window.rcSetTheme('system')" title="Follow device" aria-label="System theme">System</button>
             </div>
-            <button type="button" x-show="isSuperAdmin" @click="showChangelog = true"
-                        class="block w-full text-left rounded-lg px-2 py-1.5 bg-slate-800/80 border border-slate-600 hover:border-sky-400 hover:bg-slate-800 transition"
-                        title="Open version changelog">
-                    <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-bold">Version</span>
-                    <span class="block text-sm font-black text-sky-300 font-mono leading-tight">v<span x-text="state.context.v"></span></span>
-                    <span class="block text-[10px] text-slate-400 mt-0.5">Changelog ↗</span>
-                </button>
-                <a href="?tab=terms" class="block text-[10px] text-slate-400 hover:text-blue-300 px-1">Governance</a>
-                <a href="?tab=terms&amp;policy=privacy" class="block text-[10px] text-slate-400 hover:text-blue-300 px-1">Privacy &amp; DPDP</a>
-            </div>
-            <button type="button" x-show="!sidebarOpen && isSuperAdmin" @click="showChangelog = true"
-                    class="text-center w-full rounded-md py-1 text-[10px] font-mono font-bold text-sky-300 hover:text-white bg-slate-800 border border-slate-600"
-                    title="Changelog">v<span x-text="state.context.v"></span></button>
-            <button type="button" onclick="window.rcToggleTheme && window.rcToggleTheme()"
-                        class="ctrl-btn rc-hit-lg" title="Toggle Interface Theme" aria-label="Toggle colour theme">
-                    <i class="fa-solid fa-moon text-xs" aria-hidden="true"></i>
-                </button>
-                <button type="button" @click="logout()" class="rc-hit-lg text-slate-600 hover:text-red-400 transition-colors shrink-0 ml-auto flex items-center justify-center" title="Terminate Session" aria-label="Terminate session and sign out">
-                <i class="fa-solid fa-power-off text-xs" aria-hidden="true"></i>
+            <script>(function(){try{var p=localStorage.getItem('rc-theme')||'system';document.querySelectorAll('[data-rc-theme-opt]').forEach(function(b){var on=b.getAttribute('data-rc-theme-opt')===p;b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('is-active',on);});window.rcSetTheme=window.rcSetTheme||function(mode){try{localStorage.setItem('rc-theme',mode);var html=document.documentElement;if(mode==='system'){var dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;html.setAttribute('data-theme',dark?'dark':'light');html.classList.toggle('dark',dark);}else{html.setAttribute('data-theme',mode);html.classList.toggle('dark',mode==='dark');}document.querySelectorAll('[data-rc-theme-opt]').forEach(function(b){var on=b.getAttribute('data-rc-theme-opt')===mode;b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('is-active',on);});}catch(e){}};}catch(e){}})();</script>
+            <button type="button" @click="logout()"
+                    class="rc-sidebar-logout rc-hit-lg w-full flex items-center justify-center rounded-lg px-3 py-2.5 transition-colors no-underline"
+                    title="Sign out" aria-label="Sign out">
+                <i class="fa-solid fa-power-off text-sm" aria-hidden="true"></i>
             </button>
         </div>
     </aside>
 
     <!-- ═══════════════════════════════════════════════════════════
-         MAIN CONTENT
+         MAIN CONTENT (must be a direct body flex child with sidebar only)
     ═══════════════════════════════════════════════════════════════ -->
-    <div id="rc-status-live" class="rc-live rc-live-a11y" role="status" aria-live="polite" aria-atomic="true"></div>
     <main id="rc-main-content" class="flex flex-col flex-1 min-w-0 h-screen bg-slate-50" tabindex="-1">
-        
+        <div id="rc-status-live" class="rc-live rc-live-a11y" role="status" aria-live="polite" aria-atomic="true"></div>
+        <?php
+          $__adPartial = __DIR__ . '/partials/subscription_ad_strip.php';
+          if (is_file($__adPartial)) {
+              require $__adPartial;
+          }
+        ?>
         <!-- Header -->
         <header class="bg-white border-b border-slate-200 shrink-0 z-30 relative" role="banner">
             <div class="h-16 flex items-center justify-between px-4 md:px-6 gap-2">
@@ -1129,9 +1298,25 @@ $DASHBOARD_STATE = [
                     <i class="fa-solid fa-trash text-[10px]"></i> <span class="hidden sm:inline">Retire</span>
                 </button>
                 <?php endif; ?>
+                <!-- Mobile: open nav drawer + sign out (sidebar is off-canvas <768px) -->
+                <button type="button" @click="sidebarMobileOpen = !sidebarMobileOpen"
+                        class="md:hidden rc-hit-lg h-9 w-9 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-slate-100 flex items-center justify-center"
+                        title="Menu" aria-label="Open navigation menu" :aria-expanded="sidebarMobileOpen ? 'true' : 'false'">
+                    <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                </button>
+                <button type="button" @click="logout()"
+                        class="md:hidden rc-hit-lg h-9 px-2.5 rounded-lg text-red-600 hover:text-white hover:bg-red-600 border border-red-200 flex items-center justify-center gap-1.5 text-xs font-bold"
+                        title="Sign out" aria-label="Sign out">
+                    <i class="fa-solid fa-power-off" aria-hidden="true"></i>
+                    <span>Out</span>
+                </button>
             </div>
             </div><!-- /row 1 — secondary team toolbar removed -->
         </header>
+        <!-- Mobile sidebar backdrop -->
+        <div class="md:hidden fixed inset-0 z-[70] bg-slate-900/50" x-show="sidebarMobileOpen" x-cloak
+             @click="sidebarMobileOpen = false" aria-hidden="true"></div>
+
 
         <input type="file" x-ref="importInput" class="hidden" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" @change="importExcel">
 
@@ -1198,29 +1383,26 @@ $DASHBOARD_STATE = [
                     <?php
                     // Statistics: use ?tab=statistics only
 
-                    // Public / visitor live widgets
-                    if (!empty($isPublic) && empty($isAdmin) && empty($isSuperAdmin)) {
+                    // Live widgets — hidden for Super Admin control plane
+                    if (empty($isSuperAdmin) && empty($viewData['isSuperAdmin'])) {
+                        echo '<div class="rc-top-widgets mb-3 grid grid-cols-4 gap-2 items-stretch" style="grid-template-columns:repeat(4,minmax(0,1fr))">';
                         $wxPartial = __DIR__ . '/partials/public_live_widgets.php';
                         if (is_file($wxPartial)) {
                             require $wxPartial;
                         }
-                    }
-                    // Celebrations · next 7 days — Team Directory only
-                    if (($currentTab ?? '') === 'team') {
                         $bdayPartial = __DIR__ . '/partials/value_birthday_strip.php';
                         if (is_file($bdayPartial)) {
                             require $bdayPartial;
                         }
+                        echo '</div>';
                     }
-                    // Search is the single header control only (no second people-search strip).
-                    // Co. Admin: Celebrations strip only (birthday partial above).
                     ?>
 
             <div class="w-full max-w-full block">
                 <?php 
                     // fell through to the generic table view further down and never
                     // loaded dbd/tab_departments.php / dbd/tab_designations.php at all.
-                    $customTabs = ['team', 'events', 'company', 'numero', 'statistics', 'opt', 'docs', 'statutory', 'monitor', 'tenants', 'access', 'locations', 'terms', 'departments', 'designations', 'cartags', 'cctv', 'status', 'leads', 'settings', 'tracking', 'dispatch', 'ops', 'assets', 'expiry', 'org', 'audit', 'health'];
+                    $customTabs = ['team', 'events', 'company', 'numero', 'statistics', 'opt', 'docs', 'mediakit', 'statutory', 'monitor', 'tenants', 'access', 'brandlogos', 'locations', 'terms', 'departments', 'designations', 'cartags', 'cctv', 'status', 'leads', 'settings', 'tracking', 'dispatch', 'ops', 'assets', 'expiry', 'org', 'audit', 'health'];
                     if (in_array($currentTab, ['monitor', 'opt', 'tenants', 'access'], true) && empty($isSuperAdmin)) {
                         echo '<div class="p-8 text-center text-red-700 font-bold bg-red-50 rounded-xl border border-red-200 m-4">Access Denied — Super Admin only.</div>';
                     } elseif (in_array($currentTab, $customTabs)) {
@@ -1247,9 +1429,19 @@ $DASHBOARD_STATE = [
                             <template x-for="i in paginatedList" :key="i.id">
                                 <div class="w-full bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-l-blue-500 relative overflow-hidden group hover:border-blue-300 hover:shadow-md transition-all flex flex-col md:flex-row md:items-start justify-between gap-4">
                                     <div class="flex flex-col md:flex-row gap-6 w-full flex-1 min-w-0">
-                                        <div class="md:w-36 shrink-0 md:border-r border-slate-100 md:pr-4 min-w-0">
-                                            <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Reference ID</div>
-                                            <div class="font-mono text-base font-bold text-slate-700 truncate" x-text="i.slug || i.id || '-'"></div>
+                                        <div class="md:w-40 shrink-0 md:border-r border-slate-100 md:pr-4 min-w-0 flex flex-col items-start gap-2">
+                                            <div class="w-full">
+                                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Reference ID</div>
+                                                <div class="font-mono text-sm font-bold text-slate-700 truncate" x-text="i.slug || i.id || '-'"></div>
+                                            </div>
+                                            <div class="w-[72px] h-[72px] rounded-xl border border-slate-200 bg-white p-2 flex items-center justify-center overflow-hidden shadow-sm shrink-0" title="Bank logo">
+                                                <template x-if="i.bank_logo || (i.bank_logo_candidates && i.bank_logo_candidates.length)">
+                                                    <img :src="i.bank_logo || (i.bank_logo_candidates && i.bank_logo_candidates[0])" alt="" width="72" height="72" class="max-w-full max-h-full object-contain" loading="lazy"
+                                                         :data-cands="JSON.stringify(i.bank_logo_candidates || [])"
+                                                         @error="window.rcLogoCascade && window.rcLogoCascade($el)">
+                                                </template>
+                                                <span class="text-slate-300 text-2xl" x-show="!i.bank_logo"><i class="fa-solid fa-building-columns"></i></span>
+                                            </div>
                                         </div>
                                         <div class="flex-1 min-w-0 md:border-r border-slate-100 md:px-4 space-y-2">
                                             <div><div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Account Holder</div><div class="font-bold text-slate-800 text-base truncate" x-text="i.holder_name"></div></div>
@@ -1266,7 +1458,7 @@ $DASHBOARD_STATE = [
                                         <div class="shrink-0 flex flex-col items-center justify-center gap-1.5 md:border-l border-slate-100 md:pl-4"
                                              x-show="i.upi_id || i.qr_image"
                                              x-cloak>
-                                            <div class="w-[7.5rem] h-[7.5rem] rounded-xl border-2 border-slate-200 bg-white p-1.5 shadow-sm flex items-center justify-center overflow-hidden"
+                                            <div class="rc-bank-qr-box w-[7.5rem] h-[7.5rem] max-w-[120px] max-h-[120px] rounded-xl border-2 border-slate-200 bg-white p-1.5 shadow-sm flex items-center justify-center overflow-hidden"
                                                  :data-bank-id="i.id"
                                                  x-init="$nextTick(() => window.rcPaintBankQr && window.rcPaintBankQr($el, i))">
                                                 <template x-if="i.qr_image">
@@ -1368,6 +1560,29 @@ $DASHBOARD_STATE = [
                 </template>
             </div>
         </div>
+
+        <?php
+          $licName = trim((string)($viewData['company']['name'] ?? ''));
+          if ($licName === '') $licName = defined('TENANT_ID') ? ucfirst((string)TENANT_ID) : 'Organization';
+          $licUrl  = trim((string)($viewData['company']['website'] ?? ''));
+          if ($licUrl !== '' && !preg_match('~^https?://~i', $licUrl)) $licUrl = 'https://'.$licUrl;
+        ?>
+        <footer class="no-print shrink-0 border-t border-slate-200/80 px-3 py-2.5 text-[11px] text-slate-500" role="contentinfo">
+          <nav class="rc-site-footer flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-center" aria-label="Site">
+            <button type="button" @click="showChangelog = true" class="tabular-nums no-underline hover:text-[color:var(--rc-accent)] cursor-pointer bg-transparent border-0 p-0 text-[11px] text-slate-500" title="Changelog">RC Version No. <?= htmlspecialchars(defined('APP_VERSION') ? (string)APP_VERSION : '', ENT_QUOTES,'UTF-8') ?></button>
+            <span class="opacity-40" aria-hidden="true">·</span>
+            <span>Developed by: <a href="https://www.arthsathi.com" target="_blank" rel="noopener noreferrer" class="font-semibold no-underline text-slate-600 hover:text-[color:var(--rc-accent)]">Arthsathi Limited</a></span>
+            <span class="opacity-40" aria-hidden="true">·</span>
+            <span>Licensee: <?php if ($licUrl !== ''): ?><a href="<?= htmlspecialchars($licUrl, ENT_QUOTES,'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="font-semibold no-underline text-slate-600 hover:text-[color:var(--rc-accent)]"><?= htmlspecialchars($licName, ENT_QUOTES,'UTF-8') ?></a><?php else: ?><span class="font-semibold text-slate-600"><?= htmlspecialchars($licName, ENT_QUOTES,'UTF-8') ?></span><?php endif; ?></span>
+            <span class="opacity-40" aria-hidden="true">·</span>
+            <span class="inline-flex items-center gap-x-3">
+              <a href="?tab=terms" class="no-underline hover:text-[color:var(--rc-accent)]">Governance</a>
+              <a href="?tab=terms&amp;policy=privacy" class="no-underline hover:text-[color:var(--rc-accent)]">Privacy</a>
+              <a href="?tab=terms&amp;policy=privacy" class="no-underline hover:text-[color:var(--rc-accent)]">DPDP</a>
+            </span>
+          </nav>
+        </footer>
+
     </main>
 
     <!-- ═══════════════════════════════════════════════════════════
@@ -1500,6 +1715,39 @@ $DASHBOARD_STATE = [
     </div>
 
         <!-- dashboardApp: assets/dashboard-app.js -->
+
+<script>
+// SAFETY NET, not a fix for the root cause: added after a live deployment
+// showed an empty sidebar and header with no visible error at all. Root
+// cause there was assets/dashboard-app.js missing or stale on the server --
+// x-data="dashboardApp" silently fails to resolve, the surrounding <aside>
+// and <header> markup still renders as plain HTML, but every x-for loop
+// that depends on Alpine (navGroups, primaryNav) never populates. Nothing
+// in the browser tells you why; it just looks broken.
+// This checks for the actual SYMPTOM (the sidebar has zero rendered nav
+// links) a couple of seconds after load, rather than guessing at Alpine's
+// internal state -- that makes it catch this failure mode regardless of
+// the exact underlying cause (a missing file, a load-order problem, a
+// future JS error in that file), not just this one specific incident.
+// Deliberately framework-independent: if Alpine itself is the thing that
+// failed to load, a check that depends on Alpine would fail silently too.
+(function () {
+    setTimeout(function () {
+        var nav = document.getElementById('rc-sidebar-nav');
+        if (!nav || nav.querySelector('.sidebar-link, .section-label')) return; // rendered fine
+
+        var banner = document.createElement('div');
+        banner.setAttribute('role', 'alert');
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;' +
+            'background:#7f1d1d;color:#fef2f2;font:600 13px/1.5 system-ui,sans-serif;' +
+            'padding:10px 16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+        banner.innerHTML = 'Navigation failed to load &mdash; the sidebar and header controls are missing their content. ' +
+            'A required file likely failed to load: <code style="background:rgba(0,0,0,.25);padding:1px 6px;border-radius:4px">assets/dashboard-app.js</code>. ' +
+            'Check the browser console (F12) and the Network tab for a 404 on that file, then confirm it exists on the server.';
+        document.body.insertBefore(banner, document.body.firstChild);
+    }, 2500);
+})();
+</script>
 
 <?php $cp = __DIR__ . '/partials/command_palette.php'; if (is_file($cp)) require $cp; ?>
 </body>

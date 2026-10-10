@@ -85,7 +85,7 @@ final class AppSchema
             'bank' => ['holder_name', 'bank_name', 'branch', 'acc_no', 'ifsc', 'upi_id', 'slug'],
             'cartags' => ['tag_id', 'registration_number', 'plate', 'make_model', 'colour', 'vehicle_class', 'owner_name', 'member_id'],
             'docs' => ['name', 'title', 'file_type', 'version', 'size', 'updated_at', 'slug'],
-            'events' => ['name', 'date', 'location', 'description', 'is_virtual'],
+            'events' => ['name', 'date', 'location', 'description', 'is_virtual', 'photo', 'image', 'url'],
             'locations' => ['name', 'address', 'city', 'state', 'pincode', 'map_url'],
             'statutory' => ['company_name', 'cin', 'pan', 'tan', 'gst', 'lei', 'roc_code', 'msme', 'esic', 'pf_code', 'isin', 'demat_id', 'phone', 'email', 'address'],
         ];

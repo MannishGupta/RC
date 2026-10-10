@@ -1,15 +1,21 @@
-# Fusion Resource Centre
+# Resource Centre (RC)
 
-Multi-tenant enterprise directory and operations platform.
+Multi-tenant corporate directory and operations portal (PHP 8.x, flat-file JSON, no required Composer).
 
-| Doc | Purpose |
-|-----|---------|
-| **LAUNCH.md** | Commercial go-live checklist |
-| **HELP.md** | Operator guide |
-| **VERSION** | Changelog |
-| **DEPLOY.md** | Hosting |
-| **PACKAGE.md** | File layout |
+## Quick links
+- **Version:** see `version.php` / `VERSION`
+- **Health:** `/health.php`
+- **Launch:** `docs/PRODUCTION_LAUNCH_CHECKLIST.md`
+- **Auth rotation:** `docs/AUTH_ROTATION.md`
+- **Tenant guide:** `docs/TENANT_QUICKSTART.md`
 
-**Build:** see `VERSION` · **Developer:** Arthsathi Limited
+## Development
+- Entry: `index.php`
+- Tenancy: `app/tenant_bootstrap.php` → `tenants/{id}/data/`
+- Theme: `assets/contrast-lock.css`
 
-Requires PHP 8.2+, HTTPS recommended, writable `tenants/{id}/data/`.
+## CI
+Push to GitHub to run **RC Safety Check** (PHP syntax, JSON, forbidden secret paths).
+
+## License / product
+Commercial product operated per tenant; “Fusion” and similar names are tenant data only, not product branding.

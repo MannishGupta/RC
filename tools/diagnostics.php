@@ -14,12 +14,6 @@ $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DI
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 // BUG FIX: this file -- the permission/diagnostics validator itself --
-// defined DATA_PATH directly from BASE_PATH, bypassing tenant resolution
-// entirely. It would inspect and report on the wrong tenant's folders on
-// any multi-tenant deployment, exactly the "non-existent root folders"
-// false-alarm behaviour this tool exists to prevent. Fixed to require
-// tenant_bootstrap.php first, matching every other correctly-wired
-// standalone entry point.
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('SESSION_PATH')) define('SESSION_PATH', DATA_PATH . '/sessions');
 
@@ -104,7 +98,9 @@ if (file_exists($logPath)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Diagnostics</title>
+    <meta name="description" content="Resource Centre diagnostics — restricted operator tool.">
+<meta name="robots" content="noindex,nofollow">
+<title>System Diagnostics</title>
     <link rel="stylesheet" href="/assets/app.css">
     <link href="/assets/vendor/fontawesome.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="/assets/vendor/fontawesome.min.css" rel="stylesheet"></noscript>

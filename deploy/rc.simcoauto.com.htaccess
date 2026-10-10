@@ -103,3 +103,10 @@ ErrorDocument 404 /index.php
         Deny from all
     </IfModule>
 </FilesMatch>
+
+# Deny non-public trees
+<IfModule mod_rewrite.c>
+    RewriteRule ^sql/ - [F,L]
+    RewriteRule ^tests/ - [F,L]
+    RewriteRule ^docs/ - [F,L]
+</IfModule>

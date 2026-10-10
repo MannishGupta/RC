@@ -16,6 +16,7 @@
                 cur: (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.context && window.__DASHBOARD_STATE__.context.tab) ? window.__DASHBOARD_STATE__.context.tab : 'team',
                 search: '', globalSearchOpen: false, favIds: [], ts: Date.now(), sidebarOpen: window.innerWidth >= 768,
                 mobileMore: false,
+                sidebarMobileOpen: false,
                 clock: '',
                 optLoading: false, optLogs: [],
                 sortCol: (function () {
@@ -29,7 +30,7 @@
                     return [
                         {id:'team',   icon:'fa-solid fa-users',       label:'Human Capital'},
                         {id:'docs',   icon:'fa-solid fa-folder-open', label:'Documents'},
-                        {id:'bank',   icon:'fa-solid fa-building-columns', label:'Treasury'},
+                        {id:'bank',   icon:'fa-solid fa-building-columns', label:'Treasury & Banking Ledger'},
                         {id:'events', icon:'fa-solid fa-calendar',    label:'Calendar'}
                     ];
                 },
@@ -45,9 +46,12 @@
                             {
                                 title: 'Control Plane',
                                 items: [
-                                    { id: 'access',  icon: 'fa-solid fa-user-shield',   label: 'Access Mode' },
-                                    { id: 'tenants', icon: 'fa-solid fa-building-user', label: 'Tenant Setup' },
-                                    { id: 'monitor', icon: 'fa-solid fa-heart-pulse',   label: 'Monitor / Optimisation' },
+                                    { id: 'access',     icon: 'fa-solid fa-user-shield',   label: 'Access Mode' },
+                                    { id: 'brandlogos', icon: 'fa-solid fa-trademark',     label: 'Brand Logos' },
+                                    { id: 'tenants',    icon: 'fa-solid fa-building-user', label: 'Tenant Setup' },
+                                    { id: 'monitor',    icon: 'fa-solid fa-heart-pulse',   label: 'Monitor / Diagnostics' },
+                                    { id: 'opt',        icon: 'fa-solid fa-gauge-high',    label: 'Optimisation Suite' },
+                                    { id: 'health',     icon: 'fa-solid fa-screwdriver-wrench', label: 'Health & Tools' },
                                 ]
                             }
                         ];
@@ -58,16 +62,17 @@
                         { id: 'team', icon: 'fa-solid fa-users', label: 'Human Capital Index' }
                     ]});
                     groups.push({ title: 'Field Operations', items: [
-                        { id: 'tracking', icon: 'fa-solid fa-location-crosshairs', label: 'Live Location' },
-                        { id: 'ops',      icon: 'fa-solid fa-clipboard-list',      label: 'Field Ops Hub' },
-                        { id: 'cartags',  icon: 'fa-solid fa-car',                 label: 'Vehicle Inventory' },
-                        { id: 'dispatch', icon: 'fa-solid fa-route',               label: 'Dispatch & Routes' },
-                        { id: 'locations',icon: 'fa-solid fa-map-location-dot',    label: 'Standard Locations' },
+                        { id: 'locations',icon: 'fa-solid fa-map-location-dot',    label: 'Shared Locations' },
+                        { id: 'cartags',  icon: 'fa-solid fa-car',                 label: 'Fleet Asset Registry' },
                         { id: 'assets',   icon: 'fa-solid fa-box-open',            label: 'Asset Checkout' },
+                        { id: 'tracking', icon: 'fa-solid fa-location-crosshairs', label: 'Live Location' },
+                        { id: 'dispatch', icon: 'fa-solid fa-route',               label: 'Dispatch & Routes' },
+                        { id: 'ops',      icon: 'fa-solid fa-clipboard-list',      label: 'Field Ops Hub' },
                     ]});
                     groups.push({ title: 'Institutional Resources', items: [
-                        { id: 'bank',      icon: 'fa-solid fa-building-columns', label: 'Treasury & Banking' },
+                        { id: 'bank',      icon: 'fa-solid fa-building-columns', label: 'Treasury & Banking Ledger' },
                         { id: 'docs',      icon: 'fa-solid fa-folder-open',      label: 'Document Vault' },
+                        { id: 'mediakit',  icon: 'fa-solid fa-photo-film',       label: 'Media Kit' },
                         { id: 'events',    icon: 'fa-solid fa-calendar-days',    label: 'Calendar' },
                         { id: 'statutory', icon: 'fa-solid fa-scale-balanced',   label: 'Compliance Register' },
                         { id: 'expiry',    icon: 'fa-solid fa-hourglass-end',    label: 'Expiry Radar' },
@@ -77,35 +82,46 @@
                     groups.push({ title: 'Insights', items: [
                         { id: 'numero', icon: 'fa-solid fa-wand-magic-sparkles', label: 'Vedic Numero' },
                         { id: 'janam', url: 'janam_patri.php', icon: 'fa-solid fa-om', label: 'Janam Patri' },
+                        { id: 'blood', url: 'blood_report.php', icon: 'fa-solid fa-droplet', label: 'Blood Report' },
+                        { id: 'cctv', icon: 'fa-solid fa-video', label: 'Surveillance Access' },
                         { id: 'statistics', icon: 'fa-solid fa-chart-pie', label: 'Statistics Panel' },
                     ]});
                     if (this.isAdmin) {
                         groups.push({ title: 'Enterprise Configuration', items: [
                             { id: 'company',      icon: 'fa-solid fa-sliders',     label: 'Organizational Config' },
-                            { id: 'departments',  icon: 'fa-solid fa-sitemap',     label: 'Organizational Units' },
                             { id: 'designations', icon: 'fa-solid fa-list-check',  label: 'Role Taxonomy' },
+                            { id: 'departments',  icon: 'fa-solid fa-sitemap',     label: 'Organizational Units' },
                             { id: 'settings',     icon: 'fa-solid fa-plug',        label: 'Integrations' },
                             { id: 'leads',        icon: 'fa-solid fa-address-card',label: 'Opportunity Pipeline' },
-                            { id: 'cctv',         icon: 'fa-solid fa-video',       label: 'Surveillance Access' },
                         ]});
                         groups.push({ title: 'Platform Operations', items: [
-                            { id: 'health', icon: 'fa-solid fa-server',          label: 'Health & Backup' },
+                            { id: 'health', icon: 'fa-solid fa-server',          label: 'Health & Tools' },
                             { id: 'audit',  icon: 'fa-solid fa-clipboard-list',  label: 'Audit Ledger' },
+                            { id: 'monitor', icon: 'fa-solid fa-heart-pulse',   label: 'Monitor' },
+                            { id: 'opt',     icon: 'fa-solid fa-gauge-high',    label: 'System Optimizer' },
                         ]});
                     }
                     groups.push({ title: 'Session', items: [
                         { id: 'access', icon: 'fa-solid fa-user-shield', label: 'Access Mode' },
                         { id: 'terms',  icon: 'fa-solid fa-scroll',      label: 'Governance Policy' },
                     ]});
-                    const allowed = (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.auth)
-                        ? window.__DASHBOARD_STATE__.auth.allowedTabs : null;
-                    if (Array.isArray(allowed)) {
-                        return groups.map(g => ({
-                            ...g,
-                            items: g.items.filter(it => !it.id || allowed.includes(it.id) || it.url)
-                        })).filter(g => g.items.length);
-                    }
-                    return groups;
+                    const auth = (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.auth) ? window.__DASHBOARD_STATE__.auth : {};
+                    const allowed = Array.isArray(auth.allowedTabs) ? auth.allowedTabs : null;
+                    const modEnabled = (auth.modules && auth.modules.enabled) ? auth.modules.enabled : {};
+                    const isSa = !!auth.isSuperAdmin;
+                    return groups.map(g => ({
+                        ...g,
+                        items: g.items.filter(it => {
+                            if (!it.id) return true; // external url items
+                            if (['tenants','monitor','opt'].includes(it.id) && !isSa) return false;
+                            if (Array.isArray(allowed) && !allowed.includes(it.id) && !it.url) return false;
+                            // Module matrix: disabled modules hidden for Co Admin / Visitor
+                            if (!isSa && Object.prototype.hasOwnProperty.call(modEnabled, it.id) && !modEnabled[it.id]) {
+                                return false;
+                            }
+                            return true;
+                        })
+                    })).filter(g => g.items.length);
                 },
                 init() {
                     if (typeof this.loadFavourites === 'function') this.loadFavourites();
@@ -307,7 +323,7 @@
                         { ns: 'team', label: 'People', tab: 'team', fields: ['name','phone','mobile','email','designation_name','department_name','gotra','slug'] },
                         { ns: 'docs', label: 'Documents', tab: 'docs', fields: ['title','name','doc_name','category','tags'] },
                         { ns: 'cartags', label: 'Vehicles', tab: 'cartags', fields: ['plate','tag_id','make_model','name','owner_name'] },
-                        { ns: 'bank', label: 'Treasury', tab: 'bank', fields: ['bank_name','acc_no','upi_id','holder_name','ifsc'] },
+                        { ns: 'bank', label: 'Treasury & Banking Ledger', tab: 'bank', fields: ['bank_name','acc_no','upi_id','holder_name','ifsc'] },
                         { ns: 'locations', label: 'Locations', tab: 'locations', fields: ['name','city','address','pincode'] },
                     ];
                     const out = [];
@@ -620,9 +636,14 @@ get filteredList() {
                 },
                 get counts() {
                     const c = {};
+                    const pre = (this.data && this.data._counts) || (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.data && window.__DASHBOARD_STATE__.data._counts) || {};
                     this.navGroups.forEach(g => g.items.forEach(n => {
-                        const d = this.data[n.id];
-                        c[n.id] = Array.isArray(d) ? d.length : 0;
+                        if (pre[n.id] != null && pre[n.id] !== '') {
+                            c[n.id] = Number(pre[n.id]) || 0;
+                        } else {
+                            const d = this.data[n.id];
+                            c[n.id] = Array.isArray(d) ? d.length : 0;
+                        }
                     }));
                     const stc = (window.__DASHBOARD_STATE__ && window.__DASHBOARD_STATE__.statusProjectCount) || 0;
                     if (stc > 0) c.status = stc;
@@ -715,8 +736,23 @@ get filteredList() {
                             const keys = await caches.keys();
                             await Promise.all(keys.map(k => caches.delete(k)));
                         }
-                    } catch (e) {  }
-                    this.postReq('logout', {});
+                    } catch (e) { /* ignore SW/cache errors */ }
+                    const csrf = (window.APP && window.APP.csrf) || window.CSRF_TOKEN || window.APP_CSRF || '';
+                    try {
+                        await fetch('index.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-Token': csrf
+                            },
+                            body: JSON.stringify({ action: 'logout', csrf_token: csrf, csrf: csrf }),
+                            credentials: 'same-origin',
+                            cache: 'no-store'
+                        });
+                    } catch (e) { /* still leave the UI */ }
+                    // Always leave the app shell — do not reload a tab URL that may error after session end
+                    window.location.replace('index.php');
                 },
                 deleteItem(id, ns) { if(confirm('Retire this record permanently from the enterprise registry? This action cannot be reversed.')) this.postReq('delete', {id, ns}); },
                 async runOptimise() {
@@ -744,9 +780,16 @@ get filteredList() {
                         let data = null;
                         try { data = JSON.parse(raw); } catch (parseErr) {
                             this.optLoading = false;
+                            const plain = (raw || '')
+                                .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                                .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                                .replace(/<[^>]+>/g, ' ')
+                                .replace(/\s+/g, ' ')
+                                .trim();
                             this.optLogs = [
                                 '⚠️ Non-JSON response (HTTP ' + res.status + ')',
-                                (raw || '').slice(0, 400)
+                                plain ? plain.slice(0, 600) : '(empty body — often PHP fatal / memory limit)',
+                                'Tip: raise memory_limit / max_execution_time, then re-run. Details appear here once the server returns JSON.'
                             ];
                             return;
                         }
@@ -809,7 +852,7 @@ get filteredList() {
                     document.body.setAttribute('data-print-title', title);
                     document.body.setAttribute('data-print-date', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }));
                     if (tab === 'team') {
-                        window.open('tools/print_directory.php?tab=team', '_blank', 'noopener');
+                        window.open('print_directory.php?tab=team', '_blank', 'noopener');
                         return;
                     }
                     window.print();

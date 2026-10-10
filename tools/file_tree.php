@@ -16,8 +16,6 @@ if (file_exists($rootPath . '/app/bootstrap.php')) {
     define('BASE_PATH', $rootPath);
     require_once BASE_PATH . '/app/tenant_bootstrap.php';
     // BUG FIX: defined DATA_PATH directly from BASE_PATH, bypassing tenant
-    // resolution -- would list the wrong tenant's directory tree on a
-    // multi-tenant deployment. Fixed to require tenant_bootstrap.php first.
     if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
     if (!defined('SESSION_PATH')) define('SESSION_PATH', DATA_PATH . '/sessions');
     if (!file_exists(SESSION_PATH)) @mkdir(SESSION_PATH, 0755, true);
@@ -179,7 +177,9 @@ $treeOutput = $treeGenerator->generateTree($baseDirectory);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Directory Tree Generator</title>
+    <meta name="description" content="Resource Centre file tree — restricted operator tool.">
+<meta name="robots" content="noindex,nofollow">
+<title>Directory Tree Generator</title>
     <style>
         :root {
             --bg-color: #f3f4f6;

@@ -92,6 +92,7 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
         echo SeoShare::personCard('visiting', is_array($person ?? null) ? $person : [], is_array($company ?? null) ? $company : []);
     } else {
         echo '<title>Visiting Card — ' . htmlspecialchars((string)($name ?? ''), ENT_QUOTES, 'UTF-8') . '</title>';
+        echo '<meta name="description" content="' . htmlspecialchars('Visiting card for ' . (string)($name ?? 'team member') . ' — official contact details.', ENT_QUOTES, 'UTF-8') . '">';
     }
     ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">

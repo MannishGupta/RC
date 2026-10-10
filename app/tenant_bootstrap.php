@@ -21,6 +21,10 @@
  */
 declare(strict_types=1);
 
+if (is_file(__DIR__ . '/TenantTombstone.php')) {
+    require_once __DIR__ . '/TenantTombstone.php';
+}
+
 if (defined('TENANT_BOOTSTRAPPED')) {
     return;
 }
@@ -221,7 +225,10 @@ function rc_tenant_boot(): void
     }
 
     if (!defined('TENANT_ID')) {
-        define('TENANT_ID', $tenantId);
+        if (class_exists('TenantTombstone') && TenantTombstone::isDeleted((string)$tenantId) && $tenantId !== 'default') {
+    $tenantId = 'default';
+}
+define('TENANT_ID', $tenantId);
     }
     if (!defined('TENANT_ROOT')) {
         define('TENANT_ROOT', $tenantRoot);
@@ -279,6 +286,13 @@ function rc_tenant_boot(): void
     if (function_exists('rc_storage_self_heal')) {
         rc_storage_self_heal(DATA_PATH);
     }
+    $__ts = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__)) . '/app/TenantStorage.php';
+    $__md = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__)) . '/app/MasterDirectory.php';
+    if (is_file($__md)) require_once $__md;
+    if (is_file($__ts)) { require_once $__ts; if (class_exists('TenantStorage')) TenantStorage::ensureBaseline(DATA_PATH); }
+    $__mr = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__)) . '/app/ModuleRegistry.php';
+    if (is_file($__mr)) { require_once $__mr; }
+
 
     // Session path is applied in AppAuth::initSession (with writability fallback).
 }

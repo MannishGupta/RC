@@ -1,5 +1,5 @@
 /**
- * Fusion Resource Centre — WAI-ARIA Tooltip pattern
+ * Resource Centre — WAI-ARIA Tooltip pattern
  * APG: https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
  * Version: 260921.29
  *
