@@ -3,13 +3,14 @@ declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;
 }
-$__pwaName = trim((string)($viewData['company']['name'] ?? '')) ?: 'Resource Centre';
+$__pwaName = 'Resource Centre';
+$__pwaPublisher = 'Arthsathi Limited';
 $__pwaVer  = defined('APP_VERSION') ? (string)APP_VERSION : '';
 ?>
 <div id="rc-pwa-install" class="rc-pwa-install no-print" hidden role="region" aria-label="Install app">
   <div class="rc-pwa-install__inner">
     <div class="rc-pwa-install__icon" aria-hidden="true">
-      <img src="/tools/pwa_icon.php?size=96" width="40" height="40" alt="" loading="lazy"
+      <img src="/tools/pwa_icon.php?product=1&size=96&v=<?= rawurlencode($__pwaVer) ?>" width="40" height="40" alt="" loading="lazy"
            onerror="this.style.display='none'">
     </div>
     <div class="rc-pwa-install__copy min-w-0">

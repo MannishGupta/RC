@@ -34,6 +34,7 @@ require_once BASE_PATH . '/app/bootstrap.php';
 $size     = (int)($_GET['size'] ?? 192);
 $size     = max(48, min(1024, $size));            // clamp: no arbitrary canvas sizes
 $maskable = !empty($_GET['maskable']);
+$product  = !empty($_GET['product']); // Arthsathi product mark for install prompt
 
 if (!function_exists('imagecreatetruecolor')) {
     http_response_code(501);
@@ -44,9 +45,14 @@ if (!function_exists('imagecreatetruecolor')) {
 $company = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
 $name    = trim((string)($company['name'] ?? '')) ?: 'Directory';
 
-// Brand colour, falling back to the slate used across the UI.
-$hex = ltrim((string)($company['brand_color'] ?? '#0f172a'), '#');
-if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) $hex = '0f172a';
+// Product mode (install prompt): Arthsathi brand colour + product favicon/icon
+if (!empty($product)) {
+    $hex = '0078D4'; // Fluent product blue
+    $name = 'Resource Centre';
+} else {
+    $hex = ltrim((string)($company['brand_color'] ?? '#0f172a'), '#');
+    if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) $hex = '0f172a';
+}
 [$bR, $bG, $bB] = [hexdec(substr($hex,0,2)), hexdec(substr($hex,2,2)), hexdec(substr($hex,4,2))];
 
 $im = imagecreatetruecolor($size, $size);
@@ -54,10 +60,62 @@ imagealphablending($im, true);
 imagesavealpha($im, true);
 imagefilledrectangle($im, 0, 0, $size, $size, imagecolorallocate($im, $bR, $bG, $bB));
 
-$logoFile = !empty($company['logo']) ? IMG_PATH . DIRECTORY_SEPARATOR . basename((string)$company['logo']) : '';
+$logoFile = '';
 $drawn = false;
 
-if ($logoFile && is_file($logoFile)) {
+// 1) Product install icons: Arthsathi favicon / brand assets (raster siblings preferred)
+if (!empty($product)) {
+    $candidates = [
+        BASE_PATH . '/favicon-512.png',
+        BASE_PATH . '/favicon-192.png',
+        BASE_PATH . '/apple-touch-icon-180.png',
+        BASE_PATH . '/favicon-32.png',
+        BASE_PATH . '/assets/brand/arthsathi-icon.png',
+        BASE_PATH . '/assets/brand/arthsathi.png',
+    ];
+    foreach ($candidates as $cand) {
+        if (is_file($cand)) { $logoFile = $cand; break; }
+    }
+    // SVG via Imagick when no PNG shipped
+    if ($logoFile === '') {
+        foreach ([BASE_PATH . '/favicon.svg', BASE_PATH . '/assets/brand/arthsathi-icon.svg', BASE_PATH . '/assets/brand/arthsathi.svg'] as $svg) {
+            if (!is_file($svg)) continue;
+            if (extension_loaded('imagick')) {
+                try {
+                    $imx = new Imagick();
+                    $imx->setBackgroundColor(new ImagickPixel('transparent'));
+                    $imx->readImage($svg);
+                    $imx->setImageFormat('png32');
+                    $imx->resizeImage($size, $size, Imagick::FILTER_LANCZOS, 1, true);
+                    $blob = $imx->getImageBlob();
+                    $imx->clear();
+                    $src = @imagecreatefromstring($blob);
+                    if ($src) {
+                        $inset = $maskable ? 0.60 : 0.72;
+                        $box = (int)round($size * $inset);
+                        $sw = imagesx($src); $sh = imagesy($src);
+                        $scale = min($box / max(1,$sw), $box / max(1,$sh));
+                        $dw = max(1, (int)round($sw * $scale));
+                        $dh = max(1, (int)round($sh * $scale));
+                        $dx = (int)(($size - $dw) / 2);
+                        $dy = (int)(($size - $dh) / 2);
+                        imagealphablending($im, true);
+                        imagecopyresampled($im, $src, $dx, $dy, 0, 0, $dw, $dh, $sw, $sh);
+                        imagedestroy($src);
+                        $drawn = true;
+                    }
+                } catch (Throwable $e) { /* fall through */ }
+            }
+            if ($drawn) break;
+        }
+    }
+}
+
+// 2) Tenant company logo (non-product mode, or product fallback if no brand file)
+if ($logoFile === '' && empty($product) && !empty($company['logo'])) {
+    $logoFile = (defined('IMG_PATH') ? IMG_PATH : (BASE_PATH . '/images')) . DIRECTORY_SEPARATOR . basename((string)$company['logo']);
+}
+if (!$drawn && $logoFile !== '' && is_file($logoFile)) {
     $info = @getimagesize($logoFile);
     $src = null;
     if ($info) {
@@ -94,7 +152,8 @@ if (!$drawn) {
         $l = preg_replace('/[^A-Za-z]/', '', $w);
         if ($l !== '') $initials .= strtoupper($l[0]);
     }
-    if ($initials === '') $initials = 'D';
+    if ($initials === '') $initials = !empty($product) ? 'RC' : 'A';
+    if (!empty($product)) $initials = 'RC';
 
     $white = imagecolorallocate($im, 255, 255, 255);
     $font  = null;

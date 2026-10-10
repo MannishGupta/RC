@@ -57,7 +57,13 @@ $logoH = 48;
 
     <meta name="format-detection" content="telephone=no,date=no,email=no,address=no">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
-    <meta name="theme-color" id="rc-theme-color" content="#FAF9F8">
+    <meta name="theme-color" id="rc-theme-color" content="#0078D4">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Resource Centre">
+    <link rel="manifest" href="/manifest.php?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+    <link rel="apple-touch-icon" href="/tools/pwa_icon.php?product=1&amp;size=180">
     <meta name="color-scheme" content="light">
 <?php if ($seoHtml !== ''): ?>
     <?= $seoHtml ?>
