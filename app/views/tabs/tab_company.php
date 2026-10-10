@@ -255,6 +255,23 @@ window.rcSaveCompanyImages = window.rcSaveCompanyImages || async function (ev) {
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-5">
         <div>
             <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Organization Setup</h1>
+
+    <?php
+      $__logoFile = (string)($viewData['company']['logo'] ?? '');
+      $__isSvgLogo = $__logoFile !== '' && preg_match('/\.svgz?$/i', $__logoFile);
+      $__hasRaster = false;
+      if ($__isSvgLogo && defined('IMG_PATH')) {
+        foreach (['company-logo.sig.png','company-logo.png','company-logo.webp'] as $__r) {
+          if (is_file(rtrim(IMG_PATH,'/\\') . '/' . $__r)) { $__hasRaster = true; break; }
+        }
+      }
+      if ($__isSvgLogo && !$__hasRaster):
+    ?>
+    <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-sm px-4 py-3 mb-4">
+      SVG logos cannot be used in emails / app icon on this server without a PNG sibling — upload a PNG as well, or ensure Imagick is available so a raster copy is created on save.
+    </div>
+    <?php endif; ?>
+
             <p class="text-slate-500 font-medium text-sm mt-1">Manage your central brand identity, digital presence, and authority assets.</p>
         </div>
         

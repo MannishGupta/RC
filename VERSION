@@ -1,11 +1,15 @@
-20261009.32
+20261009.33
 
-## 20261009.32 — 10 Oct 2026
+## 20261009.33 — 10 Oct 2026
 
-### Restore GitHub Actions (excluded by bad zip filter)
-- Packaging used -x '*.git*' which also dropped .github/
-- Restored .github/workflows/rc-safety-check.yml (PHP 8.2/8.3/8.4)
-- Restored .github/workflows/php-composer.yml (matrix + skip if no composer.json)
-- Restored .gitignore (secrets + runtime paths)
+### Audit fixes (WP-1 … WP-9)
+- **Deploy:** workflow_dispatch + tag only; safety job gates FTP; excludes data/, tenants/, storage/, tests/, docs; dry-run default; per-env secrets; documentation/DEPLOY.md
+- **Secrets:** expanded .gitignore; auth_config.example.php; map.example.json; no factory bcrypt in source
+- **Auth:** no factoryHashes; missing auth_config → first-run setup (setup_token); existing auth_config unchanged — rotate factory passwords on server yourself
+- **logo_proxy:** tenant_bootstrap + DATA_PATH throttle
+- **Optimizer:** multi-tenant sweep uses dataRoot() for sessions/logs/tmp
+- **Caches:** CardCache::bust, AppDataCache::flushAll; AppSlug::fromName; AppDB::readOne; MasterDirectory::ensureFiles
+- **CI:** SVG tests, mojibake, auth_config, entry-point checks; php-composer PR-only; cache@v4
+- **WP-10:** no code change — needs live svg_logo_check diagnostics from owner
 
 ---

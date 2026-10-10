@@ -816,8 +816,30 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         sendJson(['status' => 'success']);
     }
 
+    if ($action === 'setup_complete') {
+        if (!class_exists('AppAuth') || !AppAuth::needsSetup()) {
+            sendJson(['status' => 'error', 'message' => 'Setup not required or already complete.'], false);
+        }
+        $token = trim((string)($input['setup_token'] ?? $_POST['setup_token'] ?? ''));
+        $passwords = [
+            'super_admin' => (string)($input['password_super_admin'] ?? $_POST['password_super_admin'] ?? ''),
+            'admin' => (string)($input['password_admin'] ?? $_POST['password_admin'] ?? ''),
+            'public' => (string)($input['password_public'] ?? $_POST['password_public'] ?? ''),
+        ];
+        if (AppAuth::completeSetup($passwords, $token)) {
+            if (class_exists('AuditLog')) {
+                @AuditLog::write('auth_setup_complete', ['roles' => array_keys(array_filter($passwords))]);
+            }
+            sendJson(['status' => 'success', 'message' => 'Access keys saved. You can sign in now.'], false);
+        }
+        sendJson(['status' => 'error', 'message' => 'Setup failed. Check token and passwords (min 8 characters for admin).'], false);
+    }
+
     if ($action === 'login') {
         // Always answer with a real JSON body (never 304 / empty).
+        if (class_exists('AppAuth') && method_exists('AppAuth', 'needsSetup') && AppAuth::needsSetup()) {
+            sendJson(['status' => 'error', 'message' => 'First-run setup required. Open the login page to set access keys.'], false);
+        }
         if (!AppAuth::checkRateLimit()) {
             sendJson(['status' => 'error', 'message' => 'Too many attempts. Please try again later.'], false);
         }
@@ -2618,8 +2640,8 @@ return " . var_export($_merged, true) . ";
         if (!AppDB::save('company', $co)) {
             sendJson(['status' => 'error', 'message' => 'Images may be on disk but company record failed to save']);
         }
-        if (class_exists('CardCache') && method_exists('CardCache', 'clear')) {
-            try { CardCache::clear(); } catch (Throwable $e) {}
+        if (class_exists('CardCache') && method_exists('CardCache', 'bust')) {
+            try { CardCache::bust(); } catch (Throwable $e) {}
         }
         if (class_exists('AuditLog')) {
             AuditLog::write('save_company_brand', ['saved' => array_keys($saved)]);
@@ -3188,10 +3210,10 @@ if ($ns === 'docs') {
             if (class_exists('CardCache')) {
                 CardCache::bust();
             }
-            if (class_exists('AppDataCache') && method_exists('AppDataCache', 'forget')) {
-                AppDataCache::forget('company');
-            } elseif (class_exists('AppDataCache') && method_exists('AppDataCache', 'flush')) {
-                AppDataCache::flush();
+            if (class_exists('AppDataCache') && method_exists('AppDataCache', 'flushAll')) {
+                AppDataCache::flushAll();
+            } elseif (class_exists('AppDataCache') && method_exists('AppDataCache', 'invalidate')) {
+                AppDataCache::invalidate('company');
             }
             if (class_exists('AuditLog')) AuditLog::write('save', ['ns' => $ns, 'singleton' => true]);
             if (class_exists('AppLog')) AppLog::info("Saved Company configuration details", [

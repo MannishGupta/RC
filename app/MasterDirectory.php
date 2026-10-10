@@ -293,4 +293,15 @@ final class MasterDirectory
         usort($out, static fn($a, $b) => strcasecmp($a['label'], $b['label']));
         return $out;
     }
+
+    /** Ensure logo folder tree exists (TenantStorage baseline). */
+    public static function ensureFiles(): void {
+        $base = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
+        foreach (['/assets/logos/banks', '/assets/logos/oems'] as $rel) {
+            $dir = $base . $rel;
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0775, true);
+            }
+        }
+    }
 }

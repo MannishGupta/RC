@@ -37,6 +37,12 @@ $h = static function (string $s): string {
 };
 
 $csrf = (string)($_SESSION['csrf_token'] ?? '');
+$needsSetup = class_exists('AppAuth') && method_exists('AppAuth', 'needsSetup') && AppAuth::needsSetup();
+$setupToken = '';
+if ($needsSetup && method_exists('AppAuth', 'ensureSetupToken')) {
+    $setupToken = AppAuth::ensureSetupToken();
+}
+
 $logoW = 160;
 $logoH = 48;
 ?>
@@ -192,7 +198,40 @@ $logoH = 48;
         <div class="divider" role="presentation"></div>
 
         <p class="text-[11px] text-slate-500 mb-3" style="max-width:22rem;margin:0 auto 0.75rem;text-align:center">Enterprise access key required. Contact your administrator for credentials.</p>
-        <form id="loginForm" method="post" action="index.php" autocomplete="current-password">
+        
+<?php if (!empty($needsSetup)): ?>
+<div class="rc-login-card" style="max-width:420px;margin:1rem auto;padding:1.25rem;border:1px solid #e1dfdd;border-radius:12px;background:#fff;color:#201f1e;font-family:system-ui,sans-serif">
+  <h2 style="margin:0 0 .5rem;font-size:1.1rem">First-run setup</h2>
+  <p style="margin:0 0 1rem;font-size:.85rem;color:#605e5c">No access keys are configured for this tenant. Set an admin password (min 8 characters). The setup token is stored only on this server in <code>data/.setup_token</code>.</p>
+  <form id="rc-setup-form" method="post" action="index.php" style="display:flex;flex-direction:column;gap:.6rem">
+    <input type="hidden" name="action" value="setup_complete">
+    <input type="hidden" name="csrf_token" value="<?= $h($csrf) ?>">
+    <input type="hidden" name="setup_token" value="<?= $h($setupToken) ?>">
+    <label style="font-size:.8rem">Admin password<input type="password" name="password_admin" minlength="8" required style="display:block;width:100%;padding:.5rem;margin-top:.25rem"></label>
+    <label style="font-size:.8rem">Super-admin password (optional)<input type="password" name="password_super_admin" minlength="8" style="display:block;width:100%;padding:.5rem;margin-top:.25rem"></label>
+    <label style="font-size:.8rem">Visitor / public password (optional)<input type="password" name="password_public" minlength="8" style="display:block;width:100%;padding:.5rem;margin-top:.25rem"></label>
+    <button type="submit" style="padding:.65rem;background:#0078d4;color:#fff;border:0;border-radius:8px;font-weight:600">Save access keys</button>
+  </form>
+  <p style="margin:.75rem 0 0;font-size:.75rem;color:#a4262c">Existing installs with auth_config.php are unchanged. Rotate factory passwords on the server yourself — this screen only appears when no keys exist.</p>
+</div>
+<script>
+(function(){
+  var f=document.getElementById('rc-setup-form');
+  if(!f)return;
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var fd=new FormData(f);
+    var body={action:'setup_complete',csrf_token:fd.get('csrf_token'),setup_token:fd.get('setup_token'),
+      password_admin:fd.get('password_admin'),password_super_admin:fd.get('password_super_admin'),password_public:fd.get('password_public')};
+    fetch('index.php',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body),credentials:'same-origin'})
+      .then(function(r){return r.json()})
+      .then(function(j){alert(j.message||j.status); if(j.status==='success') location.reload();})
+      .catch(function(err){alert(String(err));});
+  });
+})();
+</script>
+<?php else: ?>
+<form id="loginForm" method="post" action="index.php" autocomplete="current-password">
             <div class="input-wrap">
                 <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 1 0-8 0v4h8z"/></svg>
                 <label for="password" class="visually-hidden" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0">Access key</label>
@@ -363,5 +402,6 @@ body.rc-login-portal .btn{background:#2563eb!important;color:#fff!important}
 })();
 </script>
 
+<?php endif; /* needsSetup */ ?>
 </body>
 </html>

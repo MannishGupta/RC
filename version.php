@@ -1,3 +1,3 @@
 <?php
-if (!defined('APP_VERSION')) define('APP_VERSION', '20261009.32');
+if (!defined('APP_VERSION')) define('APP_VERSION', '20261009.33');
 if (!defined('APP_VERSION_DATE')) define('APP_VERSION_DATE', '10 Oct 2026');
