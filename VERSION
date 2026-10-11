@@ -1,3 +1,4 @@
-20261009.35
+20261009.37
 
-## 20261009.35 — Full PWA checklist (screenshots, iOS meta, SW CACHE_NAME/OFFLINE_URL)
+## 20261009.37 — Hardcoded PWA/install logo to /assets/brand/arthsathi-icon-*.png|svg
+Fallback: https://rc.arthsathi.com/assets/brand/…

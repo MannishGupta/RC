@@ -65,20 +65,21 @@ $drawn = false;
 
 // 1) Product install icons: Arthsathi favicon / brand assets (raster siblings preferred)
 if (!empty($product)) {
+    // HARDCODED — only Arthsathi product brand (never tenant logo)
     $candidates = [
+        BASE_PATH . '/assets/brand/arthsathi-icon-512.png',
+        BASE_PATH . '/assets/brand/arthsathi-icon-192.png',
+        BASE_PATH . '/assets/brand/arthsathi-icon.png',
         BASE_PATH . '/favicon-512.png',
         BASE_PATH . '/favicon-192.png',
         BASE_PATH . '/apple-touch-icon-180.png',
-        BASE_PATH . '/favicon-32.png',
-        BASE_PATH . '/assets/brand/arthsathi-icon.png',
-        BASE_PATH . '/assets/brand/arthsathi.png',
     ];
     foreach ($candidates as $cand) {
         if (is_file($cand)) { $logoFile = $cand; break; }
     }
     // SVG via Imagick when no PNG shipped
     if ($logoFile === '') {
-        foreach ([BASE_PATH . '/favicon.svg', BASE_PATH . '/assets/brand/arthsathi-icon.svg', BASE_PATH . '/assets/brand/arthsathi.svg'] as $svg) {
+        foreach ([BASE_PATH . '/assets/brand/arthsathi-icon.svg', BASE_PATH . '/assets/brand/arthsathi.svg', BASE_PATH . '/favicon.svg'] as $svg) {
             if (!is_file($svg)) continue;
             if (extension_loaded('imagick')) {
                 try {

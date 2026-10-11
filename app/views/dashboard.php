@@ -523,16 +523,16 @@ $DASHBOARD_STATE = [
          Makes the dashboard installable via "Add to Home Screen" on iOS and
          Android today: home-screen icon, standalone window, no browser chrome.
          Offline access and push additionally require a service worker, which
-         is registered via sw.js for installability and offline shell. -->
+         is intentionally not registered yet — see PWA.md. -->
     <link rel="manifest" href="/manifest.php?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
-    <meta name="application-name" content="Resource Centre">
-    <meta name="theme-color" id="rc-theme-color" content="#0078D4">
+    <meta name="application-name" content="<?= htmlspecialchars((string)($viewData['company']['name'] ?? 'Resource Centre'), ENT_QUOTES) ?>">
+    <meta name="theme-color" id="rc-theme-color" content="#FAF9F8">
     <meta name="mobile-web-app-capable" content="yes">
     <!-- iOS ignores the manifest for standalone mode and needs its own tags. -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Resource Centre">
-    <link rel="apple-touch-icon" href="/tools/pwa_icon.php?product=1&amp;size=180&amp;v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
+    <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars(mb_substr((string)($viewData['company']['name'] ?? 'Directory'), 0, 12)) ?>">
+    <link rel="apple-touch-icon" href="/assets/brand/arthsathi-icon-192.png">
 
     <!-- Performance: warm DNS/TLS for CDNs before first paint -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

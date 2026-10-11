@@ -23,6 +23,15 @@ if (isset($company[0]) && is_array($company[0]) && empty($company['name'])) {
 }
 $tenantName = trim((string)($company['name'] ?? '')) ?: 'Organization';
 $ver = defined('APP_VERSION') ? (string)APP_VERSION : '1';
+// Windows Installed Apps expects a dotted numeric version (not 1.0.0.0 default)
+$winVer = '1.0.0.0';
+if (preg_match('/^(\d{4})(\d{2})(\d{2})\.(\d+)$/', $ver, $vm)) {
+    // 20261009.35 → 2026.10.9.35
+    $winVer = sprintf('%d.%d.%d.%d', (int)$vm[1], (int)$vm[2], (int)$vm[3], (int)$vm[4]);
+} elseif (preg_match('/^(\d+)\.(\d+)/', $ver, $vm)) {
+    $winVer = $vm[1] . '.' . $vm[2] . '.0.0';
+}
+
 $publisher = 'Arthsathi Limited';
 $origin = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http')
         . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
@@ -45,32 +54,50 @@ if ($website !== '') {
     $descParts[] = 'Tenant site: ' . $website;
 }
 
-// Prefer product (Arthsathi) icons for the install prompt — not tenant monogram
-$iconBase = '/tools/pwa_icon.php?product=1';
+// HARDCODED product identity — always Arthsathi brand (not tenant logo)
+// Local path (same codebase on every host) + absolute fallback on rc.arthsathi.com
+$brandLocal = [
+    192 => '/assets/brand/arthsathi-icon-192.png',
+    512 => '/assets/brand/arthsathi-icon-512.png',
+    180 => '/assets/brand/arthsathi-icon-192.png',
+];
+$brandAbs = 'https://rc.arthsathi.com/assets/brand';
+$iconSrc = static function (int $sz) use ($brandLocal, $brandAbs, $ver): string {
+    $local = $brandLocal[$sz] ?? $brandLocal[512];
+    $absPath = BASE_PATH . str_replace('/', DIRECTORY_SEPARATOR, $local);
+    if (is_file($absPath)) {
+        return $local . '?v=' . rawurlencode($ver);
+    }
+    // Host missing file → load from product origin
+    $name = ($sz >= 256) ? 'arthsathi-icon-512.png' : 'arthsathi-icon-192.png';
+    return $brandAbs . '/' . $name . '?v=' . rawurlencode($ver);
+};
 $icons = [];
 foreach ([48, 72, 96, 128, 144, 152, 192, 256, 384, 512] as $sz) {
+    $pick = $sz >= 256 ? 512 : 192;
     $icons[] = [
-        'src' => $iconBase . '&size=' . $sz . '&v=' . rawurlencode($ver),
+        'src' => $iconSrc($pick),
         'sizes' => $sz . 'x' . $sz,
         'type' => 'image/png',
         'purpose' => 'any',
     ];
 }
 $icons[] = [
-    'src' => $iconBase . '&size=512&maskable=1&v=' . rawurlencode($ver),
+    'src' => $iconSrc(512),
     'sizes' => '512x512',
     'type' => 'image/png',
     'purpose' => 'maskable',
 ];
-// Also advertise static product SVG where supported
-if (is_file(BASE_PATH . '/favicon.svg')) {
-    array_unshift($icons, [
-        'src' => '/favicon.svg?v=' . rawurlencode($ver),
-        'sizes' => 'any',
-        'type' => 'image/svg+xml',
-        'purpose' => 'any',
-    ]);
-}
+// SVG mark (supported install UAs)
+$svgLocal = BASE_PATH . '/assets/brand/arthsathi-icon.svg';
+$icons[] = [
+    'src' => is_file($svgLocal)
+        ? '/assets/brand/arthsathi-icon.svg?v=' . rawurlencode($ver)
+        : $brandAbs . '/arthsathi-icon.svg?v=' . rawurlencode($ver),
+    'sizes' => 'any',
+    'type' => 'image/svg+xml',
+    'purpose' => 'any',
+];
 
 $manifest = [
     'id'               => $origin . '/',
@@ -87,25 +114,10 @@ $manifest = [
     'dir'              => 'ltr',
     'icons'            => $icons,
     'categories'       => ['business', 'productivity'],
-    'screenshots'      => [
-        [
-            'src' => '/tools/pwa_screenshot.php?form=wide&v=' . rawurlencode($ver),
-            'sizes' => '1280x720',
-            'type' => 'image/png',
-            'form_factor' => 'wide',
-            'label' => 'Resource Centre desktop',
-        ],
-        [
-            'src' => '/tools/pwa_screenshot.php?form=narrow&v=' . rawurlencode($ver),
-            'sizes' => '750x1334',
-            'type' => 'image/png',
-            'form_factor' => 'narrow',
-            'label' => 'Resource Centre mobile',
-        ],
-    ],
     // Non-standard but useful for tooling / future UA support
     'publisher'        => $publisher,
-    'version'          => $ver,
+    'version'          => $winVer, // four-part for Windows Installed Apps
+    'version_name'     => $ver,
     'related_applications' => [],
     'prefer_related_applications' => false,
 ];
