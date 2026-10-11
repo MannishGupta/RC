@@ -208,6 +208,10 @@ class AppSlug {
      */
     public const PROTECTED_SLUGS = ['mg', 'ag', 'ap', 'rj', 'akg', 'mk'];
 
+    public static function fromName(string $name): string {
+        return self::generate($name);
+    }
+
     public static function generate(string $name, string $dob = '', string $mobile = ''): string {
         $words    = preg_split('/\s+/', trim($name)) ?: [];
         $initials = '';
@@ -832,29 +836,99 @@ class AppAuth {
         return null;
     }
 
-    /** Factory hashes for missing roles only (never override existing hashes). */
-    private static function factoryHashes(): array {
-        return [
-            'super_admin' => '$2y$10$M1GGzw3h5pdmJDTtqlMUM.IT./keLq5/H0V01fUGzXVquZmoNYTPm',
-            'admin'       => '$2y$10$yEwuWZQ3A1radvRacbJJmuWOGpQyYYlG/GbAnJ4K6rJgemfsn7gDS',
-            'public'      => '$2y$10$iaQ3Xa4U72s1TkfNxQdkAeYBvBdD7QfmmMAlGcZLXo1iO8fjgb57W',
-            'crm'         => '$2y$10$8D2gZwHsfX88SDq3XeNNeOuDVX4lL12.u3tdhXXgJ9KTQ1cjYrX6K',
-        ];
+    /**
+     * True when no usable auth_config exists (fresh install).
+     * Existing installs with auth_config.php are unchanged.
+     */
+    public static function needsSetup(): bool {
+        $creds = self::loadCredentials();
+        foreach (['admin', 'super_admin'] as $role) {
+            if (!empty($creds[$role]) && is_string($creds[$role]) && str_starts_with($creds[$role], '$2y$')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * First-run: write bcrypt hashes for roles. Requires setup token from data/.setup_token.
+     * Never logs passwords. Does not invent default passwords.
+     *
+     * @param array<string,string> $passwords role => plaintext (hashed before write)
+     */
+    public static function completeSetup(array $passwords, string $token): bool {
+        $dataDir = defined('DATA_PATH') ? DATA_PATH : (defined('BASE_PATH') ? BASE_PATH . '/data' : (__DIR__ . '/../data'));
+        $tokenFile = $dataDir . '/.setup_token';
+        if (!is_file($tokenFile)) {
+            return false;
+        }
+        $expect = trim((string)@file_get_contents($tokenFile));
+        if ($expect === '' || !hash_equals($expect, $token)) {
+            return false;
+        }
+        $out = [];
+        foreach (['super_admin', 'admin', 'public'] as $role) {
+            $pw = (string)($passwords[$role] ?? '');
+            if (strlen($pw) < 8) {
+                continue;
+            }
+            $out[$role] = password_hash($pw, PASSWORD_DEFAULT);
+        }
+        if (empty($out['admin']) && empty($out['super_admin'])) {
+            return false;
+        }
+        if (!is_dir($dataDir)) {
+            @mkdir($dataDir, 0775, true);
+        }
+        $file = $dataDir . '/auth_config.php';
+        $export = "<?php\n"
+            . "// auth_config.php — bcrypt access keys. Do not commit.\n"
+            . "if (!defined('BASE_PATH')) exit('No direct script access');\n"
+            . "return [\n";
+        foreach ($out as $role => $hash) {
+            $h = addslashes($hash);
+            $export .= "    '{$role}' => '{$h}',\n";
+        }
+        $export .= "];\n";
+        if (@file_put_contents($file, $export, LOCK_EX) === false) {
+            return false;
+        }
+        @unlink($tokenFile);
+        self::$credentials = null;
+        return true;
+    }
+
+    /** Ensure a one-time setup token exists when auth is not configured. */
+    public static function ensureSetupToken(): string {
+        $dataDir = defined('DATA_PATH') ? DATA_PATH : (defined('BASE_PATH') ? BASE_PATH . '/data' : (__DIR__ . '/../data'));
+        if (!is_dir($dataDir)) {
+            @mkdir($dataDir, 0775, true);
+        }
+        $tokenFile = $dataDir . '/.setup_token';
+        if (is_file($tokenFile)) {
+            $t = trim((string)@file_get_contents($tokenFile));
+            if ($t !== '') {
+                return $t;
+            }
+        }
+        $t = bin2hex(random_bytes(24));
+        @file_put_contents($tokenFile, $t, LOCK_EX);
+        return $t;
     }
 
     private static function loadCredentials(): array {
-        if (self::$credentials !== null) return self::$credentials;
+        if (self::$credentials !== null) {
+            return self::$credentials;
+        }
 
-        $dataDir = defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data';
+        $dataDir = defined('DATA_PATH') ? DATA_PATH : (defined('BASE_PATH') ? BASE_PATH . '/data' : (__DIR__ . '/../data'));
         $candidates = [
             $dataDir . '/auth_config.php',
             $dataDir . '/config/auth_config.php',
         ];
-        $file = null;
         $creds = [];
         foreach ($candidates as $cand) {
             if (is_file($cand)) {
-                $file = $cand;
                 $loaded = @include $cand;
                 if (is_array($loaded)) {
                     $creds = $loaded;
@@ -863,45 +937,8 @@ class AppAuth {
             }
         }
 
-        $factory = self::factoryHashes();
-        $merged = false;
-        if ($file === null) {
-            $file = $dataDir . '/auth_config.php';
-            if (!is_dir($dataDir)) {
-                @mkdir($dataDir, 0775, true);
-            }
-            $creds = $factory;
-            $merged = true;
-        } else {
-            // Fill only missing roles — keep existing admin hash so lifeisgood still works
-            foreach ($factory as $role => $hash) {
-                if (empty($creds[$role]) || !is_string($creds[$role])) {
-                    $creds[$role] = $hash;
-                    $merged = true;
-                }
-            }
-            // If crm exists but public missing, public already filled from factory
-        }
-
-        if ($merged && $file) {
-            $export = "<?php\n"
-                . "// auth_config.php — bcrypt access keys. Rotate after install.\n"
-                . "// super_admin=blsbls admin=lifeisgood public/crm=alliswell (defaults)\n"
-                . "if (!defined('BASE_PATH')) exit('No direct script access');\n"
-                . "return [\n";
-            foreach (['super_admin', 'admin', 'public', 'crm'] as $role) {
-                if (!empty($creds[$role])) {
-                    $h = addslashes((string)$creds[$role]);
-                    $export .= "    '{$role}' => '{$h}',\n";
-                }
-            }
-            $export .= "];\n";
-            @file_put_contents($file, $export, LOCK_EX);
-            if (class_exists('AppLog') && $merged) {
-                AppLog::info('auth_config.php roles merged/created', ['file' => $file]);
-            }
-        }
-
+        // No factory hashes. Missing roles stay missing (disabled).
+        // Existing auth_config.php is used as-is — owner must rotate factory passwords themselves.
         self::$credentials = is_array($creds) ? $creds : [];
         return self::$credentials;
     }
@@ -1167,6 +1204,21 @@ class AppDB {
             }
         }
         return $file;
+    }
+
+    /** Find first list row matching filters (slug/id). */
+    public static function readOne(string $ns, array $filters = []): ?array {
+        $rows = self::read($ns);
+        if (!is_array($rows)) return null;
+        foreach ($rows as $row) {
+            if (!is_array($row)) continue;
+            $ok = true;
+            foreach ($filters as $fk => $fv) {
+                if ((string)($row[$fk] ?? '') !== (string)$fv) { $ok = false; break; }
+            }
+            if ($ok) return $row;
+        }
+        return null;
     }
 
     public static function read($k) {

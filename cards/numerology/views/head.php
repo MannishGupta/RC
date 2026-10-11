@@ -24,6 +24,10 @@ if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
     }
 }" id="html-root">
 <head>
+<?php
+$__boot = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__, 3)) . '/app/views/partials/rc_theme_boot.php';
+if (is_file($__boot)) require $__boot;
+?>
 <link rel="stylesheet" href="/assets/numerology.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
 <link rel="stylesheet" href="/assets/contrast-lock.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
 
@@ -163,5 +167,5 @@ if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
     <?php endif; ?>
     
 <?php require dirname(__DIR__, 2) . '/partials/lightbox.php'; ?>
-<link rel="stylesheet" href="/assets/contrast-lock.css?v=20261009.9">
+<link rel="stylesheet" href="/assets/contrast-lock.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>">
 </head>

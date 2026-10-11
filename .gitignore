@@ -8,16 +8,25 @@ tenants/*/data/config/auth_config.php
 **/.env
 **/.env.*
 
-# Runtime / uploads (per-tenant data stays local)
+# Runtime JSON + stores (per install / tenant)
+data/*.json
+data/indexes/
+data/janam/
+data/value/
+data/runners/
+data/dispatch/
+data/cache/
 data/sessions/
 data/logs/
 data/backups/
 data/media/
-tenants/*/data/sessions/
-tenants/*/data/logs/
-tenants/*/data/backups/
-tenants/*/data/media/
-tenants/*/data/cache/
+data/*_config.php
+data/config/*_config.php
+storage/janam/
+tenants/*/data/
+tenants/deleted.json
+# Live host map is server-local; ship map.example.json only
+tenants/map.json
 
 # OS / editor
 .DS_Store
@@ -30,3 +39,6 @@ Thumbs.db
 
 # Composer (if added later)
 /vendor/
+
+# FTP deploy state
+**/.ftp-deploy-sync-state.json

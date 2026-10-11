@@ -1,7 +1,5 @@
 name: PHP Composer
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 permissions:
@@ -25,15 +23,14 @@ jobs:
           echo "present=true" >> "$GITHUB_OUTPUT"
         else
           echo "present=false" >> "$GITHUB_OUTPUT"
-          echo "No composer.json — RC is flat PHP; skipping Composer install."
+          echo "No composer.json — skip."
         fi
-    - name: Validate composer.json and composer.lock
+    - name: Validate composer.json
       if: steps.composer.outputs.present == 'true'
       run: composer validate --strict
     - name: Cache Composer packages
       if: steps.composer.outputs.present == 'true'
-      id: composer-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: vendor
         key: ${{ runner.os }}-php${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}

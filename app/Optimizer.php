@@ -314,9 +314,9 @@ class SystemDataOptimizer
             foreach ([
                 defined('IMG_PATH') ? IMG_PATH : (self::dataRoot() . '/media/images'),
                 defined('DOC_PATH') ? DOC_PATH : (self::dataRoot() . '/media/documents'),
-                (defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/sessions',
-                (defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/logs',
-                (defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/tmp',
+                self::dataRoot() . '/sessions',
+                self::dataRoot() . '/logs',
+                self::dataRoot() . '/tmp',
                 // pre-migration files are visible in cleanup"), but this
                 // list never included them -- any file correctly flagged
                 // from a legacy location would always fail this safety

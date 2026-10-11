@@ -30,7 +30,7 @@ if ($domain === '' || str_contains($domain, '..')) {
 
 // Rate-limit distinct fetches (cache hits do not count) — 30 / 10 min per IP
 $clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
-$throttleFile = BASE_PATH . '/data/logo_proxy_throttle.json';
+$throttleFile = (defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/logo_proxy_throttle.json';
 $throttle = [];
 if (is_file($throttleFile)) {
     $rawTh = json_decode((string)@file_get_contents($throttleFile), true);
@@ -47,7 +47,7 @@ $entries = array_values(array_filter($entries, static fn($ts) => is_int($ts) && 
 $throttle[$ipKey] = $entries;
 
 $png1x1 = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5l5+kAAAAASUVORK5CYII=');
-$cacheDir = BASE_PATH . '/data/cache/logos';
+$cacheDir = (defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/cache/logos';
 if (!is_dir($cacheDir)) {
     @mkdir($cacheDir, 0775, true);
 }

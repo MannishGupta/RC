@@ -440,7 +440,19 @@ if (!defined('BASE_PATH')) {
               <label class="span-2">
                 <span class="rc-ed-lbl">Google Maps API key</span>
                 <input type="text" class="rc-ed-input" x-model="form.google_maps_api_key" placeholder="AIza…" autocomplete="off">
-                <span class="rc-ed-hint">Stored in data/company.json · Live Tracking map</span>
+                <span class="rc-ed-hint">Optional. Live Tracking uses OpenStreetMap when empty.</span>
+              </label>
+              <label>
+                <span class="rc-ed-lbl">DPDP grievance officer</span>
+                <input type="text" class="rc-ed-input" x-model="form.grievance_officer_name" placeholder="Full name">
+              </label>
+              <label>
+                <span class="rc-ed-lbl">Grievance email</span>
+                <input type="email" class="rc-ed-input" x-model="form.grievance_officer_email" placeholder="privacy@…">
+              </label>
+              <label>
+                <span class="rc-ed-lbl">Grievance phone</span>
+                <input type="text" class="rc-ed-input" x-model="form.grievance_officer_phone" placeholder="+91 …">
               </label>
               <label>
                 <span class="rc-ed-lbl">Logo file</span>
@@ -1099,6 +1111,9 @@ if (!defined('BASE_PATH')) {
             phone: item.phone || '', email: item.email || '', logo: item.logo || '', favicon: item.favicon || '',
             cover: item.cover || '', brand_color: item.brand_color || '#1e3a5f',
             google_maps_api_key: item.google_maps_api_key || item.maps_api_key || '',
+            grievance_officer_name: item.grievance_officer_name || (item.dpdp && item.dpdp.grievance_officer_name) || '',
+            grievance_officer_email: item.grievance_officer_email || (item.dpdp && item.dpdp.grievance_officer_email) || '',
+            grievance_officer_phone: item.grievance_officer_phone || (item.dpdp && item.dpdp.grievance_officer_phone) || '',
             maps_api_key: item.maps_api_key || item.google_maps_api_key || '',
             social: normalizeSocial(item.social)
           };

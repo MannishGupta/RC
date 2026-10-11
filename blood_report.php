@@ -15,19 +15,26 @@ if (!defined('BASE_PATH')) {
 // BUG FIX: checked for tenant_bootstrap.php at BASE_PATH root, which never
 if (is_file($base . '/app/tenant_bootstrap.php')) {
     require_once $base . '/app/tenant_bootstrap.php';
-} elseif (is_file($base . '/app/bootstrap.php')) {
+}
+if (is_file($base . '/app/bootstrap.php')) {
     require_once $base . '/app/bootstrap.php';
 }
 if (!defined('DATA_PATH')) {
     define('DATA_PATH', BASE_PATH . '/data');
 }
 
-
-if (session_status() === PHP_SESSION_NONE && class_exists('AppAuth')) { AppAuth::initSession(); }
+// Session must use same AppAuth path as index.php (tenant session name + cookie)
+if (class_exists('AppAuth')) {
+    AppAuth::initSession();
+} elseif (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
 $__u = (string)($_SESSION['user'] ?? '');
-if ($__u === '' || !in_array($__u, ['admin','super_admin','public','crm'], true)) {
-    http_response_code(403); header('Content-Type: text/plain; charset=UTF-8');
-    echo 'Access denied. Sign in via the Resource Centre first.'; exit;
+if ($__u === '' || !in_array($__u, ['admin', 'super_admin', 'public', 'crm'], true)) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Access denied. Sign in via the Resource Centre first.';
+    exit;
 }
 
 date_default_timezone_set('Asia/Kolkata');
@@ -610,7 +617,8 @@ function bg_header(string $title, array $ctx = []): void {
     $locale = $lang === 'hi' ? 'hi_IN' : 'en_IN';
     $site = 'Resource Centre · Arthsathi Limited';
 
-    echo '<!DOCTYPE html><html lang="' . ($lang === 'hi' ? 'hi-IN' : 'en-IN') . '"><head><meta charset="UTF-8">';
+    echo '<!DOCTYPE html><html lang="' . ($lang === 'hi' ? 'hi-IN' : 'en-IN') . '"><head>
+<?php if (is_file(__DIR__ . \'/app/views/partials/rc_theme_boot.php\')) require __DIR__ . \'/app/views/partials/rc_theme_boot.php\'; ?><meta charset="UTF-8">';
     echo '<meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . bg_h($title) . '</title>';
     echo '<meta name="description" content="' . bg_h($desc) . '">';

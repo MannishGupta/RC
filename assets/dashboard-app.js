@@ -76,7 +76,7 @@
                         { id: 'events',    icon: 'fa-solid fa-calendar-days',    label: 'Calendar' },
                         { id: 'statutory', icon: 'fa-solid fa-scale-balanced',   label: 'Compliance Register' },
                         { id: 'expiry',    icon: 'fa-solid fa-hourglass-end',    label: 'Expiry Radar' },
-                        { id: 'status',    icon: 'fa-solid fa-chart-line',       label: 'Delivery Status' },
+                        { id: 'status',    icon: 'fa-solid fa-helmet-safety',    label: 'Const. Status' },
                         { id: 'org',       icon: 'fa-solid fa-diagram-project',  label: 'Org Chart' },
                     ]});
                     groups.push({ title: 'Insights', items: [
@@ -95,10 +95,9 @@
                             { id: 'leads',        icon: 'fa-solid fa-address-card',label: 'Opportunity Pipeline' },
                         ]});
                         groups.push({ title: 'Platform Operations', items: [
+                            // monitor / opt / health live once under Control Plane (Super Admin)
                             { id: 'health', icon: 'fa-solid fa-server',          label: 'Health & Tools' },
                             { id: 'audit',  icon: 'fa-solid fa-clipboard-list',  label: 'Audit Ledger' },
-                            { id: 'monitor', icon: 'fa-solid fa-heart-pulse',   label: 'Monitor' },
-                            { id: 'opt',     icon: 'fa-solid fa-gauge-high',    label: 'System Optimizer' },
                         ]});
                     }
                     groups.push({ title: 'Session', items: [

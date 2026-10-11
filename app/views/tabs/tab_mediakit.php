@@ -520,6 +520,16 @@ if (!empty($coSocial) && is_array($coSocial)) {
 .mk-soc-bar{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.75rem;padding-top:.65rem;border-top:1px solid var(--rc-border)}
 </style>
 
+
+<div class="rc-card rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 mb-4">
+  <strong class="text-slate-800">Media sources (ToS-safe)</strong>
+  <ul class="mt-1 list-disc pl-5 space-y-0.5 text-xs">
+    <li><strong>Upload</strong> files here for dealer kits and social creatives.</li>
+    <li><strong>Paste a public post URL</strong> — oEmbed where the platform allows (YouTube, etc.).</li>
+    <li><strong>Official API</strong> (Meta / YouTube / LinkedIn / X) — connect tokens in Org Config when available; no scraping.</li>
+    <li>Profile-wide “import all posts” requires those official APIs; Instagram may rate-limit anonymous requests (HTTP 429).</li>
+  </ul>
+</div>
 <div class="mk w-full" x-data="rcMediaKit()">
 
   <!-- 1. Header -->
@@ -664,6 +674,104 @@ if (!empty($coSocial) && is_array($coSocial)) {
           </span>
           <?php endforeach; ?>
         </div>
+
+        <?php if ($__isAd && !empty($mkConnStatus)): ?>
+        <details class="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
+          <summary class="cursor-pointer font-bold text-slate-800">Official API / RSS connections</summary>
+          <p class="text-[11px] text-slate-500 mt-1 mb-2">Tokens stay on this tenant only (data/config/mediakit_connections.json). Never commit them. Leave a field blank to keep the current secret.</p>
+          <form id="mk-conn-form" class="space-y-3" onsubmit="return window.rcMkSaveConnections&&window.rcMkSaveConnections(event)">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string)($_SESSION['csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <fieldset class="border border-slate-100 rounded-lg p-2">
+                <legend class="text-xs font-bold px-1">Meta (Instagram / Facebook)</legend>
+                <label class="block text-[10px] font-semibold mt-1">Access token<input class="mk-input w-full" name="meta_access_token" type="password" autocomplete="off" placeholder="EAAB…"></label>
+                <label class="block text-[10px] font-semibold mt-1">IG user id<input class="mk-input w-full" name="meta_ig_user_id" type="text" placeholder="17841…"></label>
+                <label class="block text-[10px] font-semibold mt-1">Page id<input class="mk-input w-full" name="meta_page_id" type="text"></label>
+                <label class="inline-flex items-center gap-1 mt-1 text-[10px]"><input type="checkbox" name="meta_enabled" value="1"> Enable</label>
+              </fieldset>
+              <fieldset class="border border-slate-100 rounded-lg p-2">
+                <legend class="text-xs font-bold px-1">YouTube</legend>
+                <label class="block text-[10px] font-semibold mt-1">API key<input class="mk-input w-full" name="youtube_api_key" type="password" autocomplete="off"></label>
+                <label class="block text-[10px] font-semibold mt-1">Channel id<input class="mk-input w-full" name="youtube_channel_id" type="text" placeholder="UC…"></label>
+                <label class="inline-flex items-center gap-1 mt-1 text-[10px]"><input type="checkbox" name="youtube_enabled" value="1"> Enable</label>
+              </fieldset>
+              <fieldset class="border border-slate-100 rounded-lg p-2">
+                <legend class="text-xs font-bold px-1">LinkedIn</legend>
+                <label class="block text-[10px] font-semibold mt-1">Access token<input class="mk-input w-full" name="linkedin_access_token" type="password" autocomplete="off"></label>
+                <label class="block text-[10px] font-semibold mt-1">Org id<input class="mk-input w-full" name="linkedin_org_id" type="text"></label>
+                <label class="inline-flex items-center gap-1 mt-1 text-[10px]"><input type="checkbox" name="linkedin_enabled" value="1"> Enable</label>
+              </fieldset>
+              <fieldset class="border border-slate-100 rounded-lg p-2">
+                <legend class="text-xs font-bold px-1">X / Twitter</legend>
+                <label class="block text-[10px] font-semibold mt-1">Bearer token<input class="mk-input w-full" name="x_bearer_token" type="password" autocomplete="off"></label>
+                <label class="block text-[10px] font-semibold mt-1">User id<input class="mk-input w-full" name="x_user_id" type="text"></label>
+                <label class="inline-flex items-center gap-1 mt-1 text-[10px]"><input type="checkbox" name="x_enabled" value="1"> Enable</label>
+              </fieldset>
+              <fieldset class="border border-slate-100 rounded-lg p-2 sm:col-span-2">
+                <legend class="text-xs font-bold px-1">RSS / Atom</legend>
+                <label class="block text-[10px] font-semibold mt-1">Feed URL<input class="mk-input w-full" name="rss_feed_url" type="url" placeholder="https://…"></label>
+                <label class="inline-flex items-center gap-1 mt-1 text-[10px]"><input type="checkbox" name="rss_enabled" value="1"> Enable</label>
+              </fieldset>
+            </div>
+            <button type="submit" class="mk-btn mk-btn-pri">Save connections</button>
+            <span id="mk-conn-msg" class="text-xs text-slate-500 ml-2"></span>
+          </form>
+        </details>
+        <script>
+        window.rcMkSaveConnections = function (e) {
+          e.preventDefault();
+          var f = document.getElementById('mk-conn-form');
+          if (!f) return false;
+          var fd = new FormData(f);
+          var body = {
+            action: 'mediakit_save_connections',
+            csrf_token: fd.get('csrf_token'),
+            connections: {
+              meta: {
+                enabled: !!fd.get('meta_enabled'),
+                access_token: fd.get('meta_access_token') || '',
+                ig_user_id: fd.get('meta_ig_user_id') || '',
+                page_id: fd.get('meta_page_id') || ''
+              },
+              youtube: {
+                enabled: !!fd.get('youtube_enabled'),
+                api_key: fd.get('youtube_api_key') || '',
+                channel_id: fd.get('youtube_channel_id') || ''
+              },
+              linkedin: {
+                enabled: !!fd.get('linkedin_enabled'),
+                access_token: fd.get('linkedin_access_token') || '',
+                org_id: fd.get('linkedin_org_id') || ''
+              },
+              x: {
+                enabled: !!fd.get('x_enabled'),
+                bearer_token: fd.get('x_bearer_token') || '',
+                user_id: fd.get('x_user_id') || ''
+              },
+              rss: {
+                enabled: !!fd.get('rss_enabled'),
+                feed_url: fd.get('rss_feed_url') || ''
+              }
+            }
+          };
+          var msg = document.getElementById('mk-conn-msg');
+          if (msg) msg.textContent = 'Saving…';
+          fetch(location.pathname, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+          }).then(function (r) { return r.json(); }).then(function (j) {
+            if (msg) msg.textContent = j.message || j.status || 'Done';
+            if (j.status === 'success') setTimeout(function () { location.reload(); }, 600);
+          }).catch(function (err) {
+            if (msg) msg.textContent = String(err.message || err);
+          });
+          return false;
+        };
+        </script>
+        <?php endif; ?>
+
         <?php if ($__isAd): ?>
         <div class="flex flex-wrap gap-2 mb-2">
           <button type="button" class="mk-btn mk-btn-pri" @click="syncOfficial()" :disabled="socialBusy">

@@ -147,9 +147,11 @@ final class ModuleRegistry
                 'features' => [],
             ],
             'status' => [
-                'label' => 'Programme Delivery Status',
-                'group' => 'Administration',
-                'features' => [],
+                'label' => 'Const. Status',
+                'group' => 'Projects',
+                'features' => [
+                    'status_feed' => 'Tower-wise progress and photographs',
+                ],
             ],
             'health' => [
                 'label' => 'Platform Health',

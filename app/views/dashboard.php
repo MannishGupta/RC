@@ -378,7 +378,7 @@ $titles = [
     'monitor' => 'Infrastructure Telemetry & Diagnostics',
     'cartags' => 'Fleet Asset Registry',
     'cctv' => 'Surveillance Access Control',
-    'status' => 'Programme Delivery Status',
+    'status' => 'Const. Status',
     'leads' => 'Opportunity Pipeline',
     'settings' => 'Enterprise Integrations',
     'tracking' => 'Workforce Geolocation & Compliance',
@@ -1303,6 +1303,9 @@ button.bg-white,a.bg-white{color:#0f172a!important}
                         class="md:hidden rc-hit-lg h-9 w-9 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-slate-100 flex items-center justify-center"
                         title="Menu" aria-label="Open navigation menu" :aria-expanded="sidebarMobileOpen ? 'true' : 'false'">
                     <i class="fa-solid fa-bars" aria-hidden="true"></i>
+                </button>
+                <button type="button" @click="logout()" class="rc-mobile-logout md:hidden rc-hit-lg inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 bg-white text-slate-700" title="Sign out" aria-label="Sign out">
+                    <i class="fa-solid fa-power-off text-sm" aria-hidden="true"></i>
                 </button>
                 <button type="button" @click="logout()"
                         class="md:hidden rc-hit-lg h-9 px-2.5 rounded-lg text-red-600 hover:text-white hover:bg-red-600 border border-red-200 flex items-center justify-center gap-1.5 text-xs font-bold"

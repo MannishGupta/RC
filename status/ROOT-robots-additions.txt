@@ -1,0 +1,65 @@
+ROBOTS.TXT ADDITIONS — must be applied at the DOMAIN ROOT, not in /status/
+
+A robots.txt inside a subdirectory is never read by crawlers; only
+https://rc.arthsathi.com/robots.txt counts. The resource centre serves that
+through robots.php (its web.config rewrites ^robots.txt$ to robots.php), so
+these lines need adding to that script's output rather than to a file here.
+
+Same constraint applies to llms.txt: the copy shipped in /status/ is for
+reference, and the canonical location is https://rc.arthsathi.com/llms.txt.
+
+────────────────────────────────────────────────────────────────────────────
+Add to robots.php output:
+
+  # Construction progress portal
+  Allow: /status/
+  Allow: /status/assets/
+  Disallow: /status/admin.php
+  Disallow: /status/preflight.php
+  Disallow: /status/backup.php
+  Disallow: /status/consent.php
+  Disallow: /status/version.php
+
+  Sitemap: https://rc.arthsathi.com/status/sitemap.php
+
+  # AI crawlers — permitted, so AI answers cite the developer's own data
+  # rather than third-party speculation about construction status.
+  User-agent: GPTBot
+  Allow: /status/
+
+  User-agent: OAI-SearchBot
+  Allow: /status/
+
+  User-agent: ChatGPT-User
+  Allow: /status/
+
+  User-agent: ClaudeBot
+  Allow: /status/
+
+  User-agent: Claude-SearchBot
+  Allow: /status/
+
+  User-agent: PerplexityBot
+  Allow: /status/
+
+  User-agent: Google-Extended
+  Allow: /status/
+
+  User-agent: Applebot-Extended
+  Allow: /status/
+
+  User-agent: CCBot
+  Allow: /status/
+
+  User-agent: Bingbot
+  Allow: /status/
+────────────────────────────────────────────────────────────────────────────
+
+Also place llms.txt at the domain root. The /status/llms.txt in this package is
+the content to use; copy it to the web root (or have robots.php's sibling serve
+it) so it resolves at https://rc.arthsathi.com/llms.txt.
+
+NOTE on rc.fusionlimited.in: that host is configured as non-canonical, so every
+page there already returns "noindex, follow" plus a canonical pointing at
+rc.arthsathi.com. No robots.txt change is needed there, and none should be made
+— blocking it in robots.txt would stop crawlers seeing the canonical tag.

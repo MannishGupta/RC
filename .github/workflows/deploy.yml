@@ -1,30 +1,108 @@
-name: Deploy via FTP
-
+name: Deploy (manual / tag only)
 on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target host
+        required: true
+        type: choice
+        options:
+          - fusionlimited
+          - arthsathi
+          - digisofts
+          - simcoauto
+      dry_run:
+        description: Dry run (list changes only, do not upload)
+        required: true
+        type: boolean
+        default: true
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
-  web-deploy:
-    name: Deploy to FTP Server
+  safety:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
         with:
-          fetch-depth: 0
+          php-version: '8.3'
+      - name: PHP syntax
+        run: |
+          err=0
+          while IFS= read -r -d '' f; do
+            php -l "$f" >/dev/null 2>msg.txt || { echo "PHP SYNTAX ERROR in $f:"; cat msg.txt; err=1; }
+          done < <(find . -path ./vendor -prune -o -name '*.php' -print0)
+          if [ "$err" -ne 0 ]; then exit 1; fi
+          echo "All PHP OK."
+      - name: JSON validity
+        run: |
+          err=0
+          while IFS= read -r -d '' j; do
+            php -r 'json_decode(file_get_contents($argv[1])); exit(json_last_error()===JSON_ERROR_NONE?0:1);' "$j" \
+              || { echo "BROKEN JSON: $j"; err=1; }
+          done < <(find . -path ./vendor -prune -o -name '*.json' -print0)
+          if [ "$err" -ne 0 ]; then exit 1; fi
+          echo "All JSON OK."
+      - name: SVG sanitizer tests
+        run: php tests/svg_sanitizer_test.php
+      - name: No tracked auth_config
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)auth_config\.php$' | grep -v example || true)
+          if [ -n "$bad" ]; then echo "Tracked secrets: $bad"; exit 1; fi
+      - name: Mojibake scan
+        run: |
+          if grep -rInE 'â€|âš|Ã©' --include='*.php' --include='*.js' --include='*.css' . | grep -v vendor | head -5; then
+            echo "::error::Mojibake detected"; exit 1
+          fi
+          echo "No mojibake."
 
-      - name: Sync Files to Server
+  deploy:
+    needs: safety
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    environment: ${{ github.event.inputs.environment || 'fusionlimited' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve FTP secrets for environment
+        id: env
+        run: |
+          ENV="${{ github.event.inputs.environment || 'fusionlimited' }}"
+          ENV_U=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
+          echo "env=$ENV" >> "$GITHUB_OUTPUT"
+          echo "server_secret=FTP_SERVER_${ENV_U}" >> "$GITHUB_OUTPUT"
+          echo "user_secret=FTP_USERNAME_${ENV_U}" >> "$GITHUB_OUTPUT"
+          echo "pass_secret=FTP_PASSWORD_${ENV_U}" >> "$GITHUB_OUTPUT"
+          echo "path_secret=FTP_SERVER_DIR_${ENV_U}" >> "$GITHUB_OUTPUT"
+      - name: FTP deploy (code only — never data/tenants)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          # Destination path on the remote hosting server (adjust to your document root)
-          server-dir: ./httpdocs/
-          # Optional: Exclude git internal files from uploading to the public web server
+          server: ${{ secrets[steps.env.outputs.server_secret] }}
+          username: ${{ secrets[steps.env.outputs.user_secret] }}
+          password: ${{ secrets[steps.env.outputs.pass_secret] }}
+          server-dir: ${{ secrets[steps.env.outputs.path_secret] || './httpdocs/' }}
+          dry-run: ${{ github.event.inputs.dry_run == 'true' || github.event.inputs.dry_run == true }}
+          dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
-            README.md
+            .github/**
+            data/**
+            tenants/**
+            storage/**
+            tests/**
+            deploy/**
+            sql/**
+            docs/**
+            documentation/**
+            images/**
+            **/*.md
+            **/*.txt
+            htaccess.txt
+            php.ini
+            .htaccess
+            web.config
+            **/.ftp-deploy-sync-state.json
+            **/auth_config.php
+            **/*_config.php

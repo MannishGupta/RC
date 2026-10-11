@@ -15,7 +15,7 @@ $tid = defined('TENANT_ID') ? (string)TENANT_ID : 'default';
     <div>
       <div class="rc-mm__kicker text-[10px] font-bold uppercase tracking-wider">Tenant capability control</div>
       <h2 class="rc-mm__title text-base font-extrabold m-0">Module matrix · <span class="font-mono" x-text="tenantId"><?= htmlspecialchars($tid, ENT_QUOTES, 'UTF-8') ?></span></h2>
-      <p class="rc-mm__hint text-xs m-0 mt-0.5">Enable or disable modules for this tenant. Disabled items hide from Company Admin and Visitor navigation.</p>
+      <p class="rc-mm__hint text-xs m-0 mt-0.5">Enable or disable modules for this tenant (including Const. Status). Disabled items hide from Company Admin and Visitor navigation.</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <button type="button" @click="enableAll()" class="rc-mm__btn h-9 px-3 rounded-lg text-xs font-bold border">Enable all</button>

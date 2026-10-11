@@ -1,18 +1,32 @@
 const VERSION = new URL(self.location).searchParams.get('v') || 'dev';
-const SHELL = `shell-${VERSION}`;
-const ASSETS = `assets-${VERSION}`;
+const CACHE_NAME = `rc-shell-${VERSION}`;
+const ASSETS = `rc-assets-${VERSION}`;
+const OFFLINE_URL = '/offline.php';
+const PRECACHE = [OFFLINE_URL, '/favicon.svg', '/tools/pwa_icon.php?product=1&size=192'];
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(['/offline.php']).catch(() => {})).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((c) => c.addAll(PRECACHE.map((u) => new Request(u, { cache: 'reload' }))).catch(() => {}))
+      .then(() => self.skipWaiting())
+  );
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== ASSETS).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME && k !== ASSETS).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
-    event.respondWith(fetch(req).catch(async () => (await caches.match('/offline.php')) || new Response('<h1>Offline</h1>', { status: 503, headers: { 'Content-Type': 'text/html' } })));
+    event.respondWith(
+      fetch(req).catch(async () => (await caches.match(OFFLINE_URL)) || new Response('<h1>Offline</h1>', {
+        status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      }))
+    );
     return;
   }
   if (url.origin !== self.location.origin) return;

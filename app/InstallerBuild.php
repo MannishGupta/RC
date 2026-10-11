@@ -131,12 +131,24 @@ final class InstallerBuild
                 $displayName .= ' (Free Trial)';
             }
             // Product icon: prefer live Arthsathi host, then local favicon
-            $arthsathiIcon = 'https://rc.arthsathi.com/favicon.ico';
+            $arthsathiIcon = 'https://rc.arthsathi.com/assets/brand/arthsathi-icon-192.png';
+            // Prefer local product mark when building on a host that has brand assets
+            $localIcon = (defined('BASE_PATH') ? BASE_PATH : '') . '/assets/brand/arthsathi-icon-192.png';
+            if ($localIcon !== '/assets/brand/arthsathi-icon-192.png' && is_file($localIcon)) {
+                // Installer downloads via HTTPS URL — keep public product URL stable
+                $arthsathiIcon = 'https://rc.arthsathi.com/assets/brand/arthsathi-icon-192.png';
+            }
+            $winVer = $ver;
+            if (preg_match('/^(\d{4})(\d{2})(\d{2})\.(\d+)$/', $ver, $vm)) {
+                $winVer = sprintf('%d.%d.%d.%d', (int)$vm[1], (int)$vm[2], (int)$vm[3], (int)$vm[4]);
+            }
+
             $map = [
                 '{{APP_ID}}' => self::escPs($appId),
                 '{{DISPLAY_NAME}}' => self::escPs($displayName),
                 '{{PUBLISHER}}' => self::escPs('Arthsathi Limited'),
-                '{{VERSION}}' => self::escPs($ver),
+                '{{VERSION}}' => self::escPs($winVer),
+                '{{VERSION_NAME}}' => self::escPs($ver),
                 '{{URL}}' => self::escPs($url),
                 '{{ICON_URL}}' => self::escPs($arthsathiIcon),
                 '{{URL_ABOUT}}' => self::escPs('https://www.arthsathi.com'),

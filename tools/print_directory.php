@@ -356,28 +356,49 @@ foreach ($team as $m) {
     }
     $printed++;
 
-    $did = (string)($m['designation_id'] ?? '');
-    $deptid = (string)($m['department_id'] ?? '');
+    // Resolve like AppLookup::map — try id, code, raw value (lowercase keys)
+    $dKey = strtolower(trim((string)($m['designation_id'] ?? $m['designation_code'] ?? $m['designation'] ?? '')));
+    $desig = trim((string)($m['designation_name'] ?? ($desigName[$dKey] ?? '')));
+    if ($desig === '' && $dKey !== '') {
+        $desig = trim((string)($desigMap[$dKey]['name'] ?? $desigMap[$dKey]['title'] ?? ''));
+    }
+    if ($desig === '' && !empty($m['designation']) && !$rcIsRawCode((string)$m['designation'])) {
+        $desig = trim((string)$m['designation']);
+    }
+    if ($rcIsRawCode($desig)) {
+        $desig = '';
+    }
 
-    $desig = trim((string)(
-        $m['designation_name'] ?? $m['designation'] ?? $m['title']
-        ?? ($desigMap[$did]['name'] ?? $desigMap[$did]['title'] ?? '')
-    ));
-    $dept = trim((string)(
-        $m['department_name'] ?? $m['department']
-        ?? ($deptMap[$deptid]['name'] ?? '')
-    ));
-    $locid = (string)($m['location_id'] ?? '');
-    $loc = trim((string)(
-        $m['location_name'] ?? $m['location'] ?? $m['office'] ?? $m['branch']
-        ?? ($locMap[$locid]['name'] ?? '')
-    ));
-    $dE = (string)($desigMap[$did]['emoji'] ?? $desigMap[$did]['icon'] ?? '');
-    $tE = (string)($deptMap[$deptid]['emoji'] ?? $deptMap[$deptid]['icon'] ?? '');
-    if ($dE !== '' && mb_strpos($desig, $dE) === false) {
+    $tKey = strtolower(trim((string)($m['department_id'] ?? $m['department_code'] ?? $m['department'] ?? '')));
+    $dept = trim((string)($m['department_name'] ?? ($deptName[$tKey] ?? '')));
+    if ($dept === '' && $tKey !== '') {
+        $dept = trim((string)($deptMap[$tKey]['name'] ?? $deptMap[$tKey]['title'] ?? ''));
+    }
+    if ($dept === '' && !empty($m['department']) && !$rcIsRawCode((string)$m['department'])) {
+        $dept = trim((string)$m['department']);
+    }
+    if ($rcIsRawCode($dept)) {
+        $dept = '';
+    }
+
+    $lKey = strtolower(trim((string)($m['location_id'] ?? $m['location_code'] ?? $m['location'] ?? '')));
+    $loc = trim((string)($m['location_name'] ?? ($locName[$lKey] ?? '')));
+    if ($loc === '' && $lKey !== '') {
+        $loc = trim((string)($locMap[$lKey]['name'] ?? ''));
+    }
+    if ($loc === '' && !empty($m['office'])) {
+        $loc = trim((string)$m['office']);
+    }
+    if ($rcIsRawCode($loc)) {
+        $loc = '';
+    }
+
+    $dE = (string)($desigMap[$dKey]['emoji'] ?? $desigMap[$dKey]['icon'] ?? '');
+    $tE = (string)($deptMap[$tKey]['emoji'] ?? $deptMap[$tKey]['icon'] ?? '');
+    if ($dE !== '' && $desig !== '' && mb_strpos($desig, $dE) === false) {
         $desig = trim($desig . ' ' . $dE);
     }
-    if ($tE !== '' && mb_strpos($dept, $tE) === false) {
+    if ($tE !== '' && $dept !== '' && mb_strpos($dept, $tE) === false) {
         $dept = trim($dept . ' ' . $tE);
     }
     $phone = trim((string)($m['phone'] ?? $m['mobile'] ?? $m['tel'] ?? ''));

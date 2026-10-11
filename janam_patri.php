@@ -2503,7 +2503,8 @@ CSS;
 
 function jp_header(string $title, array $seo = []): void {
     $cur = (string)($_GET['view'] ?? 'home');
-    echo '<!DOCTYPE html><html lang="' . (jp_is_hi() ? 'hi' : 'en') . '-IN" data-theme="reserve"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    echo '<!DOCTYPE html><html lang="' . (jp_is_hi() ? 'hi' : 'en') . '-IN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    if (is_file(BASE_PATH . '/app/views/partials/rc_theme_boot.php')) { require BASE_PATH . '/app/views/partials/rc_theme_boot.php'; }
     if (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_report_assets.php')) { require BASE_PATH . '/app/views/partials/rc_report_assets.php'; }
     elseif (defined('BASE_PATH') && is_file(BASE_PATH . '/app/views/partials/rc_theme_head.php')) { require BASE_PATH . '/app/views/partials/rc_theme_head.php'; }
     $base = class_exists('SeoShare') ? SeoShare::baseUrl() : '';

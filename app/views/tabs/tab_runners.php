@@ -100,7 +100,7 @@ if (!empty($GLOBALS['RUNNER_TRACKING_API'])) {
         <span>■ Offline (dotted)</span>
       </div>
       <p class="px-3 py-2 text-[10px] text-slate-500 border-t border-slate-800" x-show="!mapsReady">
-        Map loads when Google Maps API key is configured (company.google_maps_api_key or GOOGLE_MAPS_API_KEY).
+        Loading map… OpenStreetMap is used when no Google key is set.
       </p>
     </div>
     <div class="rounded-xl border border-slate-700 bg-slate-900 max-h-[440px] overflow-y-auto">
@@ -259,6 +259,7 @@ if (!empty($GLOBALS['RUNNER_TRACKING_API'])) {
       counts: { total: 0, moving: 0, idle: 0, offline: 0 },
       map: null,
       mapsReady: false,
+      mapEngine: null,
       markers: {},
       infoWindow: null,
       historyRunnerId: 0,
@@ -380,27 +381,63 @@ if (!empty($GLOBALS['RUNNER_TRACKING_API'])) {
       },
 
       loadMaps() {
-        if (!MAPS_KEY) return;
-        if (window.google && window.google.maps) {
-          this.initMap();
+        if (MAPS_KEY) {
+          this.mapEngine = 'google';
+          if (window.google && window.google.maps) {
+            this.initMapGoogle();
+            return;
+          }
+          const existing = document.querySelector('script[data-runner-maps]');
+          if (existing) {
+            existing.addEventListener('load', () => this.initMapGoogle());
+            return;
+          }
+          const s = document.createElement('script');
+          s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(MAPS_KEY) + '&v=weekly&libraries=marker';
+          s.async = true;
+          s.defer = true;
+          s.dataset.runnerMaps = '1';
+          s.onload = () => this.initMapGoogle();
+          s.onerror = () => { this.errorMsg = 'Google Maps failed to load'; this.loadMapsLeaflet(); };
+          document.head.appendChild(s);
           return;
         }
-        const existing = document.querySelector('script[data-runner-maps]');
-        if (existing) {
-          existing.addEventListener('load', () => this.initMap());
-          return;
-        }
-        const s = document.createElement('script');
-        s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(MAPS_KEY) + '&v=weekly&libraries=marker';
-        s.async = true;
-        s.defer = true;
-        s.dataset.runnerMaps = '1';
-        s.onload = () => this.initMap();
-        s.onerror = () => { this.errorMsg = 'Google Maps failed to load'; };
-        document.head.appendChild(s);
+        this.loadMapsLeaflet();
       },
 
-      initMap() {
+      loadMapsLeaflet() {
+        this.mapEngine = 'leaflet';
+        const ensure = (href, attrs) => {
+          if (document.querySelector(href.startsWith('http') && href.includes('.css') ? 'link[href="' + href + '"]' : 'script[src="' + href + '"]')) return Promise.resolve();
+          return new Promise((resolve, reject) => {
+            if (href.endsWith('.css') || href.includes('leaflet@') && href.includes('css')) {
+              const l = document.createElement('link');
+              l.rel = 'stylesheet';
+              l.href = href;
+              l.onload = resolve;
+              l.onerror = reject;
+              document.head.appendChild(l);
+            } else {
+              const s = document.createElement('script');
+              s.src = href;
+              s.async = true;
+              s.onload = resolve;
+              s.onerror = reject;
+              document.head.appendChild(s);
+            }
+          });
+        };
+        // Free OSM tiles via Leaflet (no API key)
+        const css = '/assets/vendor/leaflet/leaflet.css';
+        const js = '/assets/vendor/leaflet/leaflet.js';
+        Promise.resolve()
+          .then(() => ensure(css))
+          .then(() => ensure(js))
+          .then(() => this.initMapLeaflet())
+          .catch(() => { this.errorMsg = 'Map library failed to load'; });
+      },
+
+      initMapGoogle() {
         const el = document.getElementById('runner-map');
         if (!el || !window.google) return;
         this.map = new google.maps.Map(el, {
@@ -413,6 +450,20 @@ if (!empty($GLOBALS['RUNNER_TRACKING_API'])) {
           mapTypeControl: false
         });
         this.infoWindow = new google.maps.InfoWindow();
+        this.mapsReady = true;
+        this.syncMarkers();
+      },
+
+      initMapLeaflet() {
+        const el = document.getElementById('runner-map');
+        if (!el || !window.L) return;
+        if (this.map && this.mapEngine === 'leaflet') return;
+        if (L.Icon && L.Icon.Default) { L.Icon.Default.imagePath = '/assets/vendor/leaflet/images/'; }
+        this.map = L.map(el).setView([28.6139, 77.2090], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(this.map);
         this.mapsReady = true;
         this.syncMarkers();
       },
@@ -431,7 +482,12 @@ if (!empty($GLOBALS['RUNNER_TRACKING_API'])) {
       },
 
       syncMarkers() {
-        if (!this.map || !window.google) return;
+        if (!this.map) return;
+        if (this.mapEngine === 'leaflet' && window.L) {
+          this.syncMarkersLeaflet();
+          return;
+        }
+        if (!window.google) return;
         const seen = {};
         this.runners.forEach((r) => {
           if (r.lat == null || r.lng == null) return;
@@ -535,6 +591,12 @@ if (!empty($GLOBALS['RUNNER_TRACKING_API'])) {
 
       focusRunner(r) {
         if (!this.map || r.lat == null) return;
+        if (this.mapEngine === 'leaflet' && window.L) {
+          this.map.setView([Number(r.lat), Number(r.lng)], Math.max(this.map.getZoom() || 11, 15));
+          const m = this.markers[r.id];
+          if (m && m.openPopup) m.openPopup();
+          return;
+        }
         this.map.panTo({ lat: Number(r.lat), lng: Number(r.lng) });
         this.map.setZoom(Math.max(this.map.getZoom(), 15));
         const m = this.markers[r.id];
@@ -542,7 +604,19 @@ if (!empty($GLOBALS['RUNNER_TRACKING_API'])) {
       },
 
       fitAllRunners() {
-        if (!this.map || !window.google) return;
+        if (!this.map) return;
+        if (this.mapEngine === 'leaflet' && window.L) {
+          const pts = [];
+          this.runners.forEach((r) => {
+            if (r.lat == null) return;
+            pts.push([Number(r.lat), Number(r.lng)]);
+          });
+          if (pts.length === 0) return;
+          if (pts.length === 1) this.map.setView(pts[0], 14);
+          else this.map.fitBounds(pts, { padding: [40, 40] });
+          return;
+        }
+        if (!window.google) return;
         const bounds = new google.maps.LatLngBounds();
         let n = 0;
         this.runners.forEach((r) => {
