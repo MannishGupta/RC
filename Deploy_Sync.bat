@@ -1,4 +1,4 @@
-:: Version: 1.2
+:: Version: 1.5
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -19,6 +19,21 @@ set "FTP2_PASS=Simco@1962"
 set "FTP2_DIR=/public_html"
 
 :: ---------------------------------------------------------
+:: WinSCP Binary Resolution
+:: ---------------------------------------------------------
+set "WINSCP_BIN="
+if exist "%LOCALAPPDATA%\Programs\WinSCP\winscp.com" (
+    set "WINSCP_BIN=%LOCALAPPDATA%\Programs\WinSCP\winscp.com"
+) else if exist "%ProgramFiles(x86)%\WinSCP\winscp.com" (
+    set "WINSCP_BIN=%ProgramFiles(x86)%\WinSCP\winscp.com"
+) else if exist "%ProgramFiles%\WinSCP\winscp.com" (
+    set "WINSCP_BIN=%ProgramFiles%\WinSCP\winscp.com"
+) else (
+    where winscp.com >nul 2>&1
+    if !ERRORLEVEL! equ 0 set "WINSCP_BIN=winscp.com"
+)
+
+:: ---------------------------------------------------------
 :: Initialization & Directory Validation
 :: ---------------------------------------------------------
 title "Multi-Target Deployment: Git and FTP"
@@ -28,6 +43,13 @@ echo       Deployment and Multi-Target Synchronization
 echo ========================================================
 echo Timestamp: %DATE% %TIME%
 echo Target Local Directory: %LOCAL_DIR%
+if defined WINSCP_BIN (
+    echo WinSCP Engine: !WINSCP_BIN!
+) else (
+    echo [ERROR] winscp.com not detected. Aborting.
+    pause
+    exit /b 1
+)
 echo.
 
 if not exist "%LOCAL_DIR%" (
@@ -38,7 +60,7 @@ if not exist "%LOCAL_DIR%" (
 
 cd /d "%LOCAL_DIR%"
 
-:: Prevent Git from tracking and modifying the running batch file
+:: Exclude deployment scripts and logs from Git
 findstr /C:"Deploy_Sync.bat" .gitignore >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo Deploy_Sync.bat>> .gitignore
@@ -80,7 +102,7 @@ if %ERRORLEVEL% equ 0 (
     if !ERRORLEVEL! equ 0 (
         echo [SUCCESS] GitHub sync completed via authoritative force push.
     ) else (
-        echo [ERROR] GitHub push failed. Check your network or credentials.
+        echo [ERROR] GitHub push failed. Check network or credentials.
     )
 )
 
@@ -91,35 +113,15 @@ echo Host: %FTP1_HOST%
 echo Directory: %FTP1_DIR%
 echo ========================================================
 
-where winscp.com >nul 2>&1
-if %ERRORLEVEL% equ 0 (
-    echo WinSCP detected. Mirroring directory...
-    winscp.com /command ^
-        "open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/" ^
-        "synchronize remote -delete \"%LOCAL_DIR%\" \"%FTP1_DIR%\"" ^
-        "exit"
-    if !ERRORLEVEL! equ 0 (
-        echo [SUCCESS] Windows NT FTP sync completed via WinSCP.
-    ) else (
-        echo [ERROR] WinSCP synchronization failed on Windows NT FTP.
-    )
-) else (
-    echo WinSCP not found. Transferring files using native FTP...
-    set "FTP1_SCRIPT=%TEMP%\ftp1_script_%RANDOM%.txt"
-    (
-        echo open %FTP1_HOST%
-        echo %FTP1_USER%
-        echo %FTP1_PASS%
-        echo binary
-        echo prompt off
-        echo cd %FTP1_DIR%
-        echo mput *.*
-        echo quit
-    ) > "!FTP1_SCRIPT!"
+"!WINSCP_BIN!" /command ^
+    "open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/" ^
+    "synchronize remote -filemask=\"| .git/; Deploy_Sync.*; *.log\" \"%LOCAL_DIR%\" \"%FTP1_DIR%\"" ^
+    "exit"
 
-    ftp -s:"!FTP1_SCRIPT!"
-    del "!FTP1_SCRIPT!" >nul 2>&1
-    echo [NOTICE] Windows native FTP transfer completed.
+if %ERRORLEVEL% equ 0 (
+    echo [SUCCESS] Windows NT FTP sync completed via WinSCP.
+) else (
+    echo [ERROR] WinSCP transfer failed on Windows NT FTP.
 )
 
 echo.
@@ -129,35 +131,15 @@ echo Host: %FTP2_HOST%
 echo Directory: %FTP2_DIR%
 echo ========================================================
 
-where winscp.com >nul 2>&1
-if %ERRORLEVEL% equ 0 (
-    echo WinSCP detected. Mirroring directory...
-    winscp.com /command ^
-        "open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/" ^
-        "synchronize remote -delete \"%LOCAL_DIR%\" \"%FTP2_DIR%\"" ^
-        "exit"
-    if !ERRORLEVEL! equ 0 (
-        echo [SUCCESS] Linux FTP sync completed via WinSCP.
-    ) else (
-        echo [ERROR] WinSCP synchronization failed on Linux FTP.
-    )
-) else (
-    echo WinSCP not found. Transferring files using native FTP...
-    set "FTP2_SCRIPT=%TEMP%\ftp2_script_%RANDOM%.txt"
-    (
-        echo open %FTP2_HOST%
-        echo %FTP2_USER%
-        echo %FTP2_PASS%
-        echo binary
-        echo prompt off
-        echo cd %FTP2_DIR%
-        echo mput *.*
-        echo quit
-    ) > "!FTP2_SCRIPT!"
+"!WINSCP_BIN!" /command ^
+    "open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/" ^
+    "synchronize remote -filemask=\"| .git/; Deploy_Sync.*; *.log\" \"%LOCAL_DIR%\" \"%FTP2_DIR%\"" ^
+    "exit"
 
-    ftp -s:"!FTP2_SCRIPT!"
-    del "!FTP2_SCRIPT!" >nul 2>&1
-    echo [NOTICE] Linux native FTP transfer completed.
+if %ERRORLEVEL% equ 0 (
+    echo [SUCCESS] Linux FTP sync completed via WinSCP.
+) else (
+    echo [ERROR] WinSCP transfer failed on Linux FTP.
 )
 
 echo.
