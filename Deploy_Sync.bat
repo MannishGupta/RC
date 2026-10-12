@@ -1,4 +1,4 @@
-:: Version: 1.6
+:: Version: 1.8
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -16,7 +16,7 @@ set "FTP1_DIR=/rc"
 set "FTP2_HOST=simcoauto.com"
 set "FTP2_USER=webmaster@simcoauto.com"
 set "FTP2_PASS=Simco@1962"
-set "FTP2_DIR=/public_html"
+set "FTP2_DIR=/public_html/rc.simcoauto.com"
 
 :: ---------------------------------------------------------
 :: WinSCP Binary Resolution
@@ -60,7 +60,7 @@ if not exist "%LOCAL_DIR%" (
 
 cd /d "%LOCAL_DIR%"
 
-:: Exclude deployment scripts and logs from Git
+:: Exclude deployment scripts and logs from Git tracking
 findstr /C:"Deploy_Sync.bat" .gitignore >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo Deploy_Sync.bat>> .gitignore
@@ -73,12 +73,12 @@ if %ERRORLEVEL% neq 0 (
 set "COMMIT_MSG="
 set /p COMMIT_MSG="Enter Git commit comment (Leave blank for default timestamp): "
 if "!COMMIT_MSG!"=="" (
-    set "COMMIT_MSG=Automatic deploy sync on %DATE% at %TIME%"
+    set "COMMIT_MSG=Authoritative overwrite on %DATE% at %TIME%"
 )
 
 echo.
 echo ========================================================
-echo Stage 1: Synchronizing with GitHub Repository
+echo Stage 1: Overwriting GitHub Repository (Direct Force)
 echo ========================================================
 if not exist ".git" (
     echo Initializing Git repository...
@@ -89,21 +89,14 @@ if not exist ".git" (
 
 git remote set-url origin %GIT_REMOTE_URL%
 git add -A
-git commit -m "!COMMIT_MSG!" 2>nul
+git commit -m "!COMMIT_MSG!" --allow-empty 2>nul
 
-echo Pushing committed changes to GitHub...
-git push origin main
+echo Executing force push to GitHub (bypassing comparisons)...
+git push origin main --force
 if %ERRORLEVEL% equ 0 (
-    echo [SUCCESS] GitHub sync completed cleanly.
+    echo [SUCCESS] GitHub completely overwritten with local data.
 ) else (
-    echo [WARNING] Standard push rejected due to remote divergence.
-    echo Overwriting remote with authoritative local state...
-    git push origin main --force
-    if !ERRORLEVEL! equ 0 (
-        echo [SUCCESS] GitHub sync completed via authoritative force push.
-    ) else (
-        echo [ERROR] GitHub push failed. Check network or credentials.
-    )
+    echo [ERROR] GitHub force push failed. Check your network or credentials.
 )
 
 echo.
