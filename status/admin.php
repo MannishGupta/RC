@@ -7,15 +7,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/admin_backend.php';
 
-$bsCssHref = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';
-$bsCssInt  = 'sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH';
-$bsJsHref  = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
-$bsJsInt   = 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz';
-$faHref    = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
-$faInt     = 'sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==';
+$bsCssHref = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css';
+$bsCssInt  = 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB';
+$bsJsHref  = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js';
+$bsJsInt   = 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI';
+$faHref    = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css';
+$faInt     = 'sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==';
 $xlsxSrc   = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-$quillCss  = 'https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.2/quill.snow.min.css';
-$quillJs   = 'https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.2/quill.min.js';
+$quillCss  = 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css';
+$quillJs   = 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js';
 
 // CSRF token is derived via HMAC — no session read required
 $token = makeCsrfToken();
@@ -423,7 +423,7 @@ endif;
                             <td class="text-muted small"><?php echo htmlspecialchars($p['rera'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                             <td>
                                 <?php if (!empty($p['logo'])): ?>
-                                    <?php echo statusLogoImg((string)$p['logo'], (string)($p['name'] ?? '')); ?>
+                                    <span class="project-logo-plate st-logo-plate"><?php echo statusLogoImg((string)$p['logo'], (string)($p['name'] ?? '')); ?> logo"></span>
                                 <?php else: ?>
                                     <span class="badge bg-light text-muted border">No Logo</span>
                                 <?php endif; ?>
@@ -757,7 +757,7 @@ endif;
 
 <script src="<?php echo $bsJsHref; ?>" integrity="<?php echo $bsJsInt; ?>" crossorigin="anonymous"></script>
 <script src="<?php echo $quillJs; ?>" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" integrity="sha384-BSxuMLxX+FCbTdYec3TbXlnMGEEM2QXTFdtDaveen71o+jswm2J36+xFqp8k4VHM" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js" integrity="sha384-DgmC6Xe2bSN2WjTDXzWYbUbxyhNP+NNkGDR/g78pCXV7E7rcVTGxVg0uIVCUUcBc" crossorigin="anonymous" defer></script>
 <script>
 (function () {
     'use strict';

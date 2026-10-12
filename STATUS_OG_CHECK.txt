@@ -1,0 +1,17 @@
+STATUS — OG image + no JS leak
+
+1) Put the share image file here (one of):
+   status/assets/og.jpg   (preferred, 1200×630)
+   status/assets/og.png
+   status/assets/og.webp
+
+2) Public URL after deploy:
+   https://rc.fusionlimited.in/status/assets/og.jpg
+
+3) Upload status/index.php from this package (replaces broken body/script).
+
+4) Hard-refresh /status/ — no JS text under the header.
+   Click a site photo → full-size overlay.
+
+5) Share test: paste https://rc.fusionlimited.in/status/ into WhatsApp —
+   preview should show og.jpg (may take a few minutes to refresh cache).

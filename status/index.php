@@ -1,6 +1,7 @@
 <?php
+// Version: 14.1.3
 /* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0 (2026-10-11)
+   Construction Progress Portal | Release v14.1.3 (2026-10-12)
    Single release version across all files. See CHANGELOG.md for changes.
    ───────────────────────────────────────────────────────────────────── */
 declare(strict_types=1);
@@ -27,8 +28,7 @@ if (empty($_SESSION['_consent_nonce'])) {
     $_SESSION['_consent_nonce'] = bin2hex(random_bytes(16));
 }
 
-// DPDP storage limitation: expire analytics past its retention period. Runs at
-// most once a day and costs nothing on the other requests.
+// DPDP storage limitation: expire analytics past its retention period.
 analyticsRetentionTick();
 
 $consentGiven    = analyticsConsentGiven();
@@ -47,8 +47,6 @@ $updates    = function_exists('statusLoadJson') ? statusLoadJson('updates.json')
 [$projMap, $compMap] = buildMaps($projects, $components);
 sortUpdates($updates, $compMap, $projMap);
 
-// Cap PER COMPONENT, not globally. The old global slice meant that once the
-// archive passed 50 records, filtering to an older tower showed an empty feed.
 $perComp  = max(1, (int)cfg('feed.per_component', 12));
 $maxTotal = max($perComp, (int)cfg('feed.max_total', 400));
 $seen     = [];
@@ -101,10 +99,9 @@ foreach ($tree as $projId => $pData) {
 
 $siteConfig = cachedJson(DATA_DIR . '/site_config.json');
 $videoRaw   = trim((string)($siteConfig['video_url'] ?? ''));
-// Tenant videos: tenants/{id}/data/status/uploads — never /tenants/... in the browser.
+
 if ($videoRaw !== '' && !preg_match('#^https?://#i', $videoRaw)) {
     $resolved = assetPath($videoRaw);
-    // Keep relative path when assetPath only rewrote extension/slug
     if ($resolved !== '' && !str_contains($resolved, 'serve.php') && !str_starts_with($resolved, '/status/') && !preg_match('#^https?://#i', $resolved)) {
         $videoRaw = $resolved;
     }
@@ -116,7 +113,6 @@ $currentMonthYear = date('F Y');
 $company          = (string)cfg('brand.company', 'Fusion Limited');
 $projectName      = (string)cfg('brand.project', 'Brook & Rivulet');
 
-// Header logos: RC Organisation Setup (left) + first project logo / brand mark (right)
 $companyLogo = '';
 $projectLogo = '';
 if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
@@ -158,11 +154,11 @@ if ($companyLogo === '') {
         }
     }
 }
-// Right header: first project that has a logo, else BnR assets
+
 foreach ($projects as $__p) {
     $__pl = trim((string)($__p['logo'] ?? ''));
     if ($__pl !== '') {
-        $projectLogo = $__pl; // relative uploads/… — statusLogoImg resolves
+        $projectLogo = $__pl;
         break;
     }
 }
@@ -174,20 +170,29 @@ if ($projectLogo === '') {
         }
     }
 }
-$favicon = assetPath('assets/favicon.ico');
+$favicon          = assetPath('assets/favicon.ico');
 $locality         = (string)cfg('brand.locality', '');
-// Detected from the request, so canonical/og: follow whichever host serves this.
 $siteUrl          = appBaseUrl();
-$ogImage          = appUrl('assets/' . basename(assetPath('assets/og.jpg')));
+$ogImage = '';
+foreach (['assets/og.jpg', 'assets/og.png', 'assets/og.jpeg', 'assets/og.webp'] as $__ogTry) {
+    $__ogAbs = __DIR__ . '/' . $__ogTry;
+    if (is_file($__ogAbs)) {
+        $ogImage = rtrim(appBaseUrl(), '/') . '/status/' . $__ogTry . '?v=' . (string)@filemtime($__ogAbs);
+        break;
+    }
+}
+if ($ogImage === '') {
+    // Fallback: first project logo via media URL, or brand colour card not available → site URL
+    $ogImage = rtrim(appBaseUrl(), '/') . '/status/assets/og.jpg';
+}
 $pageTitle        = "Construction Progress Update ({$currentMonthYear}) | {$company}";
 $pageDesc         = "View the official {$currentMonthYear} construction progress, tower milestones, and live site photographs for {$projectName} by {$company}.";
 
-$bsCssHref = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';
-$bsCssInt  = 'sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH';
-$bsJsHref  = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
-$bsJsInt   = 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz';
-$faHref    = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
-$faInt     = 'sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==';
+$bsCssHref = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css';
+$bsCssInt  = 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB';
+$bsJsHref  = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js';
+$bsJsInt   = 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI';
+$faHref    = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css';
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo htmlspecialchars(AppLocale::lang(), ENT_QUOTES, 'UTF-8'); ?>"<?php
@@ -195,7 +200,6 @@ $faInt     = 'sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9
     if (!in_array($themeMode, ['light', 'dark', 'reserve'], true)) {
         $themeMode = 'auto';
     }
-    // Explicit pin from config; 'auto' left for client script (rc-theme / OS)
     echo in_array($themeMode, ['light', 'dark', 'reserve'], true) ? ' data-theme="' . htmlspecialchars($themeMode, ENT_QUOTES, 'UTF-8') . '"' : '';
 ?>>
 <head>
@@ -236,6 +240,26 @@ window.statusSetTheme = function (mode) {
         'path'        => '',
         'type'        => 'website',
     ]); ?>
+
+    <!-- Open Graph Metadata (WhatsApp, Facebook, LinkedIn) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($pageDesc, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($siteUrl, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:site_name" content="<?php echo htmlspecialchars($company, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:image" content="<?php echo htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:image:secure_url" content="<?php echo htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="<?php echo htmlspecialchars($projectName . ' Construction Progress', ENT_QUOTES, 'UTF-8'); ?>">
+
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($pageDesc, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8'); ?>">
+
     <meta name="keywords" content="<?php echo htmlspecialchars($company . ', ' . $projectName . ', construction update' . ($locality ? ', ' . $locality : '') . ', RERA, progress report, site photographs', ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="article:modified_time" content="<?php echo date('c'); ?>">
     <link rel="manifest" href="manifest.php">
@@ -250,7 +274,7 @@ window.statusSetTheme = function (mode) {
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preload" as="image" href="<?php echo $ogImage; ?>">
     <link rel="stylesheet" href="<?php echo $bsCssHref; ?>" integrity="<?php echo $bsCssInt; ?>" crossorigin="anonymous">
-    <link rel="stylesheet" href="<?php echo $faHref; ?>" integrity="<?php echo $faInt; ?>" crossorigin="anonymous">
+    <link rel="stylesheet" href="<?php echo $faHref; ?>" crossorigin="anonymous">
 
     <link rel="stylesheet" href="/status/assets/app.css?v=<?php echo @filemtime(__DIR__ . '/assets/app.css') ?: time(); ?>">
 
@@ -268,12 +292,14 @@ window.statusSetTheme = function (mode) {
 .thumb-wrapper img{pointer-events:none}
 </style>
 </head>
-<?php $__embed = isset($_GET['embed']); ?>
-<?php $__stEmbed = !empty($_GET['embed']); ?>
-<body data-embed="<?= !empty($__stEmbed) ? '1' : '0' ?>
+<?php
+$__stEmbed = !empty($_GET['embed']);
+$__bodyClass = $__stEmbed ? 'st-embed' : '';
+$__bodyEmbed = $__stEmbed ? '1' : '0';
+?>
+<body data-embed="<?php echo $__bodyEmbed; ?>" class="<?php echo $__bodyClass; ?>">
 
 <script>
-/* Full-size photo viewer — available immediately (not blocked by other script errors) */
 (function () {
   function ensureLb() {
     var o = document.getElementById('stLightbox');
@@ -335,7 +361,7 @@ window.statusSetTheme = function (mode) {
   }, true);
 })();
 </script>
-" class="<?= !empty($__stEmbed) ? 'st-embed' : '' ?>">
+
 <a class="skip-link" href="#main">Skip to main content</a>
 
 <header class="fixed-top site-nav d-flex flex-nowrap align-items-center justify-content-between px-3 px-md-4">
@@ -573,7 +599,6 @@ window.statusSetTheme = function (mode) {
                     Your browser cannot play this video.
                 </video>
                 <?php else: ?>
-                <?php /* No empty <video> element: an player with no source looks broken to visitors. */ ?>
                 <div class="wip-video-empty">
                     <i class="fas fa-film" aria-hidden="true"></i>
                     <p>No featured video is set at the moment.</p>
@@ -627,9 +652,6 @@ window.statusSetTheme = function (mode) {
 </div>
 
 <?php if (!$consentDecided): ?>
-<!-- Notice and consent. Both choices proceed to the dashboard: conditioning
-     access on analytics consent would make that consent invalid under the
-     DPDP Act, which requires it to be free and unconditional. -->
 <div class="modal fade" id="complianceModal" tabindex="-1" data-bs-backdrop="static"
      data-bs-keyboard="false" aria-labelledby="complianceTitle" aria-describedby="complianceBody" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -677,21 +699,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = <?php echo json_encode($_SESSION['analytics_token'] ?? '', JSON_HEX_TAG); ?>;
     const sessionStart = Date.now();
 
-    // Identifiers are created only once consent exists — generating them first
-    // would itself be processing personal data without a lawful basis.
     let visitorId = '';
     let sessionId = '';
+    const analyticsOn = <?php echo (cfg('analytics.enabled', true) && $consentGiven) ? 'true' : 'false'; ?>;
     if (analyticsOn) {
         try {
             visitorId = localStorage.getItem('br_vid') || ('v_' + Math.random().toString(36).slice(2, 11));
             localStorage.setItem('br_vid', visitorId);
             sessionId = sessionStorage.getItem('br_sid') || ('s_' + Math.random().toString(36).slice(2, 11));
             sessionStorage.setItem('br_sid', sessionId);
-        } catch (e) { /* storage blocked — run without identifiers */ }
+        } catch (e) { }
     }
 
-    // DPDP: no event leaves the browser unless the visitor has consented.
-    const analyticsOn = <?php echo (cfg('analytics.enabled', true) && $consentGiven) ? 'true' : 'false'; ?>;
     window.logAnalytics = function (action, details = {}) {
         if (!analyticsOn) { return; }
         fetch('analytics.php', {
@@ -701,8 +720,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }).catch(() => {});
     };
 
-    // Shown only until the visitor has made a data choice; the choice itself is
-    // submitted to consent.php, so it survives sessions and can be withdrawn.
     const consentDialog = document.getElementById('complianceModal');
     if (consentDialog && typeof bootstrap !== 'undefined') {
         new bootstrap.Modal(consentDialog).show();
@@ -722,7 +739,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Track video play events (matches the 'video_play' action counted in analytics aggregation)
     const wipVideo = document.getElementById('wipVideo');
     if (wipVideo) {
         wipVideo.addEventListener('play', function () {
@@ -868,7 +884,6 @@ document.addEventListener('DOMContentLoaded', function () {
         cap.textContent = filename.replace(/_/g, ' · ');
         overlay.classList.add('is-open');
         document.body.style.overflow = 'hidden';
-        // Also try Bootstrap modal if present (optional)
         try {
             var imgEl = document.getElementById('lightboxImage');
             if (imgEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
