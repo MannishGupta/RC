@@ -1,4 +1,4 @@
-:: Version: 2.1
+:: Version: 2.2
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -109,9 +109,9 @@ git commit -m "!COMMIT_MSG!" --allow-empty 2>nul
 echo Executing force push to GitHub...
 git push origin main --force
 if %ERRORLEVEL% equ 0 (
-    echo [STATUS] GitHub sync: DONE (Working tree synchronized)
+    echo [STATUS] GitHub sync: DONE
 ) else (
-    echo [STATUS] GitHub sync: FAILED. Check network/credentials.
+    echo [STATUS] GitHub sync: FAILED. Check network or credentials.
 )
 
 echo.
@@ -126,9 +126,10 @@ set "WINSCP_LOG1=%TEMP%\winscp_log_s1_%RANDOM%.xml"
 
 (
     echo open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/
+    echo option confirm off
     echo cd "%FTP1_DIR%"
     echo lcd "%LOCAL_DIR%"
-    echo put -overwrite -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" *.*
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" *.*
     echo exit
 ) > "!WINSCP_SCRIPT1!"
 
@@ -171,10 +172,11 @@ set "WINSCP_LOG2=%TEMP%\winscp_log_s2_%RANDOM%.xml"
 
 (
     echo open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/
+    echo option confirm off
     echo cd "%FTP2_DIR%"
     echo lcd "%LOCAL_DIR%"
-    echo put -overwrite -filemask="^| .git/; Deploy_Sync.*; *.log" *.*
-    echo put -overwrite "%OPCACHE_SCRIPT%" "opcache_reset.php"
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log" *.*
+    echo put "%OPCACHE_SCRIPT%" "opcache_reset.php"
     echo exit
 ) > "!WINSCP_SCRIPT2!"
 
