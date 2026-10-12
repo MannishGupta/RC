@@ -1,12 +1,20 @@
+// Version: 1.2
 <?php
+declare(strict_types=1);
+
 /**
- * Place this file at: https://fusionlimited.in/status/admin.php
- * Permanent redirect to the RC host admin console.
+ * Fallback permanent redirect handler for fusionlimited.in/status/admin.php
+ * Target: https://rc.fusionlimited.in/status/admin.php
  */
-$target = 'https://rc.fusionlimited.in/status/admin.php';
-$qs = isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== ''
-    ? ('?' . $_SERVER['QUERY_STRING']) : '';
-header('Cache-Control: no-store');
-header('Location: ' . $target . $qs, true, 301);
-header('X-Robots-Tag: noindex');
+
+$destination = 'https://rc.fusionlimited.in/status/admin.php';
+
+if (!empty($_SERVER['QUERY_STRING'])) {
+    $destination .= '?' . $_SERVER['QUERY_STRING'];
+}
+
+header('HTTP/1.1 301 Moved Permanently', true, 301);
+header('Location: ' . $destination, true, 301);
+header('X-Robots-Tag: noindex, nofollow', true);
+header('Connection: close');
 exit;

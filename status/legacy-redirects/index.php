@@ -1,13 +1,17 @@
+// Version: 1.0
 <?php
+declare(strict_types=1);
+
 /**
- * Place this file at: https://fusionlimited.in/status/index.php
- * (or as the directory default for /status/)
- * Permanent redirect to the RC host.
+ * Fallback permanent redirect handler for https://fusionlimited.in/status/
+ * Environment: Windows Server / IIS / PHP 8.4
  */
-$target = 'https://rc.fusionlimited.in/status/';
-$qs = isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== ''
-    ? ('?' . $_SERVER['QUERY_STRING']) : '';
-header('Cache-Control: no-store');
-header('Location: ' . $target . $qs, true, 301);
-header('X-Robots-Tag: noindex');
+
+$targetHost = 'https://rc.fusionlimited.in/status/';
+$queryString = $_SERVER['QUERY_STRING'] ?? '';
+
+$destination = $targetHost . ($queryString !== '' ? '?' . $queryString : '');
+
+header('X-Robots-Tag: noindex, nofollow', true);
+header('Location: ' . $destination, true, 301);
 exit;
