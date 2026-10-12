@@ -100,19 +100,46 @@ foreach ($tree as $projId => $pData) {
 }
 
 $siteConfig = cachedJson(DATA_DIR . '/site_config.json');
-$videoUrl   = trim((string)($siteConfig['video_url'] ?? ''));
-// Follow any rename/re-encode done by Optimise, so a set video keeps playing.
-if ($videoUrl !== '' && !preg_match('#^https?://#i', $videoUrl)) {
-    $videoUrl = assetPath($videoUrl);
+$videoRaw   = trim((string)($siteConfig['video_url'] ?? ''));
+// Tenant videos: tenants/{id}/data/status/uploads — never /tenants/... in the browser.
+if ($videoRaw !== '' && !preg_match('#^https?://#i', $videoRaw)) {
+    $resolved = assetPath($videoRaw);
+    // Keep relative path when assetPath only rewrote extension/slug
+    if ($resolved !== '' && !str_contains($resolved, 'serve.php') && !str_starts_with($resolved, '/status/') && !preg_match('#^https?://#i', $resolved)) {
+        $videoRaw = $resolved;
+    }
 }
-$videoExists = $videoUrl !== ''
-    && (preg_match('#^https?://#i', $videoUrl)
-        || is_file(__DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $videoUrl))
-        || (defined('UPLOAD_DIR') && is_file(rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . ltrim(str_replace('uploads/', '', str_replace('\\', '/', $videoUrl)), '/'))));
+[$videoUrl, $videoExists] = statusResolveVideo($videoRaw);
 $videoTitle = $siteConfig['video_title'] ?? 'Site Aerial Overview';
 
 $projectLogo      = assetPath('assets/BnR.png');
 $companyLogo      = assetPath('assets/ag-image.png');
+// Prefer RC Organisation Setup logo (company.logo) when available
+if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
+    try {
+        $__co = AppDB::read('company') ?: [];
+        if (isset($__co[0]) && is_array($__co[0])) {
+            $__co = $__co[0];
+        }
+        if (is_array($__co)) {
+            $__logo = trim((string)($__co['logo'] ?? $__co['favicon'] ?? ''));
+            if ($__logo !== '') {
+                if (str_starts_with($__logo, 'http://') || str_starts_with($__logo, 'https://') || str_starts_with($__logo, '/')) {
+                    $companyLogo = $__logo;
+                } else {
+                    $companyLogo = '/media_serve.php?f=' . rawurlencode($__logo);
+                }
+            }
+            $__cn = trim((string)($__co['name'] ?? ''));
+            if ($__cn !== '') {
+                $company = $__cn;
+            }
+        }
+    } catch (Throwable $e) {
+        // keep status defaults
+    }
+}
+
 $favicon          = assetPath('assets/favicon.ico');
 $currentMonthYear = date('F Y');
 $company          = (string)cfg('brand.company', 'Fusion Limited');
@@ -215,8 +242,21 @@ window.statusSetTheme = function (mode) {
         <?php if (empty($projects)): ?>
         <div class="alert alert-secondary border my-4" role="status" style="color:var(--colorNeutralForeground1);background:var(--colorNeutralBackground2)">
             <strong>No construction projects published yet for this site.</strong>
-            <span class="d-block small mt-1">Open the <a href="admin.php">Management Console</a> to add towers and updates.
-            Data path: tenant <code>data/status/</code> (not a shared folder).</span>
+            <span class="d-block small mt-1">Open the <a href="admin.php">Management Console</a> to add towers and updates.</span>
+            <?php
+            $__diag = function_exists('statusDataDiagnostics') ? statusDataDiagnostics() : [];
+            $__tp = (string)($__diag['files']['projects.json']['tenant_path'] ?? (defined('DATA_DIR') ? DATA_DIR . '/projects.json' : ''));
+            $__lp = (string)($__diag['files']['projects.json']['legacy_path'] ?? (__DIR__ . '/data/projects.json'));
+            $__tb = (int)($__diag['files']['projects.json']['tenant_bytes'] ?? 0);
+            $__lb = (int)($__diag['files']['projects.json']['legacy_bytes'] ?? 0);
+            ?>
+            <div class="small mt-2 p-2 rounded" style="background:rgba(0,0,0,.04);font-family:ui-monospace,monospace;font-size:11px;line-height:1.45">
+                <div><strong>Looking for projects in:</strong></div>
+                <div>1. <code><?php echo htmlspecialchars($__tp, ENT_QUOTES, 'UTF-8'); ?></code> (<?php echo $__tb; ?> bytes)</div>
+                <div>2. <code><?php echo htmlspecialchars($__lp, ENT_QUOTES, 'UTF-8'); ?></code> (<?php echo $__lb; ?> bytes)</div>
+                <div class="mt-1">Upload non-empty <code>projects.json</code>, <code>components.json</code>, <code>updates.json</code> into folder <strong>1</strong>
+                (or into <code>status/data/</code> for auto-import). Photos/logos → <code>…/status/uploads/</code>.</div>
+            </div>
         </div>
         <?php endif; ?>
 

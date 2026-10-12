@@ -1,20 +1,13 @@
 <?php
 /**
- * Construction Progress — RC tab bridge.
+ * Const. Status — embed working same-origin /status/ portal (avoids fragment CSS failures).
  */
 if (!defined('BASE_PATH')) {
     exit;
 }
-$__statusPortal = BASE_PATH . '/status/status-tab.php';
-if (!is_file($__statusPortal)) {
-    echo '<div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-sm p-4">'
-        . '<strong>Construction Progress portal not installed.</strong> Upload the <code>status/</code> package.</div>';
-    return;
-}
-// Ensure tenant status dirs exist
 if (defined('DATA_PATH')) {
-    $__sd = rtrim(str_replace(['/', '\\'], '/', DATA_PATH), '/') . '/status';
-    if (!is_dir($__sd)) {
+    $__sd = rtrim(str_replace(['/', '\\'], '/', (string)DATA_PATH), '/') . '/status';
+    if (!is_dir($__sd . '/uploads')) {
         @mkdir($__sd . '/uploads', 0775, true);
     }
     foreach (['projects.json', 'components.json', 'updates.json'] as $__f) {
@@ -24,11 +17,21 @@ if (defined('DATA_PATH')) {
         }
     }
 }
-try {
-    require $__statusPortal;
-} catch (Throwable $__e) {
-    echo '<div class="rounded-xl border border-rose-200 bg-rose-50 text-rose-900 text-sm p-4">'
-        . '<strong>Status module error.</strong> '
-        . htmlspecialchars($__e->getMessage(), ENT_QUOTES, 'UTF-8')
-        . '</div>';
-}
+?>
+<div class="rc-status-shell w-full" style="min-height:70vh">
+  <div class="flex flex-wrap items-center gap-2 mb-3 text-sm" style="color:var(--rc-ink,#201f1e)">
+    <span class="font-bold">Construction Progress</span>
+    <span class="opacity-50">·</span>
+    <a href="/status/" target="_blank" rel="noopener" class="underline" style="color:var(--rc-accent,#0078D4)">Open full page</a>
+    <span class="opacity-50">·</span>
+    <a href="/status/admin.php" target="_blank" rel="noopener" class="underline" style="color:var(--rc-accent,#0078D4)">Management Console</a>
+  </div>
+  <iframe
+    src="/status/?embed=1"
+    title="Construction Progress"
+    class="w-full rounded-xl border"
+    style="min-height:72vh;height:calc(100vh - 11rem);border-color:var(--rc-border,#e1dfdd);background:var(--rc-card,#fff)"
+    loading="eager"
+    referrerpolicy="same-origin"
+  ></iframe>
+</div>

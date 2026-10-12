@@ -423,7 +423,7 @@ endif;
                             <td class="text-muted small"><?php echo htmlspecialchars($p['rera'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                             <td>
                                 <?php if (!empty($p['logo'])): ?>
-                                    <span class="project-logo-plate st-logo-plate"><?php echo statusLogoImg((string)$p['logo'], (string)($p['name'] ?? '')); ?> logo"></span>
+                                    <?php echo statusLogoImg((string)$p['logo'], (string)($p['name'] ?? '')); ?>
                                 <?php else: ?>
                                     <span class="badge bg-light text-muted border">No Logo</span>
                                 <?php endif; ?>

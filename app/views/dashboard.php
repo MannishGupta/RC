@@ -1386,8 +1386,9 @@ button.bg-white,a.bg-white{color:#0f172a!important}
                     <?php
                     // Statistics: use ?tab=statistics only
 
-                    // Live widgets — hidden for Super Admin control plane
-                    if (empty($isSuperAdmin) && empty($viewData['isSuperAdmin'])) {
+                    // Live widgets — Team + Calendar only (never Super Admin / other tabs)
+                    if (empty($isSuperAdmin) && empty($viewData['isSuperAdmin'])
+                        && in_array($currentTab, ['team', 'events'], true)) {
                         echo '<div class="rc-top-widgets mb-3 grid grid-cols-4 gap-2 items-stretch" style="grid-template-columns:repeat(4,minmax(0,1fr))">';
                         $wxPartial = __DIR__ . '/partials/public_live_widgets.php';
                         if (is_file($wxPartial)) {

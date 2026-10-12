@@ -85,7 +85,8 @@ if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
             foreach (['projects.json', 'components.json', 'updates.json', 'site_config.json', 'visitor_logs.json'] as $__copy) {
                 $__src = $__legacy . DIRECTORY_SEPARATOR . $__copy;
                 $__dst = DATA_DIR . DIRECTORY_SEPARATOR . $__copy;
-                if (is_file($__src) && !is_file($__dst)) {
+                $__dstEmpty = !is_file($__dst) || in_array(trim((string)@file_get_contents($__dst)), ['', '[]', 'null'], true);
+                if (is_file($__src) && $__dstEmpty) {
                     @copy($__src, $__dst);
                 }
             }
@@ -134,29 +135,76 @@ function statusPublicUploadUrl(string $rel): string {
  * Read a status JSON file; if tenant store is empty, fall back to legacy status/data/.
  */
 function statusLoadJson(string $basename): array {
-    $primary = DATA_DIR . DIRECTORY_SEPARATOR . $basename;
+    $basename = basename(str_replace('\\', '/', $basename));
+    if ($basename === '' || !preg_match('/^[a-z0-9_\-]+\.json$/i', $basename)) {
+        return [];
+    }
+
+    $candidates = [];
+    if (defined('DATA_DIR')) {
+        $candidates[] = DATA_DIR . DIRECTORY_SEPARATOR . $basename;
+    }
+    $candidates[] = __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . $basename;
+    $candidates[] = __DIR__ . DIRECTORY_SEPARATOR . $basename;
+    // Shared hosting sometimes left a copy next to uploads
+    $candidates[] = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $basename;
+    if (defined('DATA_PATH')) {
+        $candidates[] = rtrim(DATA_PATH, '/\\') . DIRECTORY_SEPARATOR . 'status' . DIRECTORY_SEPARATOR . $basename;
+        $candidates[] = rtrim(DATA_PATH, '/\\') . DIRECTORY_SEPARATOR . $basename;
+    }
+
     $data = [];
-    if (is_file($primary)) {
-        $j = json_decode((string)@file_get_contents($primary), true);
-        if (is_array($j)) {
-            $data = $j;
+    $source = '';
+    foreach ($candidates as $path) {
+        if (!is_file($path)) {
+            continue;
+        }
+        $raw = (string)@file_get_contents($path);
+        $j = json_decode($raw, true);
+        if (!is_array($j) || $j === []) {
+            continue;
+        }
+        $data = $j;
+        $source = $path;
+        break;
+    }
+
+    // Persist into tenant DATA_DIR when we loaded from elsewhere
+    $primary = defined('DATA_DIR') ? (DATA_DIR . DIRECTORY_SEPARATOR . $basename) : '';
+    if ($data !== [] && $primary !== '' && is_dir(dirname($primary)) && is_writable(dirname($primary))) {
+        $cur = is_file($primary) ? trim((string)@file_get_contents($primary)) : '';
+        if ($cur === '' || $cur === '[]' || $cur === 'null') {
+            @file_put_contents(
+                $primary,
+                json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n",
+                LOCK_EX
+            );
         }
     }
-    $empty = ($data === [] || $data === null);
-    if ($empty) {
-        $legacy = __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . $basename;
-        if (is_file($legacy) && realpath($legacy) !== realpath($primary)) {
-            $j = json_decode((string)@file_get_contents($legacy), true);
-            if (is_array($j) && $j !== []) {
-                $data = $j;
-                // Persist into tenant store so next load is local
-                if (is_dir(DATA_DIR) && is_writable(DATA_DIR)) {
-                    @file_put_contents($primary, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n", LOCK_EX);
-                }
-            }
-        }
-    }
+
     return is_array($data) ? $data : [];
+}
+
+/** Diagnostic paths for empty-state UI (no secrets). */
+function statusDataDiagnostics(): array {
+    $files = ['projects.json', 'components.json', 'updates.json'];
+    $out = [
+        'data_dir' => defined('DATA_DIR') ? DATA_DIR : '',
+        'upload_dir' => defined('UPLOAD_DIR') ? UPLOAD_DIR : '',
+        'tenant' => defined('TENANT_ID') ? TENANT_ID : '',
+        'files' => [],
+    ];
+    foreach ($files as $f) {
+        $p = (defined('DATA_DIR') ? DATA_DIR : '') . DIRECTORY_SEPARATOR . $f;
+        $leg = __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . $f;
+        $out['files'][$f] = [
+            'tenant_bytes' => is_file($p) ? filesize($p) : 0,
+            'legacy_bytes' => is_file($leg) ? filesize($leg) : 0,
+            'tenant_path' => $p,
+            'legacy_path' => $leg,
+        ];
+    }
+    return $out;
 }
 
 function appConfig(): array {
@@ -636,6 +684,88 @@ function statusMediaUrl(string $path): string {
  * Logo markup on sand-dune plate. Never emits broken leftover attributes.
  * Dual-src fallback: primary URL + onerror swap to alternate (legacy ↔ serve).
  */
+
+/** True if a relative media path exists on disk (tenant uploads or status tree). */
+function statusMediaFileExists(string $path): bool {
+    $path = trim(str_replace('\\', '/', $path));
+    if ($path === '' || str_contains($path, '..')) {
+        return false;
+    }
+    $path = ltrim($path, '/');
+    // Absolute URL — cannot check disk
+    if (preg_match('#^(https?:)?//#i', $path) || str_starts_with($path, 'data:')) {
+        return true;
+    }
+    if (str_starts_with($path, '/status/serve.php') || str_starts_with($path, 'serve.php')) {
+        // Extract f=
+        if (preg_match('/[?&]f=([^&]+)/', $path, $m)) {
+            $path = rawurldecode($m[1]);
+        } else {
+            return false;
+        }
+    }
+    if (str_starts_with($path, '/status/')) {
+        $path = substr($path, strlen('/status/'));
+    }
+    if (str_starts_with($path, 'uploads/')) {
+        $sub = substr($path, strlen('uploads/'));
+        if (defined('UPLOAD_DIR') && UPLOAD_DIR !== '') {
+            $t = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, UPLOAD_DIR), DIRECTORY_SEPARATOR)
+                . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $sub);
+            if (is_file($t)) {
+                return true;
+            }
+        }
+        $legacy = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, $sub);
+        return is_file($legacy);
+    }
+    if (str_starts_with($path, 'assets/')) {
+        return is_file(__DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path));
+    }
+    // bare name under uploads
+    if (defined('UPLOAD_DIR') && is_file(rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . $path)) {
+        return true;
+    }
+    return is_file(__DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path));
+}
+
+/**
+ * Normalize a configured video_url to a browser URL + existence flag.
+ * @return array{0:string,1:bool} [url, exists]
+ */
+function statusResolveVideo(string $raw): array {
+    $raw = trim($raw);
+    if ($raw === '') {
+        return ['', false];
+    }
+    if (preg_match('#^https?://#i', $raw)) {
+        return [$raw, true];
+    }
+    $rel = str_replace('\\', '/', $raw);
+    $rel = ltrim($rel, '/');
+    // Strip accidental tenant web paths
+    if (preg_match('#tenants/[^/]+/data/status/(uploads/.+)$#', $rel, $m)) {
+        $rel = $m[1];
+    }
+    if (str_starts_with($rel, 'status/uploads/')) {
+        $rel = substr($rel, strlen('status/'));
+    }
+    // Bare filename → prefer tenant uploads, then assets
+    if (!str_contains($rel, '/')) {
+        if (statusMediaFileExists('uploads/' . $rel)) {
+            $rel = 'uploads/' . $rel;
+        } elseif (statusMediaFileExists('assets/' . $rel)) {
+            $rel = 'assets/' . $rel;
+        } else {
+            $rel = 'uploads/' . $rel;
+        }
+    }
+    $exists = statusMediaFileExists($rel);
+    $url = statusMediaUrl($rel);
+    return [$url, $exists];
+}
+
 function statusLogoImg(string $path, string $alt = '', string $class = ''): string {
     $path = trim($path);
     if ($path === '') {
@@ -1220,14 +1350,26 @@ const VIDEO_EXTS = ['mp4', 'webm', 'ogv', 'ogg', 'mov', 'm4v'];
  */
 function listVideoFiles(): array {
     $out = [];
-    foreach (['assets', 'uploads'] as $folder) {
-        $base = __DIR__ . DIRECTORY_SEPARATOR . $folder;
+    $roots = [
+        ['prefix' => 'assets/', 'dir' => __DIR__ . DIRECTORY_SEPARATOR . 'assets'],
+        ['prefix' => 'uploads/', 'dir' => __DIR__ . DIRECTORY_SEPARATOR . 'uploads'],
+    ];
+    if (defined('UPLOAD_DIR') && UPLOAD_DIR !== '') {
+        $roots[] = ['prefix' => 'uploads/', 'dir' => rtrim(UPLOAD_DIR, '/\\')];
+    }
+    $seen = [];
+    foreach ($roots as $root) {
+        $base = $root['dir'];
         if (!is_dir($base)) {
             continue;
         }
-        $it = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($base, RecursiveDirectoryIterator::SKIP_DOTS)
-        );
+        try {
+            $it = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)
+            );
+        } catch (Throwable $e) {
+            continue;
+        }
         foreach ($it as $f) {
             if (!$f->isFile()) {
                 continue;
@@ -1235,13 +1377,19 @@ function listVideoFiles(): array {
             if (!in_array(strtolower($f->getExtension()), VIDEO_EXTS, true)) {
                 continue;
             }
+            $full = $f->getPathname();
+            $rel = $root['prefix'] . str_replace('\\', '/', substr($full, strlen($base) + 1));
+            if (isset($seen[$rel])) {
+                continue;
+            }
+            $seen[$rel] = true;
             $out[] = [
-                'path'  => str_replace('\\', '/', substr($f->getPathname(), strlen(__DIR__) + 1)),
+                'path'  => $rel,
                 'bytes' => (int)$f->getSize(),
             ];
         }
     }
-    usort($out, fn($a, $b) => strcmp($a['path'], $b['path']));
+    usort($out, static fn($a, $b) => $a['path'] <=> $b['path']);
     return $out;
 }
 

@@ -1,3 +1,3 @@
-20261011.15
+20261011.20
 
-## Permanent media URLs: /status/uploads + serve.php fallback; fix broken logo HTML; photos restored
+## Fix admin logo HTML leak; status uses RC company logo from Organisation Setup
