@@ -1,4 +1,4 @@
-:: Version: 2.4
+:: Version: 2.5
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -36,7 +36,7 @@ if exist "%LOCALAPPDATA%\Programs\WinSCP\winscp.com" (
 :: ---------------------------------------------------------
 :: Initialization & Directory Validation
 :: ---------------------------------------------------------
-title "Multi-Target Deployment: Git & FTP (Forced Overwrite)"
+title "Multi-Target Deployment: Git & FTP (Direct Push)"
 cls
 echo ========================================================
 echo       Deployment and Multi-Target Synchronization
@@ -116,7 +116,7 @@ if %ERRORLEVEL% equ 0 (
 
 echo.
 echo ========================================================
-echo Stage 2: Windows NT FTP Server (Blind Forced Overwrite)
+echo Stage 2: Windows NT FTP Server (Direct Recursive Upload)
 echo Host: %FTP1_HOST%
 echo Directory: %FTP1_DIR%
 echo ========================================================
@@ -126,7 +126,8 @@ set "WINSCP_LOG1=%TEMP%\winscp_log_s1_%RANDOM%.xml"
 
 (
     echo open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/ -timeout=60 -passive=on
-    echo synchronize remote -criteria=none -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%" "%FTP1_DIR%"
+    echo option confirm off
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%\*" "%FTP1_DIR%/"
     echo exit
 ) > "!WINSCP_SCRIPT1!"
 
@@ -162,7 +163,7 @@ if !FTP1_EXIT! neq 0 (
 
 echo.
 echo ========================================================
-echo Stage 3: Linux FTP Server (Blind Forced Overwrite)
+echo Stage 3: Linux FTP Server (Direct Recursive Upload)
 echo Host: %FTP2_HOST%
 echo Directory: %FTP2_DIR%
 echo ========================================================
@@ -172,7 +173,8 @@ set "WINSCP_LOG2=%TEMP%\winscp_log_s2_%RANDOM%.xml"
 
 (
     echo open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/ -timeout=60 -passive=on
-    echo synchronize remote -criteria=none -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%" "%FTP2_DIR%"
+    echo option confirm off
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%\*" "%FTP2_DIR%/"
     echo put -overwrite "%OPCACHE_SCRIPT%" "%FTP2_DIR%/opcache_reset.php"
     echo exit
 ) > "!WINSCP_SCRIPT2!"
