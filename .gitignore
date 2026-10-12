@@ -46,3 +46,4 @@ Deploy_Sync.bat
 Deploy_Sync.ps1
 Deploy_Sync.exe
 deploy_sync.log
+opcache_reset.php
