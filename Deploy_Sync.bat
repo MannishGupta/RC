@@ -1,4 +1,4 @@
-:: Version: 1.5
+:: Version: 1.6
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -113,12 +113,18 @@ echo Host: %FTP1_HOST%
 echo Directory: %FTP1_DIR%
 echo ========================================================
 
-"!WINSCP_BIN!" /command ^
-    "open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/" ^
-    "synchronize remote -filemask=\"| .git/; Deploy_Sync.*; *.log\" \"%LOCAL_DIR%\" \"%FTP1_DIR%\"" ^
-    "exit"
+set "WINSCP_SCRIPT1=%TEMP%\winscp_sync_stage1_%RANDOM%.txt"
+(
+    echo open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/
+    echo synchronize remote -filemask="^| .git/; Deploy_Sync.*; *.log" "%LOCAL_DIR%" "%FTP1_DIR%"
+    echo exit
+) > "!WINSCP_SCRIPT1!"
 
-if %ERRORLEVEL% equ 0 (
+"!WINSCP_BIN!" /script="!WINSCP_SCRIPT1!"
+set "FTP1_EXIT=!ERRORLEVEL!"
+del "!WINSCP_SCRIPT1!" >nul 2>&1
+
+if !FTP1_EXIT! equ 0 (
     echo [SUCCESS] Windows NT FTP sync completed via WinSCP.
 ) else (
     echo [ERROR] WinSCP transfer failed on Windows NT FTP.
@@ -131,12 +137,18 @@ echo Host: %FTP2_HOST%
 echo Directory: %FTP2_DIR%
 echo ========================================================
 
-"!WINSCP_BIN!" /command ^
-    "open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/" ^
-    "synchronize remote -filemask=\"| .git/; Deploy_Sync.*; *.log\" \"%LOCAL_DIR%\" \"%FTP2_DIR%\"" ^
-    "exit"
+set "WINSCP_SCRIPT2=%TEMP%\winscp_sync_stage2_%RANDOM%.txt"
+(
+    echo open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/
+    echo synchronize remote -filemask="^| .git/; Deploy_Sync.*; *.log" "%LOCAL_DIR%" "%FTP2_DIR%"
+    echo exit
+) > "!WINSCP_SCRIPT2!"
 
-if %ERRORLEVEL% equ 0 (
+"!WINSCP_BIN!" /script="!WINSCP_SCRIPT2!"
+set "FTP2_EXIT=!ERRORLEVEL!"
+del "!WINSCP_SCRIPT2!" >nul 2>&1
+
+if !FTP2_EXIT! equ 0 (
     echo [SUCCESS] Linux FTP sync completed via WinSCP.
 ) else (
     echo [ERROR] WinSCP transfer failed on Linux FTP.
