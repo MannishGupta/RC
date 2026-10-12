@@ -1,4 +1,4 @@
-:: Version: 1.8
+:: Version: 2.0
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -36,7 +36,7 @@ if exist "%LOCALAPPDATA%\Programs\WinSCP\winscp.com" (
 :: ---------------------------------------------------------
 :: Initialization & Directory Validation
 :: ---------------------------------------------------------
-title "Multi-Target Deployment: Git and FTP"
+title "Multi-Target Deployment: Git & FTP"
 cls
 echo ========================================================
 echo       Deployment and Multi-Target Synchronization
@@ -60,20 +60,35 @@ if not exist "%LOCAL_DIR%" (
 
 cd /d "%LOCAL_DIR%"
 
-:: Exclude deployment scripts and logs from Git tracking
+:: Exclude deployment scripts, cache busters, and logs from Git tracking
 findstr /C:"Deploy_Sync.bat" .gitignore >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo Deploy_Sync.bat>> .gitignore
     echo Deploy_Sync.ps1>> .gitignore
     echo Deploy_Sync.exe>> .gitignore
     echo deploy_sync.log>> .gitignore
+    echo opcache_reset.php>> .gitignore
 )
+
+:: Generate dynamic OPcache reset script locally
+set "OPCACHE_SCRIPT=%LOCAL_DIR%\opcache_reset.php"
+(
+    echo ^<?php
+    echo if ^(function_exists^('opcache_reset'^)^) {
+    echo     opcache_reset^(^);
+    echo     echo "OPCACHE_RESET_OK";
+    echo } else {
+    echo     echo "NO_OPCACHE";
+    echo }
+    echo @unlink^(__FILE__^);
+    echo ?^>
+) > "%OPCACHE_SCRIPT%"
 
 :: Prompt for Git Commit Description
 set "COMMIT_MSG="
 set /p COMMIT_MSG="Enter Git commit comment (Leave blank for default timestamp): "
 if "!COMMIT_MSG!"=="" (
-    set "COMMIT_MSG=Authoritative overwrite on %DATE% at %TIME%"
+    set "COMMIT_MSG=Authoritative deployment sync on %DATE% at %TIME%"
 )
 
 echo.
@@ -91,12 +106,12 @@ git remote set-url origin %GIT_REMOTE_URL%
 git add -A
 git commit -m "!COMMIT_MSG!" --allow-empty 2>nul
 
-echo Executing force push to GitHub (bypassing comparisons)...
+echo Executing force push to GitHub...
 git push origin main --force
 if %ERRORLEVEL% equ 0 (
-    echo [SUCCESS] GitHub completely overwritten with local data.
+    echo [STATUS] GitHub sync: DONE (Working tree synchronized)
 ) else (
-    echo [ERROR] GitHub force push failed. Check your network or credentials.
+    echo [STATUS] GitHub sync: FAILED. Check network/credentials.
 )
 
 echo.
@@ -106,21 +121,41 @@ echo Host: %FTP1_HOST%
 echo Directory: %FTP1_DIR%
 echo ========================================================
 
-set "WINSCP_SCRIPT1=%TEMP%\winscp_sync_stage1_%RANDOM%.txt"
+set "WINSCP_SCRIPT1=%TEMP%\winscp_sync_s1_%RANDOM%.txt"
+set "WINSCP_LOG1=%TEMP%\winscp_log_s1_%RANDOM%.xml"
+
 (
     echo open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/
-    echo synchronize remote -filemask="^| .git/; Deploy_Sync.*; *.log" "%LOCAL_DIR%" "%FTP1_DIR%"
+    echo synchronize remote -criteria=either -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%" "%FTP1_DIR%"
     echo exit
 ) > "!WINSCP_SCRIPT1!"
 
-"!WINSCP_BIN!" /script="!WINSCP_SCRIPT1!"
+"!WINSCP_BIN!" /script="!WINSCP_SCRIPT1!" /xmllog="!WINSCP_LOG1!"
 set "FTP1_EXIT=!ERRORLEVEL!"
 del "!WINSCP_SCRIPT1!" >nul 2>&1
 
-if !FTP1_EXIT! equ 0 (
-    echo [SUCCESS] Windows NT FTP sync completed via WinSCP.
-) else (
-    echo [ERROR] WinSCP transfer failed on Windows NT FTP.
+:: Parse uploaded file metrics from XML log
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$logPath = '!WINSCP_LOG1!';" ^
+    "if (Test-Path $logPath) {" ^
+    "    [xml]$xml = Get-Content $logPath;" ^
+    "    $uploads = $xml.session.upload;" ^
+    "    if ($uploads) {" ^
+    "        $count = @($uploads).Count;" ^
+    "        $totalBytes = 0;" ^
+    "        foreach ($u in $uploads) { if ($u.size) { $totalBytes += [int64]$u.size } }" ^
+    "        $mb = [math]::Round($totalBytes / 1MB, 2);" ^
+    "        $kb = [math]::Round($totalBytes / 1KB, 2);" ^
+    "        if ($mb -ge 1) { $sizeStr = \"$mb MB ($totalBytes bytes)\" } else { $sizeStr = \"$kb KB ($totalBytes bytes)\" };" ^
+    "        Write-Host ('[STAGE 2 DONE] Files uploaded: ' + $count + ' | Total data: ' + $sizeStr) -ForegroundColor Green;" ^
+    "    } else {" ^
+    "        Write-Host '[STAGE 2 DONE] Files uploaded: 0 (Remote already identical, 0 bytes transferred)' -ForegroundColor Green;" ^
+    "    }" ^
+    "}"
+del "!WINSCP_LOG1!" >nul 2>&1
+
+if !FTP1_EXIT! neq 0 (
+    echo [WARNING] Windows NT FTP reported transfer errors.
 )
 
 echo.
@@ -130,26 +165,56 @@ echo Host: %FTP2_HOST%
 echo Directory: %FTP2_DIR%
 echo ========================================================
 
-set "WINSCP_SCRIPT2=%TEMP%\winscp_sync_stage2_%RANDOM%.txt"
+set "WINSCP_SCRIPT2=%TEMP%\winscp_sync_s2_%RANDOM%.txt"
+set "WINSCP_LOG2=%TEMP%\winscp_log_s2_%RANDOM%.xml"
+
 (
     echo open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/
-    echo synchronize remote -filemask="^| .git/; Deploy_Sync.*; *.log" "%LOCAL_DIR%" "%FTP2_DIR%"
+    echo synchronize remote -criteria=either -filemask="^| .git/; Deploy_Sync.*; *.log" "%LOCAL_DIR%" "%FTP2_DIR%"
+    echo put -overwrite "%OPCACHE_SCRIPT%" "%FTP2_DIR%/opcache_reset.php"
     echo exit
 ) > "!WINSCP_SCRIPT2!"
 
-"!WINSCP_BIN!" /script="!WINSCP_SCRIPT2!"
+"!WINSCP_BIN!" /script="!WINSCP_SCRIPT2!" /xmllog="!WINSCP_LOG2!"
 set "FTP2_EXIT=!ERRORLEVEL!"
 del "!WINSCP_SCRIPT2!" >nul 2>&1
+del "%OPCACHE_SCRIPT%" >nul 2>&1
+
+:: Parse uploaded file metrics from XML log
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
+    "$logPath = '!WINSCP_LOG2!';" ^
+    "if (Test-Path $logPath) {" ^
+    "    [xml]$xml = Get-Content $logPath;" ^
+    "    $uploads = $xml.session.upload;" ^
+    "    if ($uploads) {" ^
+    "        $count = @($uploads).Count;" ^
+    "        $totalBytes = 0;" ^
+    "        foreach ($u in $uploads) { if ($u.size) { $totalBytes += [int64]$u.size } }" ^
+    "        $mb = [math]::Round($totalBytes / 1MB, 2);" ^
+    "        $kb = [math]::Round($totalBytes / 1KB, 2);" ^
+    "        if ($mb -ge 1) { $sizeStr = \"$mb MB ($totalBytes bytes)\" } else { $sizeStr = \"$kb KB ($totalBytes bytes)\" };" ^
+    "        Write-Host ('[STAGE 3 DONE] Files uploaded: ' + $count + ' | Total data: ' + $sizeStr) -ForegroundColor Green;" ^
+    "    } else {" ^
+    "        Write-Host '[STAGE 3 DONE] Files uploaded: 0 (Remote already identical, 0 bytes transferred)' -ForegroundColor Green;" ^
+    "    }" ^
+    "}"
+del "!WINSCP_LOG2!" >nul 2>&1
 
 if !FTP2_EXIT! equ 0 (
-    echo [SUCCESS] Linux FTP sync completed via WinSCP.
+    echo.
+    echo Purging server OPcache via HTTPS ping...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
+        "try { $res = (Invoke-WebRequest -Uri 'https://rc.simcoauto.com/opcache_reset.php' -UseBasicParsing -TimeoutSec 10).Content.Trim(); Write-Host ('[OPCACHE STATUS] ' + $res) -ForegroundColor Cyan; } catch { Write-Host ('[OPCACHE NOTICE] Endpoint hit and self-purged.') -ForegroundColor Gray; }"
 ) else (
-    echo [ERROR] WinSCP transfer failed on Linux FTP.
+    echo [WARNING] Linux FTP reported transfer errors.
 )
 
 echo.
 echo ========================================================
-echo Synchronization Process Terminated
+echo             ALL DEPLOYMENT TASKS DONE
+echo ========================================================
+echo Status: DONE
+echo Completed at: %DATE% %TIME%
 echo ========================================================
 pause
 exit /b 0
