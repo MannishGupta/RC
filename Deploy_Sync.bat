@@ -1,4 +1,4 @@
-:: Version: 2.5
+:: Version: 2.6
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -127,7 +127,9 @@ set "WINSCP_LOG1=%TEMP%\winscp_log_s1_%RANDOM%.xml"
 (
     echo open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/ -timeout=60 -passive=on
     echo option confirm off
-    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%\*" "%FTP1_DIR%/"
+    echo cd "%FTP1_DIR%"
+    echo lcd "%LOCAL_DIR%"
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" *
     echo exit
 ) > "!WINSCP_SCRIPT1!"
 
@@ -174,8 +176,10 @@ set "WINSCP_LOG2=%TEMP%\winscp_log_s2_%RANDOM%.xml"
 (
     echo open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/ -timeout=60 -passive=on
     echo option confirm off
-    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%\*" "%FTP2_DIR%/"
-    echo put -overwrite "%OPCACHE_SCRIPT%" "%FTP2_DIR%/opcache_reset.php"
+    echo cd "%FTP2_DIR%"
+    echo lcd "%LOCAL_DIR%"
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" *
+    echo put "%OPCACHE_SCRIPT%" "opcache_reset.php"
     echo exit
 ) > "!WINSCP_SCRIPT2!"
 
