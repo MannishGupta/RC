@@ -42,3 +42,7 @@ Thumbs.db
 
 # FTP deploy state
 **/.ftp-deploy-sync-state.json
+Deploy_Sync.bat
+Deploy_Sync.ps1
+Deploy_Sync.exe
+deploy_sync.log
