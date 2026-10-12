@@ -1,4 +1,4 @@
-:: Version: 2.2
+:: Version: 2.3
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -129,7 +129,7 @@ set "WINSCP_LOG1=%TEMP%\winscp_log_s1_%RANDOM%.xml"
     echo option confirm off
     echo cd "%FTP1_DIR%"
     echo lcd "%LOCAL_DIR%"
-    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" *.*
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" *
     echo exit
 ) > "!WINSCP_SCRIPT1!"
 
@@ -141,11 +141,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$logPath = '!WINSCP_LOG1!';" ^
     "if (Test-Path $logPath) {" ^
     "    [xml]$xml = Get-Content $logPath;" ^
-    "    $uploads = $xml.session.upload;" ^
-    "    if ($uploads) {" ^
-    "        $count = @($uploads).Count;" ^
+    "    $uploads = $xml.SelectNodes('//upload');" ^
+    "    if ($uploads -and $uploads.Count -gt 0) {" ^
+    "        $count = $uploads.Count;" ^
     "        $totalBytes = 0;" ^
-    "        foreach ($u in $uploads) { if ($u.size) { $totalBytes += [int64]$u.size } }" ^
+    "        foreach ($u in $uploads) {" ^
+    "            $szNode = $u.SelectSingleNode('size');" ^
+    "            if ($szNode) { $totalBytes += [int64]$szNode.InnerText }" ^
+    "        }" ^
     "        $mb = [math]::Round($totalBytes / 1MB, 2);" ^
     "        $kb = [math]::Round($totalBytes / 1KB, 2);" ^
     "        if ($mb -ge 1) { $sizeStr = \"$mb MB ($totalBytes bytes)\" } else { $sizeStr = \"$kb KB ($totalBytes bytes)\" };" ^
@@ -175,7 +178,7 @@ set "WINSCP_LOG2=%TEMP%\winscp_log_s2_%RANDOM%.xml"
     echo option confirm off
     echo cd "%FTP2_DIR%"
     echo lcd "%LOCAL_DIR%"
-    echo put -filemask="^| .git/; Deploy_Sync.*; *.log" *.*
+    echo put -filemask="^| .git/; Deploy_Sync.*; *.log" *
     echo put "%OPCACHE_SCRIPT%" "opcache_reset.php"
     echo exit
 ) > "!WINSCP_SCRIPT2!"
@@ -189,11 +192,14 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$logPath = '!WINSCP_LOG2!';" ^
     "if (Test-Path $logPath) {" ^
     "    [xml]$xml = Get-Content $logPath;" ^
-    "    $uploads = $xml.session.upload;" ^
-    "    if ($uploads) {" ^
-    "        $count = @($uploads).Count;" ^
+    "    $uploads = $xml.SelectNodes('//upload');" ^
+    "    if ($uploads -and $uploads.Count -gt 0) {" ^
+    "        $count = $uploads.Count;" ^
     "        $totalBytes = 0;" ^
-    "        foreach ($u in $uploads) { if ($u.size) { $totalBytes += [int64]$u.size } }" ^
+    "        foreach ($u in $uploads) {" ^
+    "            $szNode = $u.SelectSingleNode('size');" ^
+    "            if ($szNode) { $totalBytes += [int64]$szNode.InnerText }" ^
+    "        }" ^
     "        $mb = [math]::Round($totalBytes / 1MB, 2);" ^
     "        $kb = [math]::Round($totalBytes / 1KB, 2);" ^
     "        if ($mb -ge 1) { $sizeStr = \"$mb MB ($totalBytes bytes)\" } else { $sizeStr = \"$kb KB ($totalBytes bytes)\" };" ^
