@@ -1,4 +1,4 @@
-:: Version: 2.0
+:: Version: 2.1
 @echo off
 setlocal EnableDelayedExpansion
 
@@ -36,7 +36,7 @@ if exist "%LOCALAPPDATA%\Programs\WinSCP\winscp.com" (
 :: ---------------------------------------------------------
 :: Initialization & Directory Validation
 :: ---------------------------------------------------------
-title "Multi-Target Deployment: Git & FTP"
+title "Multi-Target Deployment: Git & FTP (Direct Upload)"
 cls
 echo ========================================================
 echo       Deployment and Multi-Target Synchronization
@@ -116,7 +116,7 @@ if %ERRORLEVEL% equ 0 (
 
 echo.
 echo ========================================================
-echo Stage 2: Windows NT FTP Server Sync (Arthsathi / Digisofts)
+echo Stage 2: Windows NT FTP Server (Direct Overwrite Upload)
 echo Host: %FTP1_HOST%
 echo Directory: %FTP1_DIR%
 echo ========================================================
@@ -126,7 +126,9 @@ set "WINSCP_LOG1=%TEMP%\winscp_log_s1_%RANDOM%.xml"
 
 (
     echo open ftp://%FTP1_USER%:%FTP1_PASS%@%FTP1_HOST%/
-    echo synchronize remote -criteria=either -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" "%LOCAL_DIR%" "%FTP1_DIR%"
+    echo cd "%FTP1_DIR%"
+    echo lcd "%LOCAL_DIR%"
+    echo put -overwrite -filemask="^| .git/; Deploy_Sync.*; *.log; opcache_reset.php" *.*
     echo exit
 ) > "!WINSCP_SCRIPT1!"
 
@@ -134,7 +136,6 @@ set "WINSCP_LOG1=%TEMP%\winscp_log_s1_%RANDOM%.xml"
 set "FTP1_EXIT=!ERRORLEVEL!"
 del "!WINSCP_SCRIPT1!" >nul 2>&1
 
-:: Parse uploaded file metrics from XML log
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$logPath = '!WINSCP_LOG1!';" ^
     "if (Test-Path $logPath) {" ^
@@ -149,7 +150,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "        if ($mb -ge 1) { $sizeStr = \"$mb MB ($totalBytes bytes)\" } else { $sizeStr = \"$kb KB ($totalBytes bytes)\" };" ^
     "        Write-Host ('[STAGE 2 DONE] Files uploaded: ' + $count + ' | Total data: ' + $sizeStr) -ForegroundColor Green;" ^
     "    } else {" ^
-    "        Write-Host '[STAGE 2 DONE] Files uploaded: 0 (Remote already identical, 0 bytes transferred)' -ForegroundColor Green;" ^
+    "        Write-Host '[STAGE 2 DONE] Files uploaded: 0' -ForegroundColor Yellow;" ^
     "    }" ^
     "}"
 del "!WINSCP_LOG1!" >nul 2>&1
@@ -160,7 +161,7 @@ if !FTP1_EXIT! neq 0 (
 
 echo.
 echo ========================================================
-echo Stage 3: Linux FTP Server Sync (simcoauto.com)
+echo Stage 3: Linux FTP Server (Direct Overwrite Upload)
 echo Host: %FTP2_HOST%
 echo Directory: %FTP2_DIR%
 echo ========================================================
@@ -170,8 +171,10 @@ set "WINSCP_LOG2=%TEMP%\winscp_log_s2_%RANDOM%.xml"
 
 (
     echo open ftp://%FTP2_USER%:%FTP2_PASS%@%FTP2_HOST%/
-    echo synchronize remote -criteria=either -filemask="^| .git/; Deploy_Sync.*; *.log" "%LOCAL_DIR%" "%FTP2_DIR%"
-    echo put -overwrite "%OPCACHE_SCRIPT%" "%FTP2_DIR%/opcache_reset.php"
+    echo cd "%FTP2_DIR%"
+    echo lcd "%LOCAL_DIR%"
+    echo put -overwrite -filemask="^| .git/; Deploy_Sync.*; *.log" *.*
+    echo put -overwrite "%OPCACHE_SCRIPT%" "opcache_reset.php"
     echo exit
 ) > "!WINSCP_SCRIPT2!"
 
@@ -180,7 +183,6 @@ set "FTP2_EXIT=!ERRORLEVEL!"
 del "!WINSCP_SCRIPT2!" >nul 2>&1
 del "%OPCACHE_SCRIPT%" >nul 2>&1
 
-:: Parse uploaded file metrics from XML log
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "$logPath = '!WINSCP_LOG2!';" ^
     "if (Test-Path $logPath) {" ^
@@ -195,7 +197,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ^
     "        if ($mb -ge 1) { $sizeStr = \"$mb MB ($totalBytes bytes)\" } else { $sizeStr = \"$kb KB ($totalBytes bytes)\" };" ^
     "        Write-Host ('[STAGE 3 DONE] Files uploaded: ' + $count + ' | Total data: ' + $sizeStr) -ForegroundColor Green;" ^
     "    } else {" ^
-    "        Write-Host '[STAGE 3 DONE] Files uploaded: 0 (Remote already identical, 0 bytes transferred)' -ForegroundColor Green;" ^
+    "        Write-Host '[STAGE 3 DONE] Files uploaded: 0' -ForegroundColor Yellow;" ^
     "    }" ^
     "}"
 del "!WINSCP_LOG2!" >nul 2>&1
