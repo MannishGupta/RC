@@ -112,9 +112,13 @@ if ($videoRaw !== '' && !preg_match('#^https?://#i', $videoRaw)) {
 [$videoUrl, $videoExists] = statusResolveVideo($videoRaw);
 $videoTitle = $siteConfig['video_title'] ?? 'Site Aerial Overview';
 
-$projectLogo      = assetPath('assets/BnR.png');
-$companyLogo      = assetPath('assets/ag-image.png');
-// Prefer RC Organisation Setup logo (company.logo) when available
+$currentMonthYear = date('F Y');
+$company          = (string)cfg('brand.company', 'Fusion Limited');
+$projectName      = (string)cfg('brand.project', 'Brook & Rivulet');
+
+// Header logos: RC Organisation Setup (left) + first project logo / brand mark (right)
+$companyLogo = '';
+$projectLogo = '';
 if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
     try {
         $__co = AppDB::read('company') ?: [];
@@ -122,12 +126,15 @@ if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
             $__co = $__co[0];
         }
         if (is_array($__co)) {
-            $__logo = trim((string)($__co['logo'] ?? $__co['favicon'] ?? ''));
+            $__logo = trim((string)($__co['logo'] ?? ''));
+            if ($__logo === '') {
+                $__logo = trim((string)($__co['favicon'] ?? ''));
+            }
             if ($__logo !== '') {
-                if (str_starts_with($__logo, 'http://') || str_starts_with($__logo, 'https://') || str_starts_with($__logo, '/')) {
+                if (preg_match('#^(https?:)?//#i', $__logo) || str_starts_with($__logo, '/')) {
                     $companyLogo = $__logo;
                 } else {
-                    $companyLogo = '/media_serve.php?f=' . rawurlencode($__logo);
+                    $companyLogo = '/media_serve.php?f=' . rawurlencode(ltrim($__logo, '/'));
                 }
             }
             $__cn = trim((string)($__co['name'] ?? ''));
@@ -136,14 +143,38 @@ if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
             }
         }
     } catch (Throwable $e) {
-        // keep status defaults
+        // keep defaults
     }
 }
-
-$favicon          = assetPath('assets/favicon.ico');
-$currentMonthYear = date('F Y');
-$company          = (string)cfg('brand.company', 'Fusion Limited');
-$projectName      = (string)cfg('brand.project', 'Brook & Rivulet');
+if ($companyLogo === '') {
+    foreach (['assets/ag-image.png', 'assets/ag-image.svg', 'assets/logo.svg', 'assets/logo.png'] as $__try) {
+        if (function_exists('statusMediaFileExists') && statusMediaFileExists($__try)) {
+            $companyLogo = statusMediaUrl($__try);
+            break;
+        }
+        if (is_file(__DIR__ . '/' . $__try)) {
+            $companyLogo = '/status/' . $__try;
+            break;
+        }
+    }
+}
+// Right header: first project that has a logo, else BnR assets
+foreach ($projects as $__p) {
+    $__pl = trim((string)($__p['logo'] ?? ''));
+    if ($__pl !== '') {
+        $projectLogo = $__pl; // relative uploads/… — statusLogoImg resolves
+        break;
+    }
+}
+if ($projectLogo === '') {
+    foreach (['assets/BnR.png', 'assets/BnR.svg', 'assets/project-logo.png'] as $__try) {
+        if (is_file(__DIR__ . '/' . $__try)) {
+            $projectLogo = $__try;
+            break;
+        }
+    }
+}
+$favicon = assetPath('assets/favicon.ico');
 $locality         = (string)cfg('brand.locality', '');
 // Detected from the request, so canonical/og: follow whichever host serves this.
 $siteUrl          = appBaseUrl();
@@ -222,10 +253,89 @@ window.statusSetTheme = function (mode) {
     <link rel="stylesheet" href="<?php echo $faHref; ?>" integrity="<?php echo $faInt; ?>" crossorigin="anonymous">
 
     <link rel="stylesheet" href="/status/assets/app.css?v=<?php echo @filemtime(__DIR__ . '/assets/app.css') ?: time(); ?>">
+
+<style id="st-lb-css">
+#stLightbox{display:none;position:fixed;inset:0;z-index:10000;background:rgba(15,15,15,.92);
+  align-items:center;justify-content:center;flex-direction:column;padding:24px;cursor:zoom-out}
+#stLightbox.is-open{display:flex}
+#stLightbox .st-lb-img{max-width:min(96vw,1200px);max-height:82vh;object-fit:contain;border-radius:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.45);cursor:default}
+#stLightbox .st-lb-cap{color:#eee;margin-top:12px;font:600 13px/1.3 system-ui,sans-serif;text-align:center}
+#stLightbox .st-lb-close{position:absolute;top:12px;right:16px;border:0;background:transparent;color:#fff;
+  font-size:32px;line-height:1;cursor:pointer;opacity:.85}
+.thumb-wrapper{cursor:zoom-in;position:relative}
+.thumb-wrapper:focus{outline:2px solid var(--rc-accent,#0078D4);outline-offset:2px}
+.thumb-wrapper img{pointer-events:none}
+</style>
 </head>
 <?php $__embed = isset($_GET['embed']); ?>
 <?php $__stEmbed = !empty($_GET['embed']); ?>
-<body data-embed="<?= !empty($__stEmbed) ? '1' : '0' ?>" class="<?= !empty($__stEmbed) ? 'st-embed' : '' ?>">
+<body data-embed="<?= !empty($__stEmbed) ? '1' : '0' ?>
+
+<script>
+/* Full-size photo viewer — available immediately (not blocked by other script errors) */
+(function () {
+  function ensureLb() {
+    var o = document.getElementById('stLightbox');
+    if (o) return o;
+    o = document.createElement('div');
+    o.id = 'stLightbox';
+    o.setAttribute('role', 'dialog');
+    o.setAttribute('aria-modal', 'true');
+    o.innerHTML = '<button type="button" class="st-lb-close" aria-label="Close">&times;</button>'
+      + '<img class="st-lb-img" alt="">'
+      + '<div class="st-lb-cap"></div>';
+    (document.body || document.documentElement).appendChild(o);
+    o.addEventListener('click', function (e) {
+      if (e.target === o || (e.target && e.target.classList && e.target.classList.contains('st-lb-close'))) {
+        o.classList.remove('is-open');
+        try { document.body.style.overflow = ''; } catch (x) {}
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        o.classList.remove('is-open');
+        try { document.body.style.overflow = ''; } catch (x) {}
+      }
+    });
+    return o;
+  }
+  window.openLightbox = function (src, filename) {
+    if (!src) return false;
+    filename = (filename || 'Site photo').replace(/\.+$/, '');
+    var o = ensureLb();
+    var img = o.querySelector('.st-lb-img');
+    var cap = o.querySelector('.st-lb-cap');
+    img.src = src;
+    img.alt = filename;
+    cap.textContent = filename.replace(/_/g, ' · ');
+    o.classList.add('is-open');
+    try { document.body.style.overflow = 'hidden'; } catch (x) {}
+    return false;
+  };
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var wrap = t.closest('.thumb-wrapper, [data-full-src]');
+    if (!wrap) return;
+    var src = wrap.getAttribute('data-full-src') || wrap.getAttribute('data-src');
+    if (!src) {
+      var im = wrap.querySelector('img');
+      if (im) src = im.currentSrc || im.src;
+    }
+    if (!src) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var cap = wrap.getAttribute('data-caption') || '';
+    if (!cap) {
+      var im2 = wrap.querySelector('img');
+      if (im2 && im2.alt) cap = im2.alt;
+    }
+    window.openLightbox(src, cap || 'Site photo');
+  }, true);
+})();
+</script>
+" class="<?= !empty($__stEmbed) ? 'st-embed' : '' ?>">
 <a class="skip-link" href="#main">Skip to main content</a>
 
 <header class="fixed-top site-nav d-flex flex-nowrap align-items-center justify-content-between px-3 px-md-4">
@@ -234,7 +344,7 @@ window.statusSetTheme = function (mode) {
     </div>
     <h1 class="site-nav-title flex-grow-1 text-center px-2"><?php echo htmlspecialchars((string)cfg('brand.dashboard', 'Official Construction Progress Dashboard'), ENT_QUOTES, 'UTF-8'); ?></h1>
     <div style="width: 120px; flex-shrink: 0; text-align: right;">
-        <?php echo statusLogoImg((string)$projectLogo, 'Project Logo'); ?>
+        <?php if (!empty($projectLogo)) echo statusLogoImg((string)$projectLogo, (string)$projectName); ?>
     </div>
 </header>
 
@@ -382,7 +492,7 @@ window.statusSetTheme = function (mode) {
                                                         <div class="row g-2 print-img-grid">
                                                             <?php foreach ($u['images'] as $img): ?>
                                                                 <div class="col-6 print-img-item">
-                                                                    <div class="thumb-wrapper" role="button" tabindex="0" aria-label="View full-size image" onclick="openLightbox('<?php echo sanitizeImagePath($img); ?>','<?php echo htmlspecialchars(addslashes($lb_name),ENT_QUOTES,'UTF-8'); ?>')" onkeydown="if(event.key==='Enter'||event.key===' ')openLightbox('<?php echo sanitizeImagePath($img); ?>','<?php echo htmlspecialchars(addslashes($lb_name),ENT_QUOTES,'UTF-8'); ?>')">
+                                                                    <div class="thumb-wrapper" role="button" tabindex="0" aria-label="View full-size image" data-full-src="<?php echo sanitizeImagePath($img); ?>" data-caption="<?php echo htmlspecialchars((string)($lb_name ?? 'Site photo'), ENT_QUOTES, 'UTF-8'); ?>">
                                                                         <?php echo statusPhotoImg((string)$img, 'Site photograph — ' . (string)$displayJob); ?>
                                                                     </div>
                                                                 </div>
@@ -431,7 +541,7 @@ window.statusSetTheme = function (mode) {
                                                     <div class="row g-2 print-img-grid">
                                                         <?php foreach ($u['images'] as $img): ?>
                                                             <div class="col-6 print-img-item">
-                                                                <div class="thumb-wrapper" role="button" tabindex="0" aria-label="View full-size image" onclick="openLightbox('<?php echo sanitizeImagePath($img); ?>','<?php echo htmlspecialchars(addslashes($lb_name),ENT_QUOTES,'UTF-8'); ?>')" onkeydown="if(event.key==='Enter'||event.key===' ')openLightbox('<?php echo sanitizeImagePath($img); ?>','<?php echo htmlspecialchars(addslashes($lb_name),ENT_QUOTES,'UTF-8'); ?>')">
+                                                                <div class="thumb-wrapper" role="button" tabindex="0" aria-label="View full-size image" data-full-src="<?php echo sanitizeImagePath($img); ?>" data-caption="<?php echo htmlspecialchars((string)($lb_name ?? 'Site photo'), ENT_QUOTES, 'UTF-8'); ?>">
                                                                     <?php echo statusPhotoImg((string)$img, 'Legacy archive photograph'); ?>
                                                                 </div>
                                                             </div>
@@ -726,29 +836,47 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('lbClose')?.addEventListener('click', () => getLbModal().hide());
 
     window.openLightbox = function (src, filename) {
+        if (!src) return;
         filename = (filename || 'Site_Image').replace(/\.+$/, '');
-        try {
-            const extM = src.match(/\.([a-zA-Z0-9]{2,5})(?:[?#]|$)/);
-            const ext = extM ? extM[1].toLowerCase() : 'jpg';
-            const full = filename + '.' + ext;
-            const imgEl = document.getElementById('lightboxImage');
-            const titleEl = document.getElementById('lbTitle');
-            const fnEl = document.getElementById('lbFilename');
-            const dl = document.getElementById('lbDownload');
-            if (imgEl && titleEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-                imgEl.src = src;
-                titleEl.textContent = filename.replace(/_/g, ' · ');
-                if (fnEl) fnEl.textContent = full;
-                if (dl) { dl.href = src; dl.download = full; dl.target = '_blank'; }
-                getLbModal().show();
-            } else {
-                // Tool-less popup when Bootstrap modal is unavailable
-                window.open(src, 'stimg', 'noopener,noreferrer,width=960,height=720,menubar=no,toolbar=no,location=no,status=no');
-            }
-            if (typeof logAnalytics === 'function') logAnalytics('image_viewed', { src: src, filename: full });
-        } catch (e) {
-            window.open(src, 'stimg', 'noopener,noreferrer,width=960,height=720,menubar=no,toolbar=no,location=no,status=no');
+        var overlay = document.getElementById('stLightbox');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'stLightbox';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            overlay.innerHTML = '<button type="button" class="st-lb-close" aria-label="Close">&times;</button>'
+                + '<img class="st-lb-img" alt="">'
+                + '<div class="st-lb-cap"></div>';
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay || e.target.classList.contains('st-lb-close')) {
+                    overlay.classList.remove('is-open');
+                    document.body.style.overflow = '';
+                }
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    overlay.classList.remove('is-open');
+                    document.body.style.overflow = '';
+                }
+            });
         }
+        var img = overlay.querySelector('.st-lb-img');
+        var cap = overlay.querySelector('.st-lb-cap');
+        img.src = src;
+        img.alt = filename.replace(/_/g, ' ');
+        cap.textContent = filename.replace(/_/g, ' · ');
+        overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        // Also try Bootstrap modal if present (optional)
+        try {
+            var imgEl = document.getElementById('lightboxImage');
+            if (imgEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                imgEl.src = src;
+                var t = document.getElementById('lbTitle');
+                if (t) t.textContent = filename.replace(/_/g, ' · ');
+            }
+        } catch (e) {}
     };
 });
 </script>
