@@ -17,6 +17,7 @@ if (!defined('DATA_PATH')) {
     define('DATA_PATH', BASE_PATH . '/data');
 }
 require_once $base . '/app/bootstrap.php';
+if (is_file($base . '/app/VcardBuilder.php')) { require_once $base . '/app/VcardBuilder.php'; }
 if (session_status() === PHP_SESSION_NONE && class_exists('AppAuth')) {
     AppAuth::initSession();
 }
@@ -235,6 +236,15 @@ foreach ($team as $m) {
     padding: 1px 6px;
     line-height: 1.3;
   }
+  .vc-print-qr {
+    margin-top: 6px;
+    width: 72px; height: 72px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 3px;
+  }
+  .vc-print-qr canvas, .vc-print-qr img { width: 100% !important; height: 100% !important; display: block; }
   .vcard-right {
     flex: 1 1 auto;
     min-width: 0;
@@ -448,6 +458,22 @@ foreach ($team as $m) {
           <?php if ($loc !== ''): ?><p class="line"><span class="ic" aria-hidden="true">📍</span><span><?= $h($loc) ?></span></p><?php endif; ?>
           <?php if ($phone !== ''): ?><p class="line"><span class="ic" aria-hidden="true">📞</span><span><?= $h($phone) ?></span></p><?php endif; ?>
           <?php if ($email !== ''): ?><p class="line email"><span class="ic" aria-hidden="true">✉</span><span><?= $h($email) ?></span></p><?php endif; ?>
+          <?php
+            $__slug = trim((string)($m['slug'] ?? ''));
+            $__cardUrl = rtrim((string)$origin, '/') . '/?card=business&slug=' . rawurlencode($__slug !== '' ? $__slug : (string)($m['id'] ?? ''));
+            $__qr = $__cardUrl;
+            if (class_exists('VcardBuilder')) {
+                $__p = is_array($m) ? $m : [];
+                if ($desig !== '') $__p['title'] = $desig;
+                if ($dept !== '') $__p['department_name'] = $dept;
+                $__vt = VcardBuilder::buildForQr($__p, ['name' => $compName]);
+                // Prefer compact vCard when it stays scannable on a small print QR
+                if ($__vt !== '' && strlen($__vt) < 900) {
+                    $__qr = $__vt;
+                }
+            }
+          ?>
+          <div class="vc-print-qr" data-qr="<?= $h($__qr) ?>" title="Scan to save contact"></div>
         </div>
       </div>
     </article>
@@ -463,13 +489,38 @@ if ($printed === 0):
     <span class="brand"><?= $h($compName) ?> · <?= (int)$printed ?> visiting cards</span>
     <span>Confidential · For internal use · <?= $h($now) ?></span>
   </footer>
+  <script src="/assets/vendor/easy.qrcode.min.js"></script>
   <script>
-    // Auto-open print dialog when requested
     (function () {
-      var q = new URLSearchParams(window.location.search);
-      if (q.get('autoprint') === '1') {
-        window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 400); });
+      function paint() {
+        if (typeof QRCode === 'undefined') return;
+        document.querySelectorAll('.vc-print-qr[data-qr]').forEach(function (el) {
+          if (el.getAttribute('data-done')) return;
+          var t = el.getAttribute('data-qr') || '';
+          if (!t) return;
+          el.innerHTML = '';
+          try {
+            new QRCode(el, {
+              text: t,
+              width: 66,
+              height: 66,
+              colorDark: '#0a0a0a',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.H,
+              quietZone: 2
+            });
+            el.setAttribute('data-done', '1');
+          } catch (e) {}
+        });
       }
+      window.addEventListener('load', function () {
+        paint();
+        setTimeout(paint, 300);
+        var q = new URLSearchParams(window.location.search);
+        if (q.get('autoprint') === '1') {
+          setTimeout(function () { window.print(); }, 700);
+        }
+      });
     })();
   </script>
 </body>
