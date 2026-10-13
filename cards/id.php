@@ -274,13 +274,24 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
         </div>
     </div>
 
+<?php
+$vcardText = '';
+if (!class_exists('VcardBuilder') && is_file(BASE_PATH . '/app/VcardBuilder.php')) {
+    require_once BASE_PATH . '/app/VcardBuilder.php';
+}
+if (class_exists('VcardBuilder')) {
+    $vcardText = VcardBuilder::buildForQr(is_array($p) ? $p : [], is_array($c) ? $c : []);
+}
+$idUrl = (string)($meta['url'] ?? ($ctx['meta']['url'] ?? ''));
+$qrPayload = ($vcardText !== '' && strlen($vcardText) < 1200) ? $vcardText : $idUrl;
+?>
 <!-- EasyQRCodeJS — client-side, replaces the previous call to an external
      QR image API that sent this card's URL to a third-party server on
      every single view. -->
 <script src="/assets/vendor/easy.qrcode.min.js"></script>
 <script>
 new QRCode(document.getElementById('idQr'), {
-    text: <?= json_encode($cardUrl) ?>,
+    text: <?= json_encode($qrPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
     // 64px physical size, not the original 46px: this URL needs roughly
     // a Version-4 QR (33x33 modules), and much below this, module size
     // drops under ~1.3px — fragile for a phone camera to resolve reliably.

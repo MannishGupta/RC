@@ -54,6 +54,21 @@ if (class_exists('AppDB')) {
 }
 
 $photo = !empty($p['photo']) ? '/images/' . basename($p['photo']) : '';
+$vcardText = '';
+if (!class_exists('VcardBuilder') && is_file(BASE_PATH . '/app/VcardBuilder.php')) {
+    require_once BASE_PATH . '/app/VcardBuilder.php';
+}
+if (class_exists('VcardBuilder')) {
+    $vp = is_array($p) ? $p : [];
+    if ($role !== '-' ) $vp['title'] = $role;
+    if ($dept !== '-') $vp['department_name'] = $dept;
+    $vcardText = VcardBuilder::buildForQr($vp, is_array($c) ? $c : []);
+}
+$cardUrl = (string)($meta['url'] ?? '');
+$vcfUrl = $cardUrl . (str_contains($cardUrl, '?') ? '&' : '?') . 'download=vcf';
+// Prefer profile URL on tiny print QR if vCard is very long (scan reliability)
+$qrPayload = ($vcardText !== '' && strlen($vcardText) < 1200) ? $vcardText : $cardUrl;
+
 $logo  = !empty($c['logo'])  ? '/images/' . basename($c['logo'])  : '';
 
 // ── Personal / Company social split (matches card_business.php / id.php) ──
@@ -228,7 +243,21 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
 
     <div class="toolbar" data-html2canvas-ignore>
         <button onclick="window.print()" class="tbtn ghost"><i class="fa-solid fa-print"></i> Print Card</button>
-        <a href="<?= htmlspecialchars($meta['url']) ?>" class="tbtn primary"><i class="fa-solid fa-arrow-up-right-from-square"></i> View Digital Profile</a>
+        <a href="<?= htmlspecialchars($vcfUrl) ?>" class="tbtn ghost" download><i class="fa-solid fa-address-card"></i> Save contact</a>
+        <?php
+          $__ph = preg_replace('/\D+/', '', (string)($p['phone'] ?? $p['mobile'] ?? ''));
+          $__waText = rawurlencode(trim(
+              ($name ?? '') . "\n"
+              . (($role !== '-' ? $role . ' · ' : '') . $companyName) . "\n"
+              . (!empty($p['phone']) ? ('Tel: ' . $p['phone'] . "\n") : '')
+              . (!empty($p['email']) ? ('Email: ' . $p['email'] . "\n") : '')
+              . 'Save contact: ' . $vcfUrl . "\n"
+              . 'Digital card: ' . $cardUrl
+          ));
+        ?>
+        <a class="tbtn primary" target="_blank" rel="noopener"
+           href="https://wa.me/<?= htmlspecialchars($__ph) ?>?text=<?= $__waText ?>"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        <a href="<?= htmlspecialchars($cardUrl) ?>" class="tbtn ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i> Digital profile</a>
     </div>
 
 <!-- EasyQRCodeJS 4.6.2 — replaces qrcodejs 1.0.0, abandoned since 2016
@@ -241,11 +270,12 @@ if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($c
     // module-density QR is fragile on screen and unreliable once printed
     // on real paper at typical scan distance.
     new QRCode(document.getElementById("qrcode-mini"), {
-        text: <?= json_encode($meta['url']) ?>,
-        width: 88, height: 88,
+        text: <?= json_encode($qrPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+        width: 96, height: 96,
         colorDark : "#0a0a0a",
         colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.M
+        correctLevel : QRCode.CorrectLevel.H,
+        quietZone: 4
     });
 </script>
 <?php require __DIR__ . '/partials/lightbox.php'; ?>

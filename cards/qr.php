@@ -16,6 +16,14 @@ if (!$ctx) {
 $p = $ctx['person'];
 $c = $ctx['company'];
 $url = $ctx['meta']['url'];
+$vcardText = '';
+if (!class_exists('VcardBuilder') && is_file(BASE_PATH . '/app/VcardBuilder.php')) {
+    require_once BASE_PATH . '/app/VcardBuilder.php';
+}
+if (class_exists('VcardBuilder')) {
+    $vcardText = VcardBuilder::buildForQr(is_array($p) ? $p : [], is_array($c) ? $c : []);
+}
+
 
 $h = static function (string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -186,6 +194,9 @@ $initial = strtoupper(substr($name !== '' ? $name : 'U', 0, 1));
             </div>
 
             <div class="actions">
+            <a class="btn" style="display:inline-block;margin-bottom:.75rem;padding:.65rem 1.25rem;border-radius:999px;background:#0078D4;color:#fff;font-weight:600;text-decoration:none"
+               href="/?card=business&amp;slug=<?= htmlspecialchars((string)($p['slug'] ?? ($_GET['slug'] ?? '')), ENT_QUOTES, 'UTF-8') ?>&amp;download=vcf">Save to contacts (.vcf)</a>
+
                 <a class="btn" href="<?= $h((string)$url) ?>">View Profile</a>
             </div>
 
@@ -197,7 +208,7 @@ $initial = strtoupper(substr($name !== '' ? $name : 'U', 0, 1));
 
     <script>
     (function () {
-        var payload = <?= json_encode((string)$url, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+        var payload = <?= json_encode(($vcardText !== '' ? $vcardText : (string)$url), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
         function tryInit(attempts) {
             attempts = attempts || 0;
             var Ctor = window.QRCode || window.EasyQRCode;

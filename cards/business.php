@@ -223,147 +223,47 @@ if (class_exists('AppDB')) {
 }
 
 if (isset($_GET['download']) && $_GET['download'] === 'vcf') {
-
-    // ── RFC 6350 (vCard 3.0) compliant generation ──────────────────────────
-    // Upgraded from a flat FN/TEL/EMAIL-only card to something that actually
-    // follows spec: comma/semicolon/backslash escaping (a company name or
-    // address containing either would previously have corrupted the file for
-    // any strict parser — Apple/Google Contacts are forgiving, several
-    // desktop clients are not), 75-octet line folding, and structured N:/ADR:
-    // fields instead of only their flattened human-readable equivalents.
-    //
-    // Deliberately NOT included: BDAY. Date of birth is collected for
-    // internal HR use (see the team record's own DOB field) but is not
-    // otherwise surfaced anywhere on this public card — adding it to a
-    // file anyone who scans the QR code can download would be a real
-    // privacy regression, not a feature, so that field stays out here too.
-
-    /** RFC 6350 §3.4 value escaping: backslash, comma, semicolon, newline. */
-    $vcfEsc = function ($v): string {
-        $v = (string)$v;
-        $v = str_replace('\\', '\\\\', $v);
-        $v = str_replace(',', '\\,', $v);
-        $v = str_replace(';', '\\;', $v);
-        $v = str_replace(["\r\n", "\n", "\r"], '\\n', $v);
-        return $v;
-    };
-
-    /**
-     * RFC 6350 §3.2 line folding: any content line over 75 octets is split,
-     * continuation lines prefixed with one space. Measured in bytes
-     * (octets), not characters — correct for UTF-8 names/addresses where a
-     * single character can be multiple bytes.
-     */
-    $vcfFold = function (string $line) use (&$vcfFold): string {
-        $line = rtrim($line, "\r\n");
-        if (strlen($line) <= 75) return $line . "\r\n";
-        $out  = substr($line, 0, 75) . "\r\n";
-        $rest = substr($line, 75);
-        while (strlen($rest) > 0) {
-            $out  .= ' ' . substr($rest, 0, 74) . "\r\n";
-            $rest  = substr($rest, 74);
-        }
-        return $out;
-    };
-
-    $vcfName    = trim($name);
-    $vcfRole    = $role !== '-' ? trim($role) : '';
-    $vcfDept    = $dept !== '-' ? trim($dept) : '';
-    $vcfCompany = trim((string)($company['name'] ?? ''));
-    $vcfPhone   = trim((string)$waPhone);
-    $vcfEmail   = trim((string)$email);
-    $vcfWebsite = trim((string)$website);
-
-    // Structured name: RFC order is Family;Given;Additional;Prefix;Suffix.
-    // A single-word name has nothing to split — it becomes the given name,
-    // matching how every contacts app on a bare "Madonna"-style entry does.
-    $nameParts = preg_split('/\s+/', $vcfName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-    $vcfFamily = count($nameParts) > 1 ? array_pop($nameParts) : '';
-    $vcfGiven  = $nameParts[0] ?? $vcfName;
-    $vcfMiddle = count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '';
-
-    $lines = [];
-    $lines[] = 'BEGIN:VCARD';
-    $lines[] = 'VERSION:3.0';
-    $lines[] = 'PRODID:-//' . $vcfEsc($vcfCompany ?: 'Arthsathi') . '//Digital Business Card//EN';
-    $lines[] = 'REV:' . gmdate('Ymd\THis\Z');
-    $lines[] = 'FN:' . $vcfEsc($vcfName);
-    $lines[] = 'N:' . $vcfEsc($vcfFamily) . ';' . $vcfEsc($vcfGiven) . ';' . $vcfEsc($vcfMiddle) . ';;';
-    if ($vcfCompany || $vcfDept) $lines[] = 'ORG:' . $vcfEsc($vcfCompany) . ($vcfDept ? ';' . $vcfEsc($vcfDept) : '');
-    if ($vcfRole)    $lines[] = 'TITLE:' . $vcfEsc($vcfRole);
-    if ($vcfPhone)   $lines[] = 'TEL;TYPE=CELL,VOICE;VALUE=uri:tel:' . preg_replace('/[^0-9+]/', '', $vcfPhone);
-    if ($vcfEmail)   $lines[] = 'EMAIL;TYPE=PREF,INTERNET:' . $vcfEsc($vcfEmail);
-    if ($vcfWebsite) $lines[] = 'URL:' . $vcfEsc($vcfWebsite);
-
-    // Structured ADR (street;locality;region;postal;country) alongside the
-    // flattened $address already used for display elsewhere on this card —
-    // both come from the SAME resolution in CardContext::get(), so there is
-    // one source of truth for the address, not two independently-composed
-    // versions that could drift apart.
-    $adrStreet = (string)($person['address_street'] ?? '');
-    $adrCity   = (string)($person['address_city']   ?? '');
-    $adrState  = (string)($person['address_state']  ?? '');
-    $adrPin    = (string)($person['address_pin']     ?? '');
-    if ($adrStreet || $adrCity || $adrState || $adrPin) {
-        $lines[] = 'ADR;TYPE=WORK,POSTAL:;;' . $vcfEsc($adrStreet) . ';' . $vcfEsc($adrCity) . ';'
-                 . $vcfEsc($adrState) . ';' . $vcfEsc($adrPin) . ';India';
+    if (!class_exists('VcardBuilder') && is_file(BASE_PATH . '/app/VcardBuilder.php')) {
+        require_once BASE_PATH . '/app/VcardBuilder.php';
     }
-
-    foreach (['linkedin', 'twitter', 'instagram', 'facebook', 'youtube', 'telegram'] as $_plat) {
-        if (!empty($socials[$_plat])) $lines[] = 'X-SOCIALPROFILE;TYPE=' . $_plat . ':' . $vcfEsc($socials[$_plat]);
+    if (!class_exists('VcardBuilder')) {
+        http_response_code(500);
+        exit('vCard builder unavailable');
     }
-
-    // ── Photo: SSRF-guarded fetch, unchanged from the working version ──────
-    // Local file read when the photo lives on this server; a remote fetch is
-    // only attempted when the host EXACTLY matches this site or the known
-    // ui-avatars.com fallback — never an arbitrary URL, which is what makes
-    // this safe to do server-side at all.
-    $imgData = false;
-    if (!empty($person['photo']) && defined('IMG_PATH') && file_exists(IMG_PATH . '/' . $person['photo'])) {
-        $imgData = @file_get_contents(IMG_PATH . '/' . $person['photo']);
+    // Map public card context → generic contact fields (order handled by builder)
+    $vcfPerson = is_array($person ?? null) ? $person : [];
+    $vcfPerson['name'] = $vcfPerson['name'] ?? ($name ?? '');
+    if (!empty($waPhone)) {
+        $vcfPerson['phone'] = $waPhone;
     }
-    if (!$imgData && $absolutePhoto) {
-        $parsed = parse_url($absolutePhoto);
-        $fetchHost = $parsed['host'] ?? '';
-        if ($fetchHost === $safeHost || $fetchHost === 'ui-avatars.com') {
-            if (ini_get('allow_url_fopen')) {
-                $imgData = @file_get_contents($absolutePhoto);
-            } elseif (function_exists('curl_init')) {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $absolutePhoto);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-                $imgData = curl_exec($ch);
-                curl_close($ch);
-            }
-        }
+    if (!empty($email)) {
+        $vcfPerson['email'] = $email;
     }
-    if ($imgData && strlen($imgData) < 300000) {
-        // PHOTO's own value is folded manually at 74 chars/line (base64 has
-        // no natural word breaks for the generic folder above to split on
-        // sensibly) — this was already correct in the previous version.
-        $b64 = chunk_split(base64_encode($imgData), 74, "\r\n ");
-        $lines[] = 'PHOTO;ENCODING=b;TYPE=JPEG:' . "\r\n " . ltrim($b64);
+    if (!empty($role) && $role !== '-') {
+        $vcfPerson['title'] = $role;
     }
-
-    $lines[] = 'END:VCARD';
-
-    $vcf = '';
-    foreach ($lines as $_ln) {
-        // PHOTO is pre-folded above; folding it again would corrupt the
-        // base64 payload by inserting extra breaks mid-stream.
-        $vcf .= str_starts_with($_ln, 'PHOTO;') ? $_ln . "\r\n" : $vcfFold($_ln);
+    if (!empty($dept) && $dept !== '-') {
+        $vcfPerson['department_name'] = $dept;
     }
-
-    $filename = preg_replace('/[^a-zA-Z0-9]/', '_', strtolower($vcfName)) . '.vcf';
-
-    if (ob_get_length()) ob_clean();
-    header("Content-Type: text/vcard; charset=utf-8");
-    header('Content-Disposition: attachment; filename="' . addslashes($filename) . '"');
+    if (!empty($address)) {
+        $vcfPerson['address'] = $address;
+    }
+    $vcfCompany = is_array($company ?? null) ? $company : [];
+    if (!empty($website)) {
+        $vcfCompany['website'] = $website;
+    }
+    $vcf = VcardBuilder::build($vcfPerson, $vcfCompany, [
+        'include_photo' => true,
+        'include_bday' => false, // public card — do not expose DOB
+    ]);
+    $filename = preg_replace('/[^a-zA-Z0-9]+/', '_', strtolower((string)($name ?? 'contact'))) . '.vcf';
+    header('Content-Type: text/vcard; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('X-Content-Type-Options: nosniff');
     echo $vcf;
     exit;
 }
+
 
 $ogTitle = trim($name . ' | ' . $companyName);
 
@@ -371,7 +271,13 @@ $ogTitle = trim($name . ' | ' . $companyName);
 // This intentionally still carries the FULL card details — that is the
 // correct behaviour when a visitor forwards this person's card onward.
 // Emoji deliberately excluded: WhatsApp's own redirect corrupts them.
+$vcfShareUrl = trim((string)($cardUrl ?? $meta['url'] ?? ''));
+if ($vcfShareUrl !== '' && !str_contains($vcfShareUrl, 'download=vcf')) {
+    $vcfShareUrl .= (str_contains($vcfShareUrl, '?') ? '&' : '?') . 'download=vcf';
+}
 $waTextLines = array_filter([
+    $vcfShareUrl !== '' ? ('Save contact: ' . $vcfShareUrl) : null,
+
     '*' . $name . '*',
     $role !== '-' ? $role : null,
     $dept !== '-' ? $dept : null,
