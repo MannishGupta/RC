@@ -85,9 +85,28 @@ if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
             foreach (['projects.json', 'components.json', 'updates.json', 'site_config.json', 'visitor_logs.json'] as $__copy) {
                 $__src = $__legacy . DIRECTORY_SEPARATOR . $__copy;
                 $__dst = DATA_DIR . DIRECTORY_SEPARATOR . $__copy;
+                if (!is_file($__src)) {
+                    continue;
+                }
                 $__dstEmpty = !is_file($__dst) || in_array(trim((string)@file_get_contents($__dst)), ['', '[]', 'null'], true);
-                if (is_file($__src) && $__dstEmpty) {
+                if ($__dstEmpty) {
                     @copy($__src, $__dst);
+                }
+            }
+            // Also seed uploads from legacy when tenant uploads empty
+            $__legUp = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
+            if (is_dir($__legUp) && defined('UPLOAD_DIR')) {
+                $__it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($__legUp, FilesystemIterator::SKIP_DOTS));
+                foreach ($__it as $__file) {
+                    if (!$__file->isFile()) {
+                        continue;
+                    }
+                    $__rel = substr($__file->getPathname(), strlen($__legUp) + 1);
+                    $__dest = rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . $__rel;
+                    if (!is_file($__dest)) {
+                        @mkdir(dirname($__dest), 0775, true);
+                        @copy($__file->getPathname(), $__dest);
+                    }
                 }
             }
         }
@@ -135,76 +154,29 @@ function statusPublicUploadUrl(string $rel): string {
  * Read a status JSON file; if tenant store is empty, fall back to legacy status/data/.
  */
 function statusLoadJson(string $basename): array {
-    $basename = basename(str_replace('\\', '/', $basename));
-    if ($basename === '' || !preg_match('/^[a-z0-9_\-]+\.json$/i', $basename)) {
-        return [];
-    }
-
-    $candidates = [];
-    if (defined('DATA_DIR')) {
-        $candidates[] = DATA_DIR . DIRECTORY_SEPARATOR . $basename;
-    }
-    $candidates[] = __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . $basename;
-    $candidates[] = __DIR__ . DIRECTORY_SEPARATOR . $basename;
-    // Shared hosting sometimes left a copy next to uploads
-    $candidates[] = __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $basename;
-    if (defined('DATA_PATH')) {
-        $candidates[] = rtrim(DATA_PATH, '/\\') . DIRECTORY_SEPARATOR . 'status' . DIRECTORY_SEPARATOR . $basename;
-        $candidates[] = rtrim(DATA_PATH, '/\\') . DIRECTORY_SEPARATOR . $basename;
-    }
-
+    $primary = DATA_DIR . DIRECTORY_SEPARATOR . $basename;
     $data = [];
-    $source = '';
-    foreach ($candidates as $path) {
-        if (!is_file($path)) {
-            continue;
-        }
-        $raw = (string)@file_get_contents($path);
-        $j = json_decode($raw, true);
-        if (!is_array($j) || $j === []) {
-            continue;
-        }
-        $data = $j;
-        $source = $path;
-        break;
-    }
-
-    // Persist into tenant DATA_DIR when we loaded from elsewhere
-    $primary = defined('DATA_DIR') ? (DATA_DIR . DIRECTORY_SEPARATOR . $basename) : '';
-    if ($data !== [] && $primary !== '' && is_dir(dirname($primary)) && is_writable(dirname($primary))) {
-        $cur = is_file($primary) ? trim((string)@file_get_contents($primary)) : '';
-        if ($cur === '' || $cur === '[]' || $cur === 'null') {
-            @file_put_contents(
-                $primary,
-                json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n",
-                LOCK_EX
-            );
+    if (is_file($primary)) {
+        $j = json_decode((string)@file_get_contents($primary), true);
+        if (is_array($j)) {
+            $data = $j;
         }
     }
-
+    $empty = ($data === [] || $data === null);
+    if ($empty) {
+        $legacy = __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . $basename;
+        if (is_file($legacy) && realpath($legacy) !== realpath($primary)) {
+            $j = json_decode((string)@file_get_contents($legacy), true);
+            if (is_array($j) && $j !== []) {
+                $data = $j;
+                // Persist into tenant store so next load is local
+                if (is_dir(DATA_DIR) && is_writable(DATA_DIR)) {
+                    @file_put_contents($primary, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n", LOCK_EX);
+                }
+            }
+        }
+    }
     return is_array($data) ? $data : [];
-}
-
-/** Diagnostic paths for empty-state UI (no secrets). */
-function statusDataDiagnostics(): array {
-    $files = ['projects.json', 'components.json', 'updates.json'];
-    $out = [
-        'data_dir' => defined('DATA_DIR') ? DATA_DIR : '',
-        'upload_dir' => defined('UPLOAD_DIR') ? UPLOAD_DIR : '',
-        'tenant' => defined('TENANT_ID') ? TENANT_ID : '',
-        'files' => [],
-    ];
-    foreach ($files as $f) {
-        $p = (defined('DATA_DIR') ? DATA_DIR : '') . DIRECTORY_SEPARATOR . $f;
-        $leg = __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . $f;
-        $out['files'][$f] = [
-            'tenant_bytes' => is_file($p) ? filesize($p) : 0,
-            'legacy_bytes' => is_file($leg) ? filesize($leg) : 0,
-            'tenant_path' => $p,
-            'legacy_path' => $leg,
-        ];
-    }
-    return $out;
 }
 
 function appConfig(): array {
@@ -220,9 +192,98 @@ function appConfig(): array {
 }
 
 /**
+ * Per-tenant brand/DPDP overlays (site_config.json + RC company record).
+ * Developer footer identity stays in config.php (Arthsathi) and is not overlaid.
+ *
+ * @return array<string,mixed> flat keys like "brand.company", "dpdp.fiduciary_name"
+ */
+function statusTenantOverlay(): array {
+    static $overlay = null;
+    if ($overlay !== null) {
+        return $overlay;
+    }
+    $overlay = [];
+
+    // 1) tenants/{id}/data/status/site_config.json
+    if (defined('DATA_DIR')) {
+        $scFile = DATA_DIR . DIRECTORY_SEPARATOR . 'site_config.json';
+        if (is_file($scFile)) {
+            $sc = json_decode((string)@file_get_contents($scFile), true);
+            if (is_array($sc)) {
+                $brand = isset($sc['brand']) && is_array($sc['brand']) ? $sc['brand'] : $sc;
+                foreach (['company', 'company_url', 'project', 'dashboard', 'report_title', 'locality'] as $k) {
+                    $v = trim((string)($brand[$k] ?? ''));
+                    if ($v !== '') {
+                        $overlay['brand.' . $k] = $v;
+                    }
+                }
+                $dpdp = isset($sc['dpdp']) && is_array($sc['dpdp']) ? $sc['dpdp'] : [];
+                foreach (['fiduciary_name', 'fiduciary_email', 'fiduciary_address', 'grievance_officer', 'grievance_email', 'grievance_phone'] as $k) {
+                    $v = trim((string)($dpdp[$k] ?? $sc[$k] ?? ''));
+                    if ($v !== '') {
+                        $overlay['dpdp.' . $k] = $v;
+                    }
+                }
+            }
+        }
+    }
+
+    // 2) RC Organisation Setup (company.json) — authoritative for company name / website / contacts
+    if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
+        try {
+            $co = AppDB::read('company') ?: [];
+            if (isset($co[0]) && is_array($co[0])) {
+                $co = $co[0];
+            }
+            if (is_array($co)) {
+                $name = trim((string)($co['name'] ?? ''));
+                if ($name !== '') {
+                    $overlay['brand.company'] = $name;
+                    $overlay['dpdp.fiduciary_name'] = $overlay['dpdp.fiduciary_name'] ?? $name;
+                }
+                $web = trim((string)($co['website'] ?? $co['url'] ?? ''));
+                if ($web !== '') {
+                    $overlay['brand.company_url'] = $web;
+                }
+                $email = trim((string)($co['email'] ?? $co['privacy_email'] ?? ''));
+                if ($email !== '') {
+                    $overlay['dpdp.fiduciary_email'] = $overlay['dpdp.fiduciary_email'] ?? $email;
+                }
+                $addr = trim((string)($co['address'] ?? ''));
+                if ($addr !== '') {
+                    $overlay['dpdp.fiduciary_address'] = $overlay['dpdp.fiduciary_address'] ?? $addr;
+                }
+            }
+        } catch (Throwable $e) {
+            // ignore
+        }
+    }
+
+    return $overlay;
+}
+
+/**
  * Read a dot-path out of the config: cfg('brand.company', 'Fallback').
+ * Tenant overlays win over shipped config.php defaults (except footer.developer*).
  */
 function cfg(string $path, mixed $default = null): mixed {
+    // Developer credit is product identity — never tenant-overridable
+    if ($path === 'footer.developer' || $path === 'footer.developer_url') {
+        $node = appConfig();
+        foreach (explode('.', $path) as $key) {
+            if (!is_array($node) || !array_key_exists($key, $node)) {
+                return $default;
+            }
+            $node = $node[$key];
+        }
+        return $node;
+    }
+
+    $overlay = statusTenantOverlay();
+    if (array_key_exists($path, $overlay)) {
+        return $overlay[$path];
+    }
+
     $node = appConfig();
     foreach (explode('.', $path) as $key) {
         if (!is_array($node) || !array_key_exists($key, $node)) {
@@ -684,7 +745,6 @@ function statusMediaUrl(string $path): string {
  * Logo markup on sand-dune plate. Never emits broken leftover attributes.
  * Dual-src fallback: primary URL + onerror swap to alternate (legacy ↔ serve).
  */
-
 /** True if a relative media path exists on disk (tenant uploads or status tree). */
 function statusMediaFileExists(string $path): bool {
     $path = trim(str_replace('\\', '/', $path));
@@ -1350,26 +1410,14 @@ const VIDEO_EXTS = ['mp4', 'webm', 'ogv', 'ogg', 'mov', 'm4v'];
  */
 function listVideoFiles(): array {
     $out = [];
-    $roots = [
-        ['prefix' => 'assets/', 'dir' => __DIR__ . DIRECTORY_SEPARATOR . 'assets'],
-        ['prefix' => 'uploads/', 'dir' => __DIR__ . DIRECTORY_SEPARATOR . 'uploads'],
-    ];
-    if (defined('UPLOAD_DIR') && UPLOAD_DIR !== '') {
-        $roots[] = ['prefix' => 'uploads/', 'dir' => rtrim(UPLOAD_DIR, '/\\')];
-    }
-    $seen = [];
-    foreach ($roots as $root) {
-        $base = $root['dir'];
+    foreach (['assets', 'uploads'] as $folder) {
+        $base = __DIR__ . DIRECTORY_SEPARATOR . $folder;
         if (!is_dir($base)) {
             continue;
         }
-        try {
-            $it = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)
-            );
-        } catch (Throwable $e) {
-            continue;
-        }
+        $it = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($base, RecursiveDirectoryIterator::SKIP_DOTS)
+        );
         foreach ($it as $f) {
             if (!$f->isFile()) {
                 continue;
@@ -1377,19 +1425,13 @@ function listVideoFiles(): array {
             if (!in_array(strtolower($f->getExtension()), VIDEO_EXTS, true)) {
                 continue;
             }
-            $full = $f->getPathname();
-            $rel = $root['prefix'] . str_replace('\\', '/', substr($full, strlen($base) + 1));
-            if (isset($seen[$rel])) {
-                continue;
-            }
-            $seen[$rel] = true;
             $out[] = [
-                'path'  => $rel,
+                'path'  => str_replace('\\', '/', substr($f->getPathname(), strlen(__DIR__) + 1)),
                 'bytes' => (int)$f->getSize(),
             ];
         }
     }
-    usort($out, static fn($a, $b) => $a['path'] <=> $b['path']);
+    usort($out, fn($a, $b) => strcmp($a['path'], $b['path']));
     return $out;
 }
 

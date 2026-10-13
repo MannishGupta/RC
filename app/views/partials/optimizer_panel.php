@@ -46,8 +46,10 @@ $optPanelCompact = $optPanelCompact ?? false;
                 <h2 class="<?= $optPanelCompact ? 'text-base' : 'text-xl' ?> font-black text-slate-800">System Optimizer</h2>
             </div>
             <p class="text-slate-500 text-sm ml-[52px] max-w-lg">
-                Enforces the data schema, normalises team slugs, phone numbers and names,
-                then clears expired sessions and trims logs.
+                Runs across <strong>every tenant</strong> (not only this domain): schema normalisation,
+                orphan media review, rubbish cleanup (.bak / copies / OS junk), sessions &amp; logs.
+                On <strong>Sunday (IST)</strong> also writes a compressed archive under
+                <code class="text-xs">data/backups/weekly/</code>.
             </p>
         </div>
 

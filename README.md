@@ -1,21 +1,10 @@
 # Resource Centre (RC)
 
-Multi-tenant corporate directory and operations portal (PHP 8.x, flat-file JSON, no required Composer).
+Multi-tenant PHP application. **Product developer:** Arthsathi Limited.
 
-## Quick links
-- **Version:** see `version.php` / `VERSION`
-- **Health:** `/health.php`
-- **Launch:** `docs/PRODUCTION_LAUNCH_CHECKLIST.md`
-- **Auth rotation:** `docs/AUTH_ROTATION.md`
-- **Tenant guide:** `docs/TENANT_QUICKSTART.md`
+- Deploy safety: [docs/DEPLOY_SAFETY.md](docs/DEPLOY_SAFETY.md)
+- Tree: [docs/TREE.md](docs/TREE.md)
+- Commercial audit: [docs/COMMERCIAL_LAUNCH_AUDIT.md](docs/COMMERCIAL_LAUNCH_AUDIT.md)
+- Vendor libs: [docs/VENDOR_LIBS.md](docs/VENDOR_LIBS.md)
 
-## Development
-- Entry: `index.php`
-- Tenancy: `app/tenant_bootstrap.php` → `tenants/{id}/data/`
-- Theme: `assets/contrast-lock.css`
-
-## CI
-Push to GitHub to run **RC Safety Check** (PHP syntax, JSON, forbidden secret paths).
-
-## License / product
-Commercial product operated per tenant; “Fusion” and similar names are tenant data only, not product branding.
+**Never upload a code package over `tenants/`.**

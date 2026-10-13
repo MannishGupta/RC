@@ -151,6 +151,11 @@ class SystemDataOptimizer
                 'safety' => 'safe', 'warning' => '',
                 'items' => [],
             ],
+            'rubbish' => [
+                'key' => 'rubbish', 'label' => 'Accidental / unused files (.bak, copies, OS junk)',
+                'safety' => 'safe', 'warning' => 'Editor backups, Thumbs.db, *-copy.* — not used by the app.',
+                'items' => [],
+            ],
         ];
 
         $referenced = self::collectReferencedFiles();
@@ -228,6 +233,16 @@ class SystemDataOptimizer
                 if (!is_file($full)) continue;
                 $add('temp', 'data/tmp/' . $f, $f, (int) @filesize($full), 'Temp file', $full);
             }
+        }
+
+        // Rubbish across current + all tenant data roots
+        foreach (self::allTenantDataRoots() as $tid => $root) {
+            self::scanRubbishUnder($root, $tid, $add);
+        }
+        // Legacy status/uploads mistakes under web tree (not tenant)
+        $legacyStatus = BASE_PATH . '/status/uploads';
+        if (is_dir($legacyStatus)) {
+            self::scanRubbishUnder($legacyStatus, 'status-legacy', $add);
         }
 
         // Drop empty groups; reindex as list
@@ -1738,6 +1753,153 @@ class SystemDataOptimizer
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
+
+    /**
+     * @return array<string,string> tenantId => absolute data path
+     */
+    public static function allTenantDataRoots(): array
+    {
+        $roots = [];
+        $tenantsDir = BASE_PATH . '/tenants';
+        if (is_dir($tenantsDir)) {
+            if (!class_exists('TenantPaths') && is_file(BASE_PATH . '/app/TenantPaths.php')) {
+                require_once BASE_PATH . '/app/TenantPaths.php';
+            }
+            $ids = class_exists('TenantPaths') ? TenantPaths::listIds() : [];
+            if ($ids === []) {
+                foreach (scandir($tenantsDir) ?: [] as $d) {
+                    if ($d === '.' || $d === '..' || str_starts_with((string) $d, '.') || $d === 'map.json') {
+                        continue;
+                    }
+                    if (preg_match('/\.(md|txt|json|htaccess)$/i', (string) $d)) {
+                        continue;
+                    }
+                    if (!is_dir($tenantsDir . '/' . $d . '/data')) {
+                        continue;
+                    }
+                    $ids[] = $d;
+                }
+            }
+            foreach ($ids as $id) {
+                $p = $tenantsDir . '/' . $id . '/data';
+                if (is_dir($p)) {
+                    $roots[(string) $id] = $p;
+                }
+            }
+        }
+        $legacy = BASE_PATH . '/data';
+        if (is_dir($legacy) && !isset($roots['default'])) {
+            $roots['_legacy'] = $legacy;
+        }
+        return $roots;
+    }
+
+    /**
+     * Flag editor backups / OS junk under a data root (for cleanup UI).
+     *
+     * @param callable $add function(string $gkey, string $rel, string $name, int $bytes, string $note, string $fullPath)
+     */
+    private static function scanRubbishUnder(string $root, string $tid, callable $add): void
+    {
+        if (!is_dir($root)) {
+            return;
+        }
+        $rootNorm = rtrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $root), DIRECTORY_SEPARATOR);
+        try {
+            $iter = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($rootNorm, FilesystemIterator::SKIP_DOTS)
+            );
+        } catch (\Throwable $e) {
+            return;
+        }
+        foreach ($iter as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+            $name = $file->getFilename();
+            $full = $file->getPathname();
+            if (!self::isRubbishFileName($name)) {
+                continue;
+            }
+            // Never flag live JSON entities or auth
+            if (preg_match('/\.(json|php)$/i', $name) && !preg_match('/(\.bak|~|\.orig)$/i', $name)) {
+                continue;
+            }
+            $rel = 'tenants/' . $tid . '/' . ltrim(str_replace('\\', '/', substr($full, strlen($rootNorm))), '/');
+            if ($tid === 'status-legacy') {
+                $rel = 'status/uploads/' . ltrim(str_replace('\\', '/', substr($full, strlen($rootNorm))), '/');
+            }
+            $add('rubbish', $rel, $name, (int) $file->getSize(), 'Unused backup/junk — safe to remove', $full);
+        }
+    }
+
+    private static function isRubbishFileName(string $name): bool
+    {
+        if ($name === 'Thumbs.db' || $name === '.DS_Store' || strcasecmp($name, 'desktop.ini') === 0) {
+            return true;
+        }
+        if (str_ends_with($name, '~') || str_ends_with($name, '.bak') || str_ends_with($name, '.orig') || str_ends_with($name, '.tmp')) {
+            return true;
+        }
+        if (preg_match('/(-copy|_copy|_old|\.bak-|~)$/i', $name)) {
+            return true;
+        }
+        if (preg_match('/\.(bak|old|orig|tmp)(\.|$)/i', $name)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Auto-delete safe rubbish under current dataRoot (and optional status legacy uploads junk).
+     */
+    private static function phaseRubbishSweep(): void
+    {
+        $root = self::dataRoot();
+        $n = 0;
+        $freed = 0;
+        $targets = [$root];
+        $legacyUp = BASE_PATH . '/status/uploads';
+        if (is_dir($legacyUp)) {
+            $targets[] = $legacyUp;
+        }
+        foreach ($targets as $base) {
+            if (!is_dir($base)) {
+                continue;
+            }
+            try {
+                $iter = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS)
+                );
+            } catch (\Throwable $e) {
+                continue;
+            }
+            foreach ($iter as $file) {
+                if (!$file->isFile()) {
+                    continue;
+                }
+                $name = $file->getFilename();
+                if (!self::isRubbishFileName($name)) {
+                    continue;
+                }
+                if (preg_match('/\.(json|php)$/i', $name) && !preg_match('/(\.bak|~|\.orig)$/i', $name)) {
+                    continue;
+                }
+                $full = $file->getPathname();
+                $sz = (int) $file->getSize();
+                if (@unlink($full)) {
+                    $n++;
+                    $freed += $sz;
+                }
+            }
+        }
+        if ($n > 0) {
+            self::log('Rubbish sweep: removed ' . $n . ' unused file(s), freed ~' . round($freed / 1024) . ' KB');
+        } else {
+            self::log('Rubbish sweep: nothing to remove');
+        }
+    }
+
     /**
      * Super Admin: optimize every tenants/{id}/data root (+ legacy data/).
      *
@@ -1827,6 +1989,8 @@ class SystemDataOptimizer
             try {
                 $bak = TenantBackup::backupAllTenants();
                 $allLogs[] = !empty($bak['ok']) ? ('Backup: ' . ($bak['message'] ?? 'ok')) : ('Backup: ' . ($bak['message'] ?? 'failed'));
+                $week = TenantBackup::weeklySundayBackup(false);
+                $allLogs[] = 'Weekly Sunday backup: ' . ($week['message'] ?? '');
             } catch (\Throwable $be) {
                 $allLogs[] = 'Backup skipped: ' . $be->getMessage();
             }
@@ -1871,6 +2035,7 @@ class SystemDataOptimizer
             self::phaseTrimSessions();
             self::phaseTrimLogs();
             self::phaseOrphanMedia();
+            self::phaseRubbishSweep();
             if (!$lightweight) {
                 self::phaseConvertImagesWebp();
             } else {

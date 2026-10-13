@@ -106,12 +106,17 @@ if ($videoRaw !== '' && !preg_match('#^https?://#i', $videoRaw)) {
         $videoRaw = $resolved;
     }
 }
-[$videoUrl, $videoExists] = statusResolveVideo($videoRaw);
+if (function_exists('statusResolveVideo')) {
+    [$videoUrl, $videoExists] = statusResolveVideo($videoRaw);
+} else {
+    $videoUrl = $videoRaw;
+    $videoExists = $videoRaw !== '';
+}
 $videoTitle = $siteConfig['video_title'] ?? 'Site Aerial Overview';
 
 $currentMonthYear = date('F Y');
-$company          = (string)cfg('brand.company', 'Fusion Limited');
-$projectName      = (string)cfg('brand.project', 'Brook & Rivulet');
+$company          = (string)cfg('brand.company', 'Organization');
+$projectName      = (string)cfg('brand.project', 'Project');
 
 $companyLogo = '';
 $projectLogo = '';
@@ -192,7 +197,7 @@ $bsCssHref = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.mi
 $bsCssInt  = 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB';
 $bsJsHref  = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js';
 $bsJsInt   = 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI';
-$faHref    = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css';
+$faHref    = '/assets/vendor/fontawesome.min.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : (defined('STATUS_VERSION') ? (string)STATUS_VERSION : '1'));
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo htmlspecialchars(AppLocale::lang(), ENT_QUOTES, 'UTF-8'); ?>"<?php
@@ -269,12 +274,12 @@ window.statusSetTheme = function (mode) {
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preload" as="image" href="<?php echo $ogImage; ?>">
     <link rel="stylesheet" href="<?php echo $bsCssHref; ?>" integrity="<?php echo $bsCssInt; ?>" crossorigin="anonymous">
-    <link rel="stylesheet" href="<?php echo $faHref; ?>" crossorigin="anonymous">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($faHref, ENT_QUOTES, 'UTF-8'); ?>">
 
     <link rel="stylesheet" href="/status/assets/app.css?v=<?php echo @filemtime(__DIR__ . '/assets/app.css') ?: time(); ?>">
 
@@ -290,6 +295,12 @@ window.statusSetTheme = function (mode) {
 .thumb-wrapper{cursor:zoom-in;position:relative}
 .thumb-wrapper:focus{outline:2px solid var(--rc-accent,#0078D4);outline-offset:2px}
 .thumb-wrapper img{pointer-events:none}
+</style>
+<style id="rc-unified-fonts">
+:root,html{--font-display:Inter,"Segoe UI",system-ui,sans-serif;--font-body:Inter,"Segoe UI","Noto Sans Devanagari",system-ui,sans-serif}
+body{font-family:var(--font-body)}
+h1,h2,h3,.site-nav-title{font-family:var(--font-display)}
+:lang(hi),.rc-hi{font-family:"Noto Sans Devanagari",Inter,system-ui,sans-serif;line-height:1.65}
 </style>
 </head>
 <?php

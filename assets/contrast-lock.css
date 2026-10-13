@@ -27,7 +27,7 @@
  *     “readability” — extend this file instead.
  *   - Force white text globally; use .rc-surface-inverse / .rc-hero-dark.
  *
- * Version: Design System 2026.1 · Fluent 2 / WinUI 3 · 20261009.9
+ * Version: Design System 2026.2 · Fluent 2 / WinUI 3 · 20261011.31 · EN+HI readable
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -219,10 +219,17 @@ select, textarea {
 /* Fluent type stack (keep Devanagari for Hindi numerology) */
 :root {
   --rc-font: "Segoe UI Variable Text", "Segoe UI", "Aptos", "Inter",
-             "Noto Sans Devanagari", system-ui, -apple-system, Roboto, sans-serif;
+             "Noto Sans Devanagari", "Noto Sans", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --rc-font-hi: "Noto Sans Devanagari", "Segoe UI", "Inter", system-ui, sans-serif;
+  --rc-font-size: 15px;
+  --rc-line: 1.5;
+  --rc-letter: 0.01em;
 }
 html, body, button, input, select, textarea, .rc-main, main {
   font-family: var(--rc-font) !important;
+  font-size: var(--rc-font-size, 15px);
+  line-height: var(--rc-line, 1.5);
+  letter-spacing: var(--rc-letter, 0.01em);
 }
 
 /* ═══ Base ═══ */
@@ -1372,4 +1379,11 @@ article.rc-vcard button.border-0 {
   height: auto !important;
   padding: 0 !important;
   line-height: 1.25 !important;
+}
+
+
+/* Hindi / Devanagari preference — apply on lang or content blocks */
+:lang(hi), .rc-hi, [lang="hi"] {
+  font-family: var(--rc-font-hi, var(--rc-font)) !important;
+  line-height: 1.65;
 }

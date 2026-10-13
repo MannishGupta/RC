@@ -11,8 +11,8 @@ $bsCssHref = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.mi
 $bsCssInt  = 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB';
 $bsJsHref  = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js';
 $bsJsInt   = 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI';
-$faHref    = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css';
-$faInt     = 'sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==';
+$faHref    = '/assets/vendor/fontawesome.min.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : (defined('STATUS_VERSION') ? (string)STATUS_VERSION : '1'));
+$faInt     = ''; // self-hosted FA 7.3.1 — no CDN SRI
 $xlsxSrc   = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
 $quillCss  = 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css';
 $quillJs   = 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js';
@@ -77,6 +77,10 @@ if (!isset($_SESSION['logged_in'])):
 <style>
 .project-logo-plate,.st-logo-plate{display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:40px;padding:6px 10px;border-radius:10px;background:radial-gradient(ellipse at 30% 20%,rgba(255,248,230,.55),transparent 55%),linear-gradient(165deg,#c9a66b 0%,#e8d4a8 38%,#d4b07a 72%,#b8956a 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 1px 2px rgba(0,0,0,.12)}
 .project-logo-plate img,.st-logo-plate img{max-width:80px;max-height:44px;object-fit:contain;display:block}
+</style>
+<style id="rc-unified-fonts">
+:root,html{--font-display:Inter,"Segoe UI",system-ui,sans-serif;--font-body:Inter,"Segoe UI","Noto Sans Devanagari",system-ui,sans-serif}
+body{font-family:var(--font-body)}
 </style>
 </head>
 <body class="st-admin-login">
@@ -147,9 +151,9 @@ endif;
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo $bsCssHref; ?>" integrity="<?php echo $bsCssInt; ?>" crossorigin="anonymous">
-    <link rel="stylesheet" href="<?php echo $faHref; ?>" integrity="<?php echo $faInt; ?>" crossorigin="anonymous">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($faHref, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo $quillCss; ?>" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/app.css?v=<?php echo @filemtime(__DIR__ . '/assets/app.css') ?: time(); ?>">
     <script src="<?php echo $xlsxSrc; ?>" crossorigin="anonymous" defer></script>

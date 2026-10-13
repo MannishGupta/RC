@@ -98,7 +98,7 @@ final class ModuleRegistry
                 'features' => [],
             ],
             'insights' => [
-                'label' => 'Insights (Numero / Janam / Blood)',
+                'label' => 'Personal insights',
                 'group' => 'Insights',
                 'features' => [
                     'numero' => 'Numerology reports',
@@ -112,32 +112,32 @@ final class ModuleRegistry
                 'features' => [],
             ],
             'org' => [
-                'label' => 'Organizational Chart',
+                'label' => 'Organisation Chart',
                 'group' => 'Administration',
                 'features' => [],
             ],
             'company' => [
-                'label' => 'Organizational Configuration',
+                'label' => 'Organisation Setup',
                 'group' => 'Administration',
                 'features' => [],
             ],
             'designations' => [
-                'label' => 'Role Taxonomy',
+                'label' => 'Designations',
                 'group' => 'Administration',
                 'features' => [],
             ],
             'departments' => [
-                'label' => 'Organizational Units',
+                'label' => 'Departments',
                 'group' => 'Administration',
                 'features' => [],
             ],
             'settings' => [
-                'label' => 'Enterprise Integrations',
+                'label' => 'Integrations',
                 'group' => 'Administration',
                 'features' => [],
             ],
             'cctv' => [
-                'label' => 'Surveillance Access',
+                'label' => 'Access log',
                 'group' => 'Administration',
                 'features' => [],
             ],
@@ -147,29 +147,29 @@ final class ModuleRegistry
                 'features' => [],
             ],
             'status' => [
-                'label' => 'Const. Status',
+                'label' => 'Construction Status',
                 'group' => 'Projects',
                 'features' => [
                     'status_feed' => 'Tower-wise progress and photographs',
                 ],
             ],
             'health' => [
-                'label' => 'Platform Health',
+                'label' => 'System health',
                 'group' => 'Administration',
                 'features' => [],
             ],
             'audit' => [
-                'label' => 'Audit Ledger',
+                'label' => 'Audit log',
                 'group' => 'Administration',
                 'features' => [],
             ],
             'terms' => [
-                'label' => 'Governance & AUP',
+                'label' => 'Governance & privacy',
                 'group' => 'System',
                 'features' => [],
             ],
             'access' => [
-                'label' => 'Access Mode',
+                'label' => 'Access mode',
                 'group' => 'System',
                 'features' => [],
             ],
@@ -187,17 +187,17 @@ final class ModuleRegistry
                 ],
             ],
             'monitor' => [
-                'label' => 'Monitor / Optimisation',
+                'label' => 'Monitor & Optimise',
                 'group' => 'Control Plane',
                 'features' => [],
             ],
             'opt' => [
-                'label' => 'Platform Optimization Suite',
+                'label' => 'Optimisation',
                 'group' => 'Control Plane',
                 'features' => [],
             ],
             'subscription_ad' => [
-                'label' => 'Subscription advert strip',
+                'label' => 'Subscription banner',
                 'group' => 'Platform',
                 'features' => [
                     'subscription_ad_banner' => 'Top marquee + Pay subscription CTA (disable to remove)',

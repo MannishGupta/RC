@@ -20,12 +20,12 @@ return [
        Used in page titles, meta tags, schema.org, the WhatsApp share text,
        the admin console header and the PDF report footer.                  */
     'brand' => [
-        'company'      => 'Fusion Limited',
-        'company_url'  => 'https://fusionlimited.in/',
-        'project'      => 'Brook & Rivulet',
+        'company'      => 'Organization',  // overridden per tenant via site_config / RC company
+        'company_url'  => '',
+        'project'      => 'Project',
         'dashboard'    => 'Official Construction Progress Dashboard',
         'report_title' => 'Official Progress Report',
-        'locality'     => 'Greater Noida West',
+        'locality'     => '',
     ],
 
     /* ── Site ─────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ return [
             // 'rc.arthsathi.com',
             // 'fusionlimited.in',
         ],
-        'cookie_prefix' => 'fusion',   // session cookie names; change per deployment
+        'cookie_prefix' => 'rc',   // generic; tenant data lives under tenants/{id}/data/status/
     ],
 
     /* ── Locale — "AppLocale" ─────────────────────────────────────────────
@@ -111,9 +111,9 @@ return [
        Set canonical_base to null to treat whatever host serves the request as
        canonical (useful on a staging copy you do not want pinned).            */
     'seo' => [
-        'canonical_base'   => 'https://rc.arthsathi.com/status/',
+        'canonical_base'   => null,  // per-host; set in tenant site_config if needed
         'indexable'        => true,     // false on a staging deployment
-        'twitter_site'     => '',       // e.g. '@fusionlimited'
+        'twitter_site'     => '',
         'allow_ai_crawlers'=> true,     // GPTBot, ClaudeBot, PerplexityBot, …
         'og_image'         => 'assets/og.jpg',
     ],
@@ -145,7 +145,7 @@ return [
        ("Powered by Arthsathi · Privacy · Terms") so the two read as one
        product. show_version appends the synchronised build number.            */
     'footer' => [
-        'developer'      => 'Arthsathi',
+        'developer'      => 'Arthsathi Limited',  // HARDCODED product developer — not tenant
         'developer_url'  => 'https://arthsathi.com/',
         'show_version'   => true,
         'support_email'  => '',
@@ -168,11 +168,11 @@ return [
     'dpdp' => [
         'require_consent'  => true,
         'retention_days'   => 180,
-        'fiduciary_name'   => 'Fusion Limited',
-        'fiduciary_email'  => 'privacy@fusionlimited.in',
-        'fiduciary_address'=> 'Fusion Limited, Greater Noida West, Uttar Pradesh, India',
+        'fiduciary_name'   => '',  // filled from RC company / site_config
+        'fiduciary_email'  => '',
+        'fiduciary_address'=> '',
         'grievance_officer'=> 'Grievance Officer',
-        'grievance_email'  => 'grievance@fusionlimited.in',
+        'grievance_email'  => '',
         'grievance_phone'  => '+91 00000 00000',
         'notice_updated'   => '11 Oct 2026',
     ],
@@ -188,12 +188,12 @@ return [
        All overridable by environment variable. reminder.php is CLI-only unless
        you set a REMINDER_TOKEN and call it with ?token=…                      */
     'reminder' => [
-        'smtp_host'  => getenv('SMTP_HOST')     ?: 'smtp.fusionlimited.in',
-        'smtp_user'  => getenv('SMTP_USER')     ?: 'system@fusionlimited.in',
+        'smtp_host'  => getenv('SMTP_HOST')     ?: '',
+        'smtp_user'  => getenv('SMTP_USER')     ?: '',
         'smtp_pass'  => getenv('SMTP_PASSWORD') ?: '',
         'smtp_port'  => (int)(getenv('SMTP_PORT') ?: 587),
-        'to_email'   => getenv('ADMIN_EMAIL')   ?: 'admin@fusionlimited.in',
-        'to_name'    => getenv('ADMIN_NAME')    ?: 'Ami Panda',
+        'to_email'   => getenv('ADMIN_EMAIL')   ?: '',
+        'to_name'    => getenv('ADMIN_NAME')    ?: '',
         'every_days' => 13,
         'web_token'  => getenv('REMINDER_TOKEN') ?: '',
     ],
