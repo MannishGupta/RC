@@ -1,26 +1,11 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0 (2026-10-11)
-   Single release version across all files. See CHANGELOG.md for changes.
-   ───────────────────────────────────────────────────────────────────── */
-// lib.php — Shared Core Library
-// Centralized utilities: storage, security, image processing
+
+ 
+ 
 declare(strict_types=1);
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-/**
- * Storage layout
- * ──────────────
- * Multi-tenant RC (DATA_PATH / TENANT_ID already defined by app/tenant_bootstrap.php):
- *   DATA_DIR   = {DATA_PATH}/status/           e.g. tenants/fusionlimited/data/status/
- *   UPLOAD_DIR = {DATA_PATH}/status/uploads/
- * Standalone (no RC tenant context):
- *   DATA_DIR   = status/data/
- *   UPLOAD_DIR = status/uploads/
- * Explicit overrides (optional):
- *   define('STATUS_DATA_DIR', ...) / define('STATUS_UPLOAD_DIR', ...) before require lib.php
- *   or config integration.tenant_data = false to force legacy status/data
- */
+ 
+
 if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
     $__stUseTenant = true;
     if (is_file(__DIR__ . '/config.php')) {
@@ -31,7 +16,7 @@ if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
             $__stUseTenant = false;
         }
     }
-    // Pull RC tenant bootstrap when status is hit standalone under an RC install
+     
     if ($__stUseTenant && !defined('DATA_PATH')) {
         $__tb = dirname(__DIR__) . '/app/tenant_bootstrap.php';
         if (is_file($__tb)) {
@@ -62,7 +47,7 @@ if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
     if (!defined('UPLOAD_DIR')) {
         define('UPLOAD_DIR', $__stUp);
     }
-    // Ensure writable dirs exist (tenant first-run)
+     
     foreach ([DATA_DIR, UPLOAD_DIR] as $__stMk) {
         if (!is_dir($__stMk)) {
             @mkdir($__stMk, 0775, true);
@@ -74,7 +59,7 @@ if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
             @file_put_contents($__stSeedPath, "[]\n");
         }
     }
-    // One-time copy from legacy status/data when tenant store is still empty
+     
     $__legacy = __DIR__ . DIRECTORY_SEPARATOR . 'data';
     if ($__stUseTenant && defined('DATA_PATH') && is_dir($__legacy)
         && realpath($__legacy) !== realpath(DATA_DIR)) {
@@ -93,7 +78,7 @@ if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
                     @copy($__src, $__dst);
                 }
             }
-            // Also seed uploads from legacy when tenant uploads empty
+             
             $__legUp = __DIR__ . DIRECTORY_SEPARATOR . 'uploads';
             if (is_dir($__legUp) && defined('UPLOAD_DIR')) {
                 $__it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($__legUp, FilesystemIterator::SKIP_DOTS));
@@ -112,27 +97,27 @@ if (!defined('DATA_DIR') || !defined('UPLOAD_DIR')) {
         }
     }
 }
-define('MAX_FILE_SIZE', 2097152);  // 2 MB
+define('MAX_FILE_SIZE', 2097152);   
 
 define('PROJ_FILE',      DATA_DIR . DIRECTORY_SEPARATOR . 'projects.json');
 define('COMP_FILE',      DATA_DIR . DIRECTORY_SEPARATOR . 'components.json');
 define('UPD_FILE',       DATA_DIR . DIRECTORY_SEPARATOR . 'updates.json');
 define('ANALYTICS_FILE', DATA_DIR . DIRECTORY_SEPARATOR . 'visitor_logs.json');
-define('ANALYTICS_CAP',  10000); // Maximum analytics log entries (FIFO rotation)
+define('ANALYTICS_CAP',  10000);  
 
-/** True when construction JSON lives under a tenant DATA_PATH/status tree. */
+ 
 function statusUsesTenantData(): bool {
     return defined('DATA_PATH') && defined('DATA_DIR')
         && str_contains(str_replace('\\', '/', DATA_DIR), '/status');
 }
 
-/** Public URL path for a stored relative upload (uploads/…). */
+ 
 function statusPublicUploadUrl(string $rel): string {
     $rel = ltrim(str_replace('\\', '/', $rel), '/');
     if (!str_starts_with($rel, 'uploads/')) {
         return $rel;
     }
-    // Tenant uploads are outside the web status/ folder — serve via serve.php
+     
     if (statusUsesTenantData()
         || (defined('UPLOAD_DIR') && !str_starts_with(
             str_replace('\\', '/', realpath(UPLOAD_DIR) ?: UPLOAD_DIR),
@@ -143,16 +128,8 @@ function statusPublicUploadUrl(string $rel): string {
     return $rel;
 }
 
-// ─── Configuration ────────────────────────────────────────────────────────────
+ 
 
-/**
- * Load config.php once. Falls back to an empty set so a missing config file
- * degrades to the built-in defaults rather than a fatal error.
- */
-
-/**
- * Read a status JSON file; if tenant store is empty, fall back to legacy status/data/.
- */
 function statusLoadJson(string $basename): array {
     $primary = DATA_DIR . DIRECTORY_SEPARATOR . $basename;
     $data = [];
@@ -169,7 +146,7 @@ function statusLoadJson(string $basename): array {
             $j = json_decode((string)@file_get_contents($legacy), true);
             if (is_array($j) && $j !== []) {
                 $data = $j;
-                // Persist into tenant store so next load is local
+                 
                 if (is_dir(DATA_DIR) && is_writable(DATA_DIR)) {
                     @file_put_contents($primary, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n", LOCK_EX);
                 }
@@ -191,12 +168,6 @@ function appConfig(): array {
     return $cfg;
 }
 
-/**
- * Per-tenant brand/DPDP overlays (site_config.json + RC company record).
- * Developer footer identity stays in config.php (Arthsathi) and is not overlaid.
- *
- * @return array<string,mixed> flat keys like "brand.company", "dpdp.fiduciary_name"
- */
 function statusTenantOverlay(): array {
     static $overlay = null;
     if ($overlay !== null) {
@@ -204,7 +175,7 @@ function statusTenantOverlay(): array {
     }
     $overlay = [];
 
-    // 1) tenants/{id}/data/status/site_config.json
+     
     if (defined('DATA_DIR')) {
         $scFile = DATA_DIR . DIRECTORY_SEPARATOR . 'site_config.json';
         if (is_file($scFile)) {
@@ -228,7 +199,7 @@ function statusTenantOverlay(): array {
         }
     }
 
-    // 2) RC Organisation Setup (company.json) — authoritative for company name / website / contacts
+     
     if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
         try {
             $co = AppDB::read('company') ?: [];
@@ -255,19 +226,15 @@ function statusTenantOverlay(): array {
                 }
             }
         } catch (Throwable $e) {
-            // ignore
+             
         }
     }
 
     return $overlay;
 }
 
-/**
- * Read a dot-path out of the config: cfg('brand.company', 'Fallback').
- * Tenant overlays win over shipped config.php defaults (except footer.developer*).
- */
 function cfg(string $path, mixed $default = null): mixed {
-    // Developer credit is product identity — never tenant-overridable
+     
     if ($path === 'footer.developer' || $path === 'footer.developer_url') {
         $node = appConfig();
         foreach (explode('.', $path) as $key) {
@@ -294,20 +261,13 @@ function cfg(string $path, mixed $default = null): mixed {
     return $node;
 }
 
-/**
- * Is this request HTTPS?
- *
- * IIS sets $_SERVER['HTTPS'] to the literal string 'off' on plain HTTP, which
- * is truthy in PHP — so the isset() check that works on Apache is ALWAYS true
- * on IIS. This is the single most common Apache-to-IIS porting bug.
- */
 function isHttps(): bool {
     $https = $_SERVER['HTTPS'] ?? '';
     if (is_string($https) && strcasecmp($https, 'on') === 0) {
         return true;
     }
     if (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') {
-        return true;   // Plesk / ARR / load balancer in front
+        return true;    
     }
     if (($_SERVER['HTTP_FRONT_END_HTTPS'] ?? '') === 'on') {
         return true;
@@ -315,18 +275,6 @@ function isHttps(): bool {
     return (int)($_SERVER['SERVER_PORT'] ?? 0) === 443;
 }
 
-/**
- * Absolute base URL of this installation, with a trailing slash.
- *
- * Detected from the request so the portal works at any host and any folder
- * depth without a code change — https://fusionlimited.in/status/ and
- * https://rc.arthsathi.com/status/ both resolve correctly from the same files.
- *
- * The Host header is attacker-controlled, so it is validated against
- * site.allowed_hosts when that list is populated, and otherwise reduced to a
- * safe character set. Without this, a poisoned Host header ends up inside
- * <link rel="canonical"> and og:url.
- */
 function appBaseUrl(): string {
     static $base = null;
     if ($base !== null) {
@@ -340,10 +288,8 @@ function appBaseUrl(): string {
 
     $https = isHttps();
 
-    /* ── Host ──────────────────────────────────────────────────────────────
-       The Host header is attacker-controlled, so it is validated against
-       site.allowed_hosts when that list is populated, and otherwise reduced to
-       a safe character set. A poisoned Host otherwise lands in canonical/og:. */
+    
+
     $host = (string)($_SERVER['HTTP_HOST'] ?? '');
     $host = preg_replace('/[^A-Za-z0-9.\-:]/', '', $host) ?? '';
 
@@ -363,8 +309,8 @@ function appBaseUrl(): string {
         $host = (string)($_SERVER['SERVER_NAME'] ?? 'localhost');
     }
 
-    // Drop the port when it is the default for the scheme. IIS commonly reports
-    // "example.com:443" on HTTPS, and ":443" in a canonical URL is wrong.
+     
+     
     if (str_contains($host, ':')) {
         [$hostName, $port] = explode(':', $host, 2);
         $port = preg_replace('/\D/', '', $port) ?? '';
@@ -373,11 +319,8 @@ function appBaseUrl(): string {
             : $hostName . ':' . $port;
     }
 
-    /* ── Folder ────────────────────────────────────────────────────────────
-       Derived from where THIS FILE lives relative to the document root, not
-       from the running script's path. dirname(SCRIPT_NAME) is wrong whenever
-       the executing script sits in a subfolder (tools/, or an include), which
-       would silently produce a base URL one level too deep.                  */
+    
+
     $path    = null;
     $docRoot = (string)($_SERVER['DOCUMENT_ROOT'] ?? '');
     $docReal = $docRoot !== '' ? realpath($docRoot) : false;
@@ -386,7 +329,7 @@ function appBaseUrl(): string {
     if ($docReal !== false && $appReal !== false) {
         $d = rtrim(str_replace('\\', '/', $docReal), '/');
         $a = rtrim(str_replace('\\', '/', $appReal), '/');
-        // Case-insensitive: Windows paths differ in case between IIS and PHP.
+         
         if ($a === $d) {
             $path = '';
         } elseif (stripos($a . '/', $d . '/') === 0) {
@@ -395,7 +338,7 @@ function appBaseUrl(): string {
     }
 
     if ($path === null) {
-        // Fallback for hosts that do not expose a usable DOCUMENT_ROOT.
+         
         $script = (string)($_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/');
         $path   = rtrim(str_replace('\\', '/', dirname($script)), '/');
         if ($path === '.' || $path === '/') {
@@ -406,28 +349,17 @@ function appBaseUrl(): string {
     return $base = ($https ? 'https' : 'http') . '://' . $host . $path . '/';
 }
 
-/**
- * Build an absolute URL for a path relative to the installation root.
- */
 function appUrl(string $relative = ''): string {
     return appBaseUrl() . ltrim($relative, '/');
 }
 
-// ─── AppLocale — en-IN presentation layer ─────────────────────────────────────
+ 
 
-/**
- * Locale-aware formatting for the portal.
- *
- * Storage formats never change; this class governs presentation only. Dates are
- * stored as 'd-M-Y' (config locale.date_store) and displayed as 'd M Y'
- * (locale.date_display), so the JSON stays stable while the UI follows the
- * en-IN convention.
- */
 final class AppLocale
 {
     private static bool $booted = false;
 
-    /** Apply timezone and encoding. Called automatically by every entry point. */
+     
     public static function boot(): void
     {
         if (self::$booted) {
@@ -447,7 +379,7 @@ final class AppLocale
         return (string)cfg('locale.lang', 'en-IN');
     }
 
-    /** Parse a date written in the stored format. Accepts Y-m-d as a fallback. */
+     
     public static function parse(string $stored): ?DateTimeImmutable
     {
         $stored = trim($stored);
@@ -463,29 +395,27 @@ final class AppLocale
         return null;
     }
 
-    /** Format a stored date for display: "08-Mar-2026" → "08 Mar 2026". */
+     
     public static function date(string $stored): string
     {
         $dt = self::parse($stored);
         return $dt ? $dt->format((string)cfg('locale.date_display', 'd M Y')) : $stored;
     }
 
-    /** Write a date back in the stored format. */
+     
     public static function store(DateTimeInterface $dt): string
     {
         return $dt->format((string)cfg('locale.date_store', 'd-M-Y'));
     }
 
-    /** "18 Sep 2026, 4:05 PM IST" */
+     
     public static function now(): string
     {
         return date((string)cfg('locale.datetime_display', 'd M Y, g:i A')) . ' IST';
     }
 
-    /**
-     * Indian digit grouping — ₹12,34,567.00, not ₹1,234,567.00.
-     * The last three digits group normally, everything above pairs off.
-     */
+    
+
     public static function money(float $amount, bool $paise = false): string
     {
         $symbol = (string)cfg('locale.currency_symbol', '₹');
@@ -505,7 +435,7 @@ final class AppLocale
         return ($neg ? '-' : '') . $symbol . $whole . $frac;
     }
 
-    /** "+91 98765 43210" from any reasonable input. */
+     
     public static function phone(string $raw): string
     {
         $cc     = (string)cfg('locale.phone_cc', '+91');
@@ -519,24 +449,15 @@ final class AppLocale
             $digits = substr($digits, 1);
         }
         if (strlen($digits) !== 10) {
-            return trim($raw);   // not an Indian mobile — leave it alone
+            return trim($raw);    
         }
 
         return $cc . ' ' . substr($digits, 0, 5) . ' ' . substr($digits, 5);
     }
 }
 
-// ─── JSON Storage ─────────────────────────────────────────────────────────────
+ 
 
-/**
- * Read a JSON file safely with a shared lock to prevent read-during-write corruption.
- *
- * $strict distinguishes "this file is legitimately empty" from "this file is damaged".
- * Read-modify-write callers MUST pass true: without it a corrupt or unreadable store
- * decodes to [] and the subsequent write silently destroys every remaining record.
- *
- * @throws RuntimeException when $strict and the file exists but cannot be parsed.
- */
 function safeReadJson(string $file, bool $strict = false): array {
     if (!file_exists($file)) {
         return [];
@@ -564,7 +485,7 @@ function safeReadJson(string $file, bool $strict = false): array {
 
     $trimmed = trim($content);
     if ($trimmed === '') {
-        return [];   // genuinely empty file — not an error
+        return [];    
     }
 
     $data = json_decode($trimmed, true);
@@ -583,21 +504,10 @@ function safeReadJson(string $file, bool $strict = false): array {
     return $data;
 }
 
-/**
- * Read a store for a read-modify-write cycle. Always strict — see safeReadJson().
- */
 function readStoreForWrite(string $file): array {
     return safeReadJson($file, true);
 }
 
-/**
- * Write JSON atomically via temp-file + rename to prevent data loss on crash.
- * Refuses to write when json_encode() fails (a single invalid UTF-8 byte returns
- * false, which would otherwise truncate the store to an empty file), and keeps
- * one generation of the previous file as <name>.bak.
- *
- * @throws RuntimeException when the payload cannot be encoded.
- */
 function atomicWriteJson(string $file, array $data): void {
     $dir = dirname($file);
     if (!is_dir($dir)) {
@@ -616,7 +526,7 @@ function atomicWriteJson(string $file, array $data): void {
         );
     }
 
-    // Keep one generation back, so a bad write is always recoverable in place.
+     
     if (is_file($file) && filesize($file) > 0) {
         @copy($file, $file . '.bak');
     }
@@ -624,7 +534,7 @@ function atomicWriteJson(string $file, array $data): void {
     $tmp = tempnam($dir, 'json_');
 
     if ($tmp === false) {
-        // Fallback: non-atomic write with exclusive lock (often needed on Windows)
+         
         file_put_contents($file, $payload, LOCK_EX);
         return;
     }
@@ -632,20 +542,17 @@ function atomicWriteJson(string $file, array $data): void {
     file_put_contents($tmp, $payload);
     chmod($tmp, 0644);
 
-    // Attempt atomic rename. Suppress warnings for Windows file lock edge cases.
+     
     if (!@rename($tmp, $file)) {
         file_put_contents($file, $payload, LOCK_EX);
     }
 
-    // Garbage collection if temp file was left stranded
+     
     if (file_exists($tmp)) {
         @unlink($tmp);
     }
 }
 
-/**
- * Read JSON with a static in-request cache to prevent redundant I/O calls.
- */
 function cachedJson(string $file): array {
     static $cache = [];
     if (!isset($cache[$file])) {
@@ -654,30 +561,18 @@ function cachedJson(string $file): array {
     return $cache[$file];
 }
 
-// ─── Security ─────────────────────────────────────────────────────────────────
+ 
 
-/**
- * Sanitize an image path for safe HTML output and path traversal prevention.
- */
 function sanitizeImagePath(string $path): string {
     return htmlspecialchars(statusMediaUrl($path), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-/**
- * Resolve stored media (uploads/…, assets/…) to a browser-usable URL.
- *
- * Order of preference (permanent, with fallback):
- *  1) Absolute / data / already-resolved URLs — unchanged
- *  2) File exists under status/uploads or status/assets (legacy web tree) → /status/…
- *  3) File exists under tenant UPLOAD_DIR → /status/serve.php?f=…
- *  4) Heuristic fallback: try legacy public URL first (most deploys still have files there)
- */
 function statusMediaUrl(string $path): string {
     $path = trim(str_replace(["\r", "\n", "\0"], '', (string)$path));
     if ($path === '') {
         return '';
     }
-    // Already a full URL, data URI, or root-absolute app path
+     
     if (preg_match('#^(https?:)?//#i', $path) || str_starts_with($path, 'data:')) {
         return $path;
     }
@@ -697,13 +592,13 @@ function statusMediaUrl(string $path): string {
 
     $statusRoot = str_replace('\\', '/', __DIR__);
 
-    // assets/* shipped with the portal
+     
     if (str_starts_with($clean, 'assets/')) {
         $abs = $statusRoot . '/' . $clean;
         if (is_file($abs)) {
             return '/status/' . $clean;
         }
-        return '/status/' . $clean; // still point at public tree
+        return '/status/' . $clean;  
     }
 
     if (str_starts_with($clean, 'uploads/')) {
@@ -723,7 +618,7 @@ function statusMediaUrl(string $path): string {
         if ($tenantOk) {
             return '/status/serve.php?f=' . rawurlencode('uploads/' . $sub);
         }
-        // Neither found — still prefer public path (older FTP layouts), browser 404 is clearer than wrong serve root
+         
         if (is_dir($statusRoot . '/uploads')) {
             return '/status/uploads/' . str_replace(' ', '%20', $sub);
         }
@@ -733,7 +628,7 @@ function statusMediaUrl(string $path): string {
         return '/status/uploads/' . str_replace(' ', '%20', $sub);
     }
 
-    // Bare filename → try uploads/
+     
     if (!str_contains($clean, '/')) {
         return statusMediaUrl('uploads/' . $clean);
     }
@@ -741,23 +636,19 @@ function statusMediaUrl(string $path): string {
     return '/status/' . $clean;
 }
 
-/**
- * Logo markup on sand-dune plate. Never emits broken leftover attributes.
- * Dual-src fallback: primary URL + onerror swap to alternate (legacy ↔ serve).
- */
-/** True if a relative media path exists on disk (tenant uploads or status tree). */
+ 
 function statusMediaFileExists(string $path): bool {
     $path = trim(str_replace('\\', '/', $path));
     if ($path === '' || str_contains($path, '..')) {
         return false;
     }
     $path = ltrim($path, '/');
-    // Absolute URL — cannot check disk
+     
     if (preg_match('#^(https?:)?//#i', $path) || str_starts_with($path, 'data:')) {
         return true;
     }
     if (str_starts_with($path, '/status/serve.php') || str_starts_with($path, 'serve.php')) {
-        // Extract f=
+         
         if (preg_match('/[?&]f=([^&]+)/', $path, $m)) {
             $path = rawurldecode($m[1]);
         } else {
@@ -783,17 +674,13 @@ function statusMediaFileExists(string $path): bool {
     if (str_starts_with($path, 'assets/')) {
         return is_file(__DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path));
     }
-    // bare name under uploads
+     
     if (defined('UPLOAD_DIR') && is_file(rtrim(UPLOAD_DIR, '/\\') . DIRECTORY_SEPARATOR . $path)) {
         return true;
     }
     return is_file(__DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path));
 }
 
-/**
- * Normalize a configured video_url to a browser URL + existence flag.
- * @return array{0:string,1:bool} [url, exists]
- */
 function statusResolveVideo(string $raw): array {
     $raw = trim($raw);
     if ($raw === '') {
@@ -804,14 +691,14 @@ function statusResolveVideo(string $raw): array {
     }
     $rel = str_replace('\\', '/', $raw);
     $rel = ltrim($rel, '/');
-    // Strip accidental tenant web paths
+     
     if (preg_match('#tenants/[^/]+/data/status/(uploads/.+)$#', $rel, $m)) {
         $rel = $m[1];
     }
     if (str_starts_with($rel, 'status/uploads/')) {
         $rel = substr($rel, strlen('status/'));
     }
-    // Bare filename → prefer tenant uploads, then assets
+     
     if (!str_contains($rel, '/')) {
         if (statusMediaFileExists('uploads/' . $rel)) {
             $rel = 'uploads/' . $rel;
@@ -837,7 +724,7 @@ function statusLogoImg(string $path, string $alt = '', string $class = ''): stri
     }
     $e = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-    // Build fallback alternate
+     
     $altUrl = '';
     $clean = ltrim(str_replace('\\', '/', $path), '/');
     if (str_starts_with($clean, 'uploads/')) {
@@ -861,9 +748,6 @@ function statusLogoImg(string $path, string $alt = '', string $class = ''): stri
         . '</span>';
 }
 
-/**
- * Plain <img> for site photos (thumbs) with the same URL + fallback logic.
- */
 function statusPhotoImg(string $path, string $alt = '', string $class = 'update-thumb'): string {
     $path = trim($path);
     if ($path === '') {
@@ -899,9 +783,6 @@ function isPathInsideUploads(string $relativePath): bool {
     return strncmp($absFile, $absUpload, strlen($absUpload)) === 0;
 }
 
-/**
- * Get the real client IP address, verifying against spoofed proxy headers.
- */
 function getRealIp(): string {
     $headers = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'REMOTE_ADDR'];
     
@@ -910,7 +791,7 @@ function getRealIp(): string {
             $ips = explode(',', $_SERVER[$header]);
             foreach ($ips as $ip) {
                 $ip = trim($ip);
-                // Validate IP and explicitly reject private/reserved ranges from proxies
+                 
                 if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
                     return $ip;
                 }
@@ -918,17 +799,13 @@ function getRealIp(): string {
         }
     }
     
-    // Fallback to strict remote address if proxy headers are spoofed/private
+     
     $fallback = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
     return filter_var($fallback, FILTER_VALIDATE_IP) ? $fallback : 'UNKNOWN';
 }
 
-// ─── Image Processing ─────────────────────────────────────────────────────────
+ 
 
-/**
- * Compress, resize, and EXIF-rotate an uploaded image using GD.
- * Returns true on success, false if GD unavailable or image unreadable.
- */
 function compressAndSaveImage(string $sourcePath, string $targetPath, string $mime): bool {
     if (!extension_loaded('gd')) return false;
 
@@ -936,7 +813,7 @@ function compressAndSaveImage(string $sourcePath, string $targetPath, string $mi
     if (!$info) return false;
     [$origWidth, $origHeight] = $info;
 
-    // Guard against zero-dimension images (corrupted/truncated files) to avoid division-by-zero
+     
     if ($origWidth <= 0 || $origHeight <= 0) return false;
 
     $source = match ($mime) {
@@ -948,7 +825,7 @@ function compressAndSaveImage(string $sourcePath, string $targetPath, string $mi
     };
     if (!$source) return false;
 
-    // EXIF auto-rotation for JPEG to fix orientation issues
+     
     if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
         $exif = @exif_read_data($sourcePath);
         if (!empty($exif['Orientation'])) {
@@ -968,7 +845,7 @@ function compressAndSaveImage(string $sourcePath, string $targetPath, string $mi
         }
     }
 
-    // Proportional resize to max 1600×1600 constraint
+     
     $maxW = 1600;
     $maxH = 1600;
     $ratio = $origWidth / $origHeight;
@@ -981,7 +858,7 @@ function compressAndSaveImage(string $sourcePath, string $targetPath, string $mi
 
     $canvas = imagecreatetruecolor($maxW, $maxH);
     
-    // Alpha channel preservation for modern formats
+     
     if ($mime === 'image/png' || $mime === 'image/webp') {
         imagealphablending($canvas, false);
         imagesavealpha($canvas, true);
@@ -992,10 +869,10 @@ function compressAndSaveImage(string $sourcePath, string $targetPath, string $mi
         imagefill($canvas, 0, 0, $white);
     }
     
-    // Resample with anti-aliasing
+     
     imagecopyresampled($canvas, $source, 0, 0, 0, 0, $maxW, $maxH, $origWidth, $origHeight);
 
-    // Always save as WebP for best compression/quality ratio
+     
     $success = imagewebp($canvas, $targetPath, 82);
 
     imagedestroy($canvas);
@@ -1004,15 +881,11 @@ function compressAndSaveImage(string $sourcePath, string $targetPath, string $mi
     return $success;
 }
 
-/**
- * Upload engine: validate, compress, and save multiple images.
- * Returns [array $savedPaths, array $errors]
- */
 function uploadEngine(array $filesArray, bool $isSingle = false): array {
     $images = [];
     $errors = [];
 
-    // Guard against entirely empty or invalid $_FILES payloads
+     
     if (empty($filesArray) || empty($filesArray['name'])) {
         return $isSingle ? ['', []] : [[], []];
     }
@@ -1032,15 +905,15 @@ function uploadEngine(array $filesArray, bool $isSingle = false): array {
         mkdir($targetDir, 0755, true);
     }
 
-    // Armor the upload directory against script execution (IIS)
+     
     $armor = UPLOAD_DIR . 'web.config';
     if (!file_exists($armor)) {
         $configData = '<?xml version="1.0" encoding="UTF-8"?><configuration><system.webServer><security><requestFiltering><fileExtensions><add fileExtension=".php" allowed="false" /><add fileExtension=".aspx" allowed="false" /><add fileExtension=".asp" allowed="false" /><add fileExtension=".jsp" allowed="false" /></fileExtensions></requestFiltering></security></system.webServer></configuration>';
         file_put_contents($armor, $configData);
     }
 
-    // Accepted input formats. All raster types are converted to WebP on save.
-    // SVG and GIF are stored as-is (GD cannot safely re-encode them).
+     
+     
     $extMap = [
         'image/jpeg'    => 'webp',
         'image/png'     => 'webp',
@@ -1069,7 +942,7 @@ function uploadEngine(array $filesArray, bool $isSingle = false): array {
             continue;
         }
 
-        // ── Decompression-bomb guard ─────────────────────────────────────
+         
         if (!in_array($mime, ['image/svg+xml', 'image/gif'], true)) {
             $imgInfo = @getimagesize($tmp);
             if ($imgInfo !== false) {
@@ -1087,19 +960,19 @@ function uploadEngine(array $filesArray, bool $isSingle = false): array {
         $relPath  = 'uploads/' . $subDir . $newName;
 
         if (compressAndSaveImage($tmp, $destPath, $mime)) {
-            // Saved as WebP by compressAndSaveImage
+             
             $images[] = $relPath;
         } elseif (in_array($mime, ['image/svg+xml', 'image/gif'], true)) {
-            // SVG and GIF: GD cannot re-encode these — safe raw move only
-            // SVG: sanitize to strip inline scripts and event-handler attributes before saving
+             
+             
             if ($mime === 'image/svg+xml') {
                 $rawSvg = file_get_contents($tmp);
                 if ($rawSvg === false) { $errors[] = "{$fileName} could not be read."; continue; }
-                // Strip <script> blocks
+                 
                 $rawSvg = preg_replace('#<script[\s\S]*?</script\s*>#i', '', $rawSvg);
-                // Strip on* event handler attributes (e.g. onclick, onload, onmouseover)
+                 
                 $rawSvg = preg_replace('/\bon\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $rawSvg);
-                // Strip javascript: hrefs/xlink:hrefs
+                 
                 $rawSvg = preg_replace('/\b(href|xlink:href)\s*=\s*"javascript:[^"]*"/i', '', $rawSvg);
                 if (file_put_contents($destPath, $rawSvg) !== false) {
                     $images[] = $relPath;
@@ -1123,39 +996,28 @@ function uploadEngine(array $filesArray, bool $isSingle = false): array {
         : [$images, $errors];
 }
 
-// ─── Rich-text sanitisation ───────────────────────────────────────────────────
+ 
 
-/**
- * Sanitise Quill-authored HTML for safe output.
- *
- * strip_tags() is NOT sufficient here: it removes disallowed *tags* but preserves
- * every *attribute* on the ones it keeps, so <span onmouseover="…"> and
- * <a href="javascript:…"> pass straight through. This parses the fragment and
- * rebuilds it, dropping every attribute that is not explicitly allowed.
- *
- * Apply at save time AND at render time — stored data predating this function
- * has not been through it.
- */
 function sanitizeRichText(?string $html): string {
     $html = trim((string)$html);
     if ($html === '') {
         return '';
     }
 
-    // Tag => attributes permitted on it. Everything else is dropped.
+     
     $allowed = [
         'b' => [], 'strong' => [], 'i' => [], 'em' => [], 'u' => [], 's' => [],
         'br' => [], 'p' => ['class'], 'ul' => [], 'ol' => [], 'li' => ['class'],
         'span' => ['class'], 'a' => ['href', 'rel', 'target'],
     ];
-    // Removed entirely, contents and all.
+     
     $purge = ['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math',
               'form', 'input', 'button', 'template', 'noscript', 'link', 'meta'];
-    // Quill's own formatting classes are the only ones kept.
+     
     $classOk = '/^ql-(align-(center|right|justify)|indent-[1-8])$/';
 
     if (!class_exists('DOMDocument')) {
-        // Fallback when ext-dom is unavailable: keep the tags, drop ALL attributes.
+         
         $out = strip_tags($html, '<b><strong><i><em><u><s><br><p><ul><ol><li><span>');
         return (string)preg_replace('#<\s*([a-zA-Z0-9]+)(?:\s[^>]*?)?(/?)\s*>#', '<$1$2>', $out);
     }
@@ -1185,7 +1047,7 @@ function sanitizeRichText(?string $html): string {
                 continue;
             }
             if (!($child instanceof DOMElement)) {
-                continue;   // text nodes are kept as-is and escaped on output
+                continue;    
             }
 
             $tag = strtolower($child->nodeName);
@@ -1196,7 +1058,7 @@ function sanitizeRichText(?string $html): string {
             }
 
             if (!isset($allowed[$tag])) {
-                // Not allowed, but not dangerous in itself: keep the text, drop the tag.
+                 
                 $walk($child);
                 while ($child->firstChild) {
                     $child->parentNode?->insertBefore($child->firstChild, $child);
@@ -1216,7 +1078,7 @@ function sanitizeRichText(?string $html): string {
                 if ($name === 'href') {
                     $href = trim($attr->nodeValue ?? '');
                     if (!preg_match('/^(https?:\/\/|mailto:|tel:|\/|#)/i', $href)) {
-                        $child->removeAttribute('href');   // javascript:, data:, vbscript:, …
+                        $child->removeAttribute('href');    
                     } else {
                         $child->setAttribute('href', $href);
                         if (stripos($href, 'http') === 0) {
@@ -1254,16 +1116,8 @@ function sanitizeRichText(?string $html): string {
     return trim($out);
 }
 
-// ─── Media filename normalisation ─────────────────────────────────────────────
+ 
 
-/**
- * Normalise one filename for safe, predictable URLs.
- *
- * The site-root web.config contains LowerCaseRule1, which 301-redirects any URL
- * containing an uppercase letter. Combined with spaces and '&' in legacy asset
- * names, that produced hard 500s for images. Everything is folded to lowercase
- * and reduced to [a-z0-9._-], so no rewrite rule ever fires on a media URL.
- */
 function mediaSlug(string $filename): string {
     $ext  = pathinfo($filename, PATHINFO_EXTENSION);
     $base = pathinfo($filename, PATHINFO_FILENAME);
@@ -1280,13 +1134,6 @@ function mediaSlug(string $filename): string {
     return $ext !== '' ? $base . '.' . strtolower($ext) : $base;
 }
 
-/**
- * Resolve an asset path that may or may not have been normalised yet.
- *
- * Lets the hardcoded paths in the PHP sources keep working both before and
- * after the Optimise run renames the files, so there is never a window where
- * a logo 404s.
- */
 function assetPath(string $rel): string {
     $exists = static function (string $p): bool {
         $p = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $p);
@@ -1307,14 +1154,14 @@ function assetPath(string $rel): string {
         return statusMediaUrl($rel);
     }
 
-    // Optimise may have renamed it …
+     
     $dir  = str_contains($rel, '/') ? substr($rel, 0, strrpos($rel, '/') + 1) : '';
     $slug = $dir . mediaSlug(basename($rel));
     if ($exists($slug)) {
         return $slug;
     }
 
-    // … and may also have re-encoded it, changing the extension.
+     
     foreach (['webp', 'avif'] as $ext) {
         foreach ([$slug, $rel] as $candidate) {
             $alt = preg_replace('/\.[^.]+$/', '.' . $ext, $candidate);
@@ -1327,12 +1174,6 @@ function assetPath(string $rel): string {
     return statusMediaUrl($rel);
 }
 
-/**
- * Rename every file under the given folders to its normalised form.
- *
- * @param  list<string> $folders  Relative to the app root, e.g. ['uploads','assets']
- * @return array{0: array<string,string>, 1: list<string>}  [relOld => relNew], skipped
- */
 function normaliseMediaNames(array $folders): array {
     $map     = [];
     $skipped = [];
@@ -1355,12 +1196,11 @@ function normaliseMediaNames(array $folders): array {
 
             $name = $f->getFilename();
             if ($name === 'web.config') {
-                continue;   // the uploads script-execution guard
+                continue;    
             }
             if ($name !== '' && $name[0] === '.') {
-                /* Dotfiles are configuration, not media. SKIP_DOTS only drops
-                   '.' and '..', so without this a .htaccess, .user.ini or
-                   .gitkeep would be renamed to something inert. */
+                
+
                 continue;
             }
 
@@ -1373,13 +1213,13 @@ function normaliseMediaNames(array $folders): array {
             $old = $dir . DIRECTORY_SEPARATOR . $name;
             $new = $dir . DIRECTORY_SEPARATOR . $slug;
 
-            // A different file already occupies the target name — leave both alone.
+             
             if (strcasecmp($old, $new) !== 0 && file_exists($new)) {
                 $skipped[] = $name . ' (target "' . $slug . '" already exists)';
                 continue;
             }
 
-            // Case-only renames are a no-op on NTFS, so go via a temp name.
+             
             $tmp = $dir . DIRECTORY_SEPARATOR . '_rn_' . bin2hex(random_bytes(4)) . '_' . $slug;
             if (!@rename($old, $tmp)) {
                 $skipped[] = $name . ' (rename failed — file locked?)';
@@ -1400,14 +1240,9 @@ function normaliseMediaNames(array $folders): array {
     return [$map, $skipped];
 }
 
-/** File extensions treated as playable media. */
+ 
 const VIDEO_EXTS = ['mp4', 'webm', 'ogv', 'ogg', 'mov', 'm4v'];
 
-/**
- * Every video file on disk, as app-relative paths, for the Featured Media picker.
- *
- * @return list<array{path:string,bytes:int}>
- */
 function listVideoFiles(): array {
     $out = [];
     foreach (['assets', 'uploads'] as $folder) {
@@ -1435,9 +1270,6 @@ function listVideoFiles(): array {
     return $out;
 }
 
-/**
- * MIME type for a video path, so <source type> matches the actual file.
- */
 function videoMimeFor(string $path): string {
     $ext = strtolower(pathinfo((string)(parse_url($path, PHP_URL_PATH) ?: $path), PATHINFO_EXTENSION));
     return [
@@ -1446,17 +1278,8 @@ function videoMimeFor(string $path): string {
     ][$ext] ?? 'video/mp4';
 }
 
-// ─── Housekeeping ─────────────────────────────────────────────────────────────
+ 
 
-/**
- * Find files that nothing in the application refers to.
- *
- * Deliberately conservative and REPORT-ONLY — the caller decides what to delete,
- * and the core runtime files can never appear in the result.
- *
- * @return array{code: list<array{path:string,bytes:int,why:string}>,
- *               media: list<array{path:string,bytes:int,why:string}>}
- */
 function housekeepingScan(): array {
     $core = [
         'index.php', 'admin.php', 'admin_backend.php', 'lib.php', 'report.php',
@@ -1464,7 +1287,7 @@ function housekeepingScan(): array {
         'web.config', 'VERSION', 'error.php', 'favicon.ico',
     ];
 
-    // Everything the running code mentions by name.
+     
     $haystack = '';
     foreach ($core as $f) {
         $p = __DIR__ . DIRECTORY_SEPARATOR . $f;
@@ -1479,7 +1302,7 @@ function housekeepingScan(): array {
         }
     }
 
-    // Media referenced from the data stores.
+     
     $referenced = [];
     foreach (cachedJson(PROJ_FILE) as $p) {
         if (!empty($p['logo'])) {
@@ -1499,7 +1322,7 @@ function housekeepingScan(): array {
     $code = [];
     $media = [];
 
-    // 1. Root-level files that are not core and are not named anywhere in the code.
+     
     foreach ((array)scandir(__DIR__) as $name) {
         if ($name === '.' || $name === '..') {
             continue;
@@ -1509,7 +1332,7 @@ function housekeepingScan(): array {
             continue;
         }
         if (str_contains($haystack, $name)) {
-            continue;   // referenced somewhere — leave it
+            continue;    
         }
         $code[] = [
             'path'  => $name,
@@ -1518,7 +1341,7 @@ function housekeepingScan(): array {
         ];
     }
 
-    // 2. Assets that neither the code nor the data stores mention.
+     
     $adir = __DIR__ . DIRECTORY_SEPARATOR . 'assets';
     if (is_dir($adir)) {
         $it = new RecursiveIteratorIterator(
@@ -1535,9 +1358,9 @@ function housekeepingScan(): array {
             if (str_contains($haystack, $f->getFilename())) {
                 continue;
             }
-            // Videos are content, not clutter. A featured video that is not
-            // currently selected would otherwise be listed as "unused" and
-            // could be deleted by mistake.
+             
+             
+             
             if (in_array(strtolower($f->getExtension()), VIDEO_EXTS, true)) {
                 continue;
             }
@@ -1555,13 +1378,6 @@ function housekeepingScan(): array {
     return ['code' => $code, 'media' => $media];
 }
 
-/**
- * Delete a caller-supplied list of paths, re-checking each against a fresh scan
- * so a stale form can never remove something that is now in use.
- *
- * @param  list<string> $paths
- * @return array{0:int, 1:int, 2:list<string>}  [deleted, bytesFreed, refused]
- */
 function housekeepingDelete(array $paths): array {
     $scan    = housekeepingScan();
     $allowed = [];
@@ -1602,20 +1418,8 @@ function housekeepingDelete(array $paths): array {
     return [$deleted, $freed, $refused];
 }
 
-// ─── Login throttle — persistent, keyed on IP ─────────────────────────────────
+ 
 
-/**
- * Brute-force throttle for the admin login.
- *
- * The previous implementation counted failures in $_SESSION. That is not a
- * throttle: the counter lives in the attacker's own session, so clearing the
- * cookie — or simply not sending one — resets it to zero. The lockout could be
- * bypassed indefinitely with unlimited password guesses.
- *
- * State now lives server-side in data/login_throttle.json, keyed on a hash of
- * the client IP, so it survives cookie clearing and is shared across sessions.
- * Entries expire and are pruned on write, so the file cannot grow unbounded.
- */
 function throttleFile(): string {
     return DATA_DIR . DIRECTORY_SEPARATOR . 'login_throttle.json';
 }
@@ -1624,9 +1428,6 @@ function throttleKey(): string {
     return substr(hash('sha256', 'login|' . getRealIp()), 0, 32);
 }
 
-/**
- * @return array{locked:bool, remaining:int, attempts:int}
- */
 function throttleStatus(): array {
     $max    = max(1, (int)cfg('admin.login_attempts', 5));
     $window = max(30, (int)cfg('admin.login_lockout', 900));
@@ -1644,7 +1445,7 @@ function throttleStatus(): array {
         return ['locked' => true, 'remaining' => $window - (time() - $lockedAt), 'attempts' => $attempts];
     }
 
-    // Window elapsed — treat as clean.
+     
     if ($lockedAt > 0) {
         return ['locked' => false, 'remaining' => 0, 'attempts' => 0];
     }
@@ -1652,7 +1453,7 @@ function throttleStatus(): array {
     return ['locked' => $attempts >= $max, 'remaining' => 0, 'attempts' => $attempts];
 }
 
-/** Record a failed attempt and lock out once the ceiling is reached. */
+ 
 function throttleRegisterFailure(): void {
     $max    = max(1, (int)cfg('admin.login_attempts', 5));
     $window = max(30, (int)cfg('admin.login_lockout', 900));
@@ -1676,7 +1477,7 @@ function throttleRegisterFailure(): void {
 
     $all[$key] = ['attempts' => $attempts, 'locked_at' => $lockedAt, 'seen' => time()];
 
-    // Prune anything older than twice the window so the file stays small.
+     
     $cutoff = time() - ($window * 2);
     foreach ($all as $k => $v) {
         if (!is_array($v) || (int)($v['seen'] ?? 0) < $cutoff) {
@@ -1691,7 +1492,7 @@ function throttleRegisterFailure(): void {
     }
 }
 
-/** Clear the throttle for this IP after a successful login. */
+ 
 function throttleClear(): void {
     $file = throttleFile();
     $all  = safeReadJson($file);
@@ -1703,16 +1504,8 @@ function throttleClear(): void {
     }
 }
 
-// ─── Optimistic locking for the JSON stores ───────────────────────────────────
+ 
 
-/**
- * A cheap fingerprint of a store's current state.
- *
- * Two admins editing at once previously meant silent data loss: both loaded the
- * same updates.json, both saved, and the second write discarded the first one's
- * record with no warning. The edit forms now carry the fingerprint they loaded,
- * and a save is rejected if the store has moved on since.
- */
 function storeFingerprint(string $file): string {
     if (!is_file($file)) {
         return 'absent';
@@ -1721,14 +1514,9 @@ function storeFingerprint(string $file): string {
     return substr(hash('sha256', (string)filemtime($file) . '|' . (string)filesize($file)), 0, 16);
 }
 
-/**
- * Throws when the store changed after the form was rendered.
- *
- * @throws RuntimeException
- */
 function assertStoreUnchanged(string $file, ?string $submitted): void {
     if ($submitted === null || $submitted === '') {
-        return;   // form predates this check — allow, so an old open tab still works
+        return;    
     }
     $now = storeFingerprint($file);
     if (!hash_equals($now, $submitted)) {
@@ -1739,62 +1527,38 @@ function assertStoreUnchanged(string $file, ?string $submitted): void {
     }
 }
 
-// ─── DPDP Act 2023 — consent and retention ────────────────────────────────────
+ 
 
-/**
- * Has the visitor granted consent for non-essential (analytics) processing?
- *
- * DPDP requires free, specific, informed, unconditional and unambiguous
- * consent, given by a clear affirmative action, before personal data is
- * processed — and the portal's analytics records online identifiers, which are
- * personal data. So nothing is tracked until this returns true.
- *
- * Consent is held in a first-party cookie rather than the session, so it
- * survives a session expiring and can be withdrawn independently.
- */
 function consentCookieName(): string {
     return cfg('site.cookie_prefix', 'fusion') . '_consent';
 }
 
 function analyticsConsentGiven(): bool {
     if (!cfg('dpdp.require_consent', true)) {
-        return true;   // explicitly disabled for internal builds
+        return true;    
     }
     return ($_COOKIE[consentCookieName()] ?? '') === 'analytics';
 }
 
-/** True when the visitor has made any choice at all (so hide the banner). */
+ 
 function consentDecided(): bool {
     $v = $_COOKIE[consentCookieName()] ?? '';
     return $v === 'analytics' || $v === 'essential';
 }
 
-/**
- * Record the visitor's choice. "analytics" grants, anything else refuses.
- * Returns the value stored.
- */
 function consentStore(string $choice): string {
     $value = $choice === 'analytics' ? 'analytics' : 'essential';
     setcookie(consentCookieName(), $value, [
         'expires'  => time() + (180 * 86400),
         'path'     => '/',
         'secure'   => isHttps(),
-        'httponly' => false,   // the page reads it to decide whether to emit events
+        'httponly' => false,    
         'samesite' => 'Lax',
     ]);
     $_COOKIE[consentCookieName()] = $value;
     return $value;
 }
 
-/**
- * Purge analytics rows older than the configured retention period.
- *
- * Storage limitation: traffic data is kept only as long as the purpose needs.
- * Called by Optimise and by a lightweight daily tick, so it happens without
- * anyone remembering to do it.
- *
- * @return int rows removed
- */
 function analyticsPurgeExpired(): int {
     $days = (int)cfg('dpdp.retention_days', 180);
     if ($days <= 0) {
@@ -1827,10 +1591,6 @@ function analyticsPurgeExpired(): int {
     return $removed;
 }
 
-/**
- * Run the retention purge at most once a day, cheaply.
- * Safe to call on every public request.
- */
 function analyticsRetentionTick(): void {
     $stamp = DATA_DIR . DIRECTORY_SEPARATOR . 'retention_last_run.txt';
     $last  = is_file($stamp) ? (int)trim((string)file_get_contents($stamp)) : 0;
@@ -1841,13 +1601,6 @@ function analyticsRetentionTick(): void {
     analyticsPurgeExpired();
 }
 
-/**
- * Erase every analytics row belonging to one visitor id.
- * This is the Right to Erasure in practice — the visitor id is the only handle
- * a data principal can quote, since IPs are stored hashed.
- *
- * @return int rows removed
- */
 function analyticsEraseVisitor(string $visitorId): int {
     $visitorId = trim($visitorId);
     if ($visitorId === '') {
@@ -1865,12 +1618,8 @@ function analyticsEraseVisitor(string $visitorId): int {
     return $removed;
 }
 
-// ─── SEO — canonical host, meta, structured data ───────────────────────────────
+ 
 
-/**
- * The address search engines should index, with a trailing slash.
- * Falls back to the detected base when seo.canonical_base is null.
- */
 function canonicalBase(): string {
     $pinned = cfg('seo.canonical_base');
     if (is_string($pinned) && $pinned !== '') {
@@ -1879,28 +1628,17 @@ function canonicalBase(): string {
     return appBaseUrl();
 }
 
-/** Absolute canonical URL for a path relative to the install root. */
+ 
 function canonicalUrl(string $relative = ''): string {
     return canonicalBase() . ltrim($relative, '/');
 }
 
-/**
- * Is the host serving this request the canonical one?
- *
- * When it is not, the page still works but must not be indexed, or the two
- * hosts compete as duplicate content and Google chooses a canonical for you.
- */
 function isCanonicalHost(): bool {
     $a = parse_url(canonicalBase(), PHP_URL_HOST);
     $b = parse_url(appBaseUrl(),    PHP_URL_HOST);
     return $a === null || $b === null || strcasecmp((string)$a, (string)$b) === 0;
 }
 
-/**
- * The robots directive for this request.
- * Non-canonical hosts and non-indexable deployments get noindex, follow —
- * "follow" so link equity still flows to the canonical copy.
- */
 function robotsDirective(): string {
     if (!cfg('seo.indexable', true) || !isCanonicalHost()) {
         return 'noindex, follow';
@@ -1908,11 +1646,6 @@ function robotsDirective(): string {
     return 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 }
 
-/**
- * Emit the full head block: robots, canonical, Open Graph, Twitter, icons.
- *
- * @param array{title:string,description:string,path:string,image?:string,type?:string} $meta
- */
 function seoHead(array $meta): string {
     $e      = static fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
     $title  = (string)($meta['title'] ?? '');
@@ -1923,8 +1656,8 @@ function seoHead(array $meta): string {
     $site   = (string)cfg('brand.company', '');
     $lang   = AppLocale::lang();
 
-    // Prefer the generated card: it carries the latest milestone date, so a
-    // share preview is never stale. Falls back to the configured artwork.
+     
+     
     $imgRel = (string)($meta['image'] ?? '');
     if ($imgRel === '') {
         $imgRel = is_file(__DIR__ . '/assets/og/og-home.png')
@@ -1939,7 +1672,7 @@ function seoHead(array $meta): string {
     $out .= '    <link rel="alternate" hreflang="' . $e($lang) . '" href="' . $e($canon) . '">' . "\n";
     $out .= '    <link rel="alternate" hreflang="x-default" href="' . $e($canon) . '">' . "\n";
 
-    // Open Graph
+     
     $out .= '    <meta property="og:type" content="' . $e($type) . '">' . "\n";
     $out .= '    <meta property="og:site_name" content="' . $e($site) . '">' . "\n";
     $out .= '    <meta property="og:title" content="' . $e($title) . '">' . "\n";
@@ -1953,7 +1686,7 @@ function seoHead(array $meta): string {
     $out .= '    <meta property="og:image:alt" content="' . $e($title) . '">' . "\n";
     $out .= '    <meta property="og:locale" content="' . $e(str_replace('-', '_', $lang)) . '">' . "\n";
 
-    // Twitter / X
+     
     $out .= '    <meta name="twitter:card" content="summary_large_image">' . "\n";
     $out .= '    <meta name="twitter:title" content="' . $e($title) . '">' . "\n";
     $out .= '    <meta name="twitter:description" content="' . $e($desc) . '">' . "\n";
@@ -1963,7 +1696,7 @@ function seoHead(array $meta): string {
         $out .= '    <meta name="twitter:site" content="' . $e($tw) . '">' . "\n";
     }
 
-    // Icons, theme, PWA
+     
     $out .= '    <link rel="icon" href="' . $e(assetPath('assets/favicon.ico')) . '" sizes="any">' . "\n";
     $out .= '    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0f6cbd">' . "\n";
     $out .= '    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#292929">' . "\n";
@@ -1974,18 +1707,11 @@ function seoHead(array $meta): string {
     return $out;
 }
 
-/** Release string, tolerant of version.php not being loaded. */
+ 
 function STATUS_RELEASE_SAFE(): string {
     return defined('STATUS_RELEASE') ? (string)constant('STATUS_RELEASE') : '';
 }
 
-/**
- * JSON-LD graph. Written for AI answer engines as much as for Google: the
- * entities are explicit and linked by @id, so a retrieval model can state who
- * published the data, when, and for which tower, and cite it.
- *
- * @param list<array<string,mixed>> $updates already sorted, newest first
- */
 function seoJsonLd(array $projects, array $components, array $updates, array $compMap, array $projMap): string {
     $base    = canonicalBase();
     $company = (string)cfg('brand.company', '');
@@ -2027,7 +1753,7 @@ function seoJsonLd(array $projects, array $components, array $updates, array $co
         ]],
     ];
 
-    // Each project as an ApartmentComplex, with its RERA registration stated.
+     
     foreach ($projects as $p) {
         $pid = (string)($p['id'] ?? '');
         if ($pid === '') { continue; }
@@ -2051,8 +1777,8 @@ function seoJsonLd(array $projects, array $components, array $updates, array $co
         $graph[] = $node;
     }
 
-    // The updates themselves, newest first and capped: an AI answer needs the
-    // latest few milestones, not the whole archive.
+     
+     
     $items = [];
     $pos   = 0;
     foreach (array_slice($updates, 0, 25) as $u) {
@@ -2105,7 +1831,7 @@ function seoJsonLd(array $projects, array $components, array $updates, array $co
     ) ?: '{}';
 }
 
-/** The shared developer footer, matching the resource centre's convention. */
+ 
 function developerFooter(): string {
     $e    = static fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
     $dev  = (string)cfg('footer.developer', '');
@@ -2129,20 +1855,13 @@ function developerFooter(): string {
     return '<p class="dev-footer">' . implode('<span class="dev-footer-sep" aria-hidden="true">·</span>', $bits) . '</p>';
 }
 
-// ─── Open Graph image generation ───────────────────────────────────────────────
+ 
 
-/**
- * Locate a bold TrueType face for OG text.
- *
- * Windows/IIS hosts almost always have Segoe UI, which is also the portal's
- * Fluent typeface, so the generated card matches the site. Returns null when no
- * TTF is available and the caller falls back to GD's bitmap font.
- */
 function ogFontPath(): ?string {
     $candidates = [
         __DIR__ . '/assets/fonts/og.ttf',
-        'C:/Windows/Fonts/seguisb.ttf',   // Segoe UI Semibold
-        'C:/Windows/Fonts/segoeuib.ttf',  // Segoe UI Bold
+        'C:/Windows/Fonts/seguisb.ttf',    
+        'C:/Windows/Fonts/segoeuib.ttf',   
         'C:/Windows/Fonts/arialbd.ttf',
         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
         '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
@@ -2155,17 +1874,6 @@ function ogFontPath(): ?string {
     return null;
 }
 
-/**
- * Render a 1200x630 Open Graph card.
- *
- * Deliberately text-forward rather than a photograph with an overlay. Social
- * previews are read at thumbnail size, and AI answer engines increasingly read
- * the image itself — so the project name, the latest milestone date and the
- * RERA number are set large, in high contrast, as the primary content. The
- * same facts are in the JSON-LD, so image and markup agree.
- *
- * @return bool true when written
- */
 function ogRenderCard(string $destAbs, string $heading, string $subheading, string $footnote): bool {
     if (!extension_loaded('gd') || !function_exists('imagecreatetruecolor')) {
         return false;
@@ -2175,7 +1883,7 @@ function ogRenderCard(string $destAbs, string $heading, string $subheading, stri
     $im = imagecreatetruecolor($W, $H);
     if (!$im) { return false; }
 
-    // Fluent surfaces: near-white card on the brand ramp, with a brand bar.
+     
     $bg    = imagecolorallocate($im, 255, 255, 255);
     $ink   = imagecolorallocate($im, 36, 36, 36);
     $ink2  = imagecolorallocate($im, 66, 66, 66);
@@ -2184,13 +1892,13 @@ function ogRenderCard(string $destAbs, string $heading, string $subheading, stri
     $rule  = imagecolorallocate($im, 224, 224, 224);
 
     imagefilledrectangle($im, 0, 0, $W, $H, $bg);
-    imagefilledrectangle($im, 0, 0, $W, 14, $brand);           // top brand bar
+    imagefilledrectangle($im, 0, 0, $W, 14, $brand);            
     imagefilledrectangle($im, 72, $H - 118, $W - 72, $H - 117, $rule);
 
     $font = ogFontPath();
 
     if ($font !== null) {
-        // Wrap the heading to the card width.
+         
         $wrap = static function (string $text, int $size, int $maxW) use ($font): array {
             $words = preg_split('/\s+/', trim($text)) ?: [];
             $lines = []; $cur = '';
@@ -2218,8 +1926,8 @@ function ogRenderCard(string $destAbs, string $heading, string $subheading, stri
         imagettftext($im, 24, 0, 72, $H - 70, $ink2, $font, $footnote);
         imagettftext($im, 18, 0, 72, $H - 32, $ink3, $font, (string)cfg('brand.company', ''));
     } else {
-        // No TTF: GD's bitmap font, rendered small then scaled so it stays
-        // legible at preview size. Lower quality, but never a blank card.
+         
+         
         $tmp = imagecreatetruecolor(400, 210);
         $tbg = imagecolorallocate($tmp, 255, 255, 255);
         $tin = imagecolorallocate($tmp, 36, 36, 36);
@@ -2240,10 +1948,6 @@ function ogRenderCard(string $destAbs, string $heading, string $subheading, stri
     return (bool)$ok;
 }
 
-/**
- * Build the social cards. Returns the number written.
- * Called by Optimise so the date on the card follows the newest update.
- */
 function ogBuildImages(): int {
     $projects   = safeReadJson(PROJ_FILE);
     $components = safeReadJson(COMP_FILE);
@@ -2279,19 +1983,13 @@ function ogBuildImages(): int {
     return $written;
 }
 
-// ─── Sorting ──────────────────────────────────────────────────────────────────
+ 
 
-/**
- * Parse a date string in the format "dd-Mon-YYYY" (e.g. "15-Jan-2024") safely.
- */
 function parseUpdateDate(string $date): int {
     $dt = DateTime::createFromFormat('d-M-Y', $date);
     return $dt ? (int)$dt->format('U') : 0;
 }
 
-/**
- * Canonical multi-key sort for updates: non-legacy first, then by project → type → job → date desc.
- */
 function sortUpdates(array &$updates, array $compMap, array $projMap): void {
     usort($updates, function (array $a, array $b) use ($compMap, $projMap): int {
         $legA = ($a['component_id'] ?? '') === 'legacy';
@@ -2314,9 +2012,6 @@ function sortUpdates(array &$updates, array $compMap, array $projMap): void {
     });
 }
 
-/**
- * Build fast-lookup maps from flat arrays to avoid O(n^2) loops during rendering.
- */
 function buildMaps(array $projects, array $components): array {
     $projMap = [];
     $compMap = [];

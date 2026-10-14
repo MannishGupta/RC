@@ -1,12 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * tools/backup.php — Full multi-tenant data backup ZIP.
- * Version: 20260928.05
- *
- * Includes ALL tenants' data trees, map.json, tenant config.json files,
- * and shared settings. Super Admin and Co. Admin (admin) only.
- */
+
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
@@ -41,9 +35,6 @@ if (!class_exists('ZipArchive')) {
     exit;
 }
 
-/**
- * @param array<string,string> $out
- */
 function rc_backup_collect(string $dir, string $prefix, array &$out): void
 {
     if (!is_dir($dir)) {
@@ -89,7 +80,7 @@ function rc_backup_collect(string $dir, string $prefix, array &$out): void
 $files = [];
 $tenantsRoot = BASE_PATH . '/tenants';
 
-// Global map + every tenant
+ 
 if (is_dir($tenantsRoot)) {
     $mapFile = $tenantsRoot . '/map.json';
     if (is_file($mapFile)) {
@@ -123,11 +114,10 @@ if (is_dir($tenantsRoot)) {
     }
 }
 
-// Active DATA_PATH (current host tenant) — may overlap tenants/{id}/data
+ 
 rc_backup_collect(DATA_PATH, 'data', $files);
 
-// Legacy root folders (images/, docs/, storage/, dispatch/data) retired — not included in backup.
-
+ 
 
 $stamp = "RC multi-tenant backup\n"
     . 'Build: ' . (defined('APP_VERSION') ? APP_VERSION : 'unknown') . "\n"

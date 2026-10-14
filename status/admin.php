@@ -1,8 +1,5 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0 (2026-10-11)
-   Single release version across all files. See CHANGELOG.md for changes.
-   ───────────────────────────────────────────────────────────────────── */
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/admin_backend.php';
@@ -12,12 +9,12 @@ $bsCssInt  = 'sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBuj
 $bsJsHref  = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js';
 $bsJsInt   = 'sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI';
 $faHref    = '/assets/vendor/fontawesome.min.css?v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : (defined('STATUS_VERSION') ? (string)STATUS_VERSION : '1'));
-$faInt     = ''; // self-hosted FA 7.3.1 — no CDN SRI
+$faInt     = '';  
 $xlsxSrc   = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
 $quillCss  = 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css';
 $quillJs   = 'https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js';
 
-// CSRF token is derived via HMAC — no session read required
+ 
 $token = makeCsrfToken();
 function signedUrl(string $base): string {
     global $token;
@@ -311,8 +308,8 @@ endif;
                         </thead>
                         <tbody>
                         <?php
-                        // The ledger is capped at 10,000 rows. Rendering them all built a
-                        // single enormous table on every page load; it is paged now.
+                         
+                         
                         $allLogs   = array_reverse($analytics);
                         $lpSize    = 100;
                         $lpTotal   = max(1, (int)ceil(count($allLogs) / $lpSize));

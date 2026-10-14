@@ -1,14 +1,5 @@
 <?php
-/**
- * CLI regression test for AppMedia::sanitizeSvg().
- *   php tests/svg_sanitizer_test.php        (exit code 0 = all passed)
- *
- * Why it exists: the sanitiser once deleted the whole <style> block whenever it
- * contained a single url(...), which silently turned CorelDRAW/Inkscape logos
- * (colours live in CSS classes, gradients in fill:url(#id)) into black shapes,
- * while the upload still reported success. This pins that behaviour, plus the
- * hostile-input and compatibility cases found while fixing it.
- */
+
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 $src = (string) file_get_contents(__DIR__ . '/../app/bootstrap.php');
@@ -26,7 +17,7 @@ function check(string $name, bool $ok, string $detail = '') { global $pass,$fail
 function wf(string $x): bool { libxml_use_internal_errors(true); $d = new DOMDocument(); $r = $x !== '' && $d->loadXML($x, LIBXML_NONET); libxml_clear_errors(); return (bool)$r; }
 $NS = 'xmlns="http://www.w3.org/2000/svg"';
 
-// ---- fidelity: CorelDRAW-style export (colours in CSS classes + one gradient url) ----
+ 
 $corel = '<?xml version="1.0" encoding="UTF-8"?>' . "\r\n" .
   '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">' . "\r\n" .
   '<!-- Creator: CorelDRAW -->' . "\r\n" .
@@ -41,7 +32,7 @@ check('Corel-style: every colour rule kept', preg_match_all('/\.fil\d\{fill:/', 
 check('Corel-style: same-document gradient url(#id0) kept', strpos($o,'url(#id0)') !== false);
 check('Corel-style: DOCTYPE removed', stripos($o,'<!DOCTYPE') === false);
 
-// ---- compatibility ----
+ 
 $ai = '<?xml version="1.0"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [<!ENTITY ns_svg "http://www.w3.org/2000/svg"><!ENTITY ns_xlink "http://www.w3.org/1999/xlink">]><svg xmlns="&ns_svg;" xmlns:xlink="&ns_xlink;" width="10" height="10"><rect width="10" height="10" fill="#c00"/></svg>';
 $o = $S($ai); file_put_contents('/tmp/svgtest/ai_NEXT.svg', $o);
 check('Illustrator DOCTYPE+ENTITY: accepted + well-formed', $o !== '' && wf($o));
@@ -53,7 +44,7 @@ check('embedded data:image/png <image> preserved', strpos($S('<svg '.$NS.' xmlns
 check('@import without semicolon does not eat following rules', strpos($S('<svg '.$NS.'><style>@import url(x.css)'."\n".'.a{fill:red}</style><rect class="a" width="1" height="1"/></svg>'), '.a{fill:red}') !== false);
 check('non-SVG input rejected', $S('<html><body>x</body></html>') === '' && $S('') === '');
 
-// ---- hostile input ----
+ 
 $o = $S('<svg '.$NS.'><script>alert(1)</script><rect width="1" height="1"/></svg>');
 check('<script> removed', $o !== '' && !preg_match('/<script/i',$o));
 $o = $S('<svg '.$NS.'><foreignObject><div xmlns="http://www.w3.org/1999/xhtml">x</div></foreignObject><rect width="1" height="1"/></svg>');

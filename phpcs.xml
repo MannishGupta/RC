@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<ruleset name="RC">
+  <description>PSR-12 for RC core engine</description>
+  <rule ref="PSR12"/>
+  <file>core</file>
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+  <arg name="colors"/>
+  <arg value="p"/>
+</ruleset>

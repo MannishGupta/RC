@@ -1,13 +1,4 @@
-<?php // Version: 260916.14
-
-/**
- * Directory Tree Generator
- *
- * CHANGELOG v1.4: previously had ZERO authentication — anyone requesting
- * this URL could see your entire directory structure, including data
- * filenames like team.json / banking.json. Now requires an active
- * admin/crm dashboard session.
- */
+<?php  
 
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH_TREE', $rootPath);
@@ -15,7 +6,7 @@ define('BASE_PATH_TREE', $rootPath);
 if (file_exists($rootPath . '/app/bootstrap.php')) {
     define('BASE_PATH', $rootPath);
     require_once BASE_PATH . '/app/tenant_bootstrap.php';
-    // BUG FIX: defined DATA_PATH directly from BASE_PATH, bypassing tenant
+     
     if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
     if (!defined('SESSION_PATH')) define('SESSION_PATH', DATA_PATH . '/sessions');
     if (!file_exists(SESSION_PATH)) @mkdir(SESSION_PATH, 0755, true);
@@ -27,7 +18,7 @@ if (file_exists($rootPath . '/app/bootstrap.php')) {
         die("<div style='padding:20px;font-family:sans-serif;color:red;font-weight:bold;'>Access Denied. Please log in via the main dashboard.</div>");
     }
 } else {
-    // app/bootstrap.php not found alongside this script — fail closed rather than open.
+     
     http_response_code(403);
     die("<div style='padding:20px;font-family:sans-serif;color:red;font-weight:bold;'>Access Denied.</div>");
 }

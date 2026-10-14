@@ -6,11 +6,6 @@ if (!defined('BASE_PATH')) {
 }
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 
-/**
- * Dynamic XML sitemap for organic search.
- * Public tabs only (no admin-only tools).
- */
-
 $base = '';
 if (isset($_SERVER['HTTP_HOST'])) {
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')

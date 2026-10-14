@@ -1,42 +1,43 @@
-<?php declare(strict_types=1);
-// index.php
-// Version: 260916.14
-//
-// CHANGELOG v2027.300 (PHP 8.4.2 / WinNT+Plesk hardening pass):
-//  - SECURITY/CRITICAL: `display_errors` is now OFF in production. The
-//    previous version set `ini_set('display_errors','1')` and
-//    `error_reporting(E_ALL)` directly in this file, meaning any PHP
-//    warning, deprecation notice, or uncaught error/exception could print
-//    full stack traces (including server file paths) straight into API
-//    responses and rendered pages. A global error + exception handler now
-//    logs everything via AppLog instead, and returns a generic message.
-//    This matters specifically on PHP 8.4: this file declares
-//    strict_types=1, so any scalar-typed call made from here with a
-//    mismatched type now throws a fatal TypeError instead of silently
-//    coercing — previously that would have been printed verbatim to users.
-//  - SECURITY: Hardcoded plaintext passwords ('lifeisgood' / 'thankyougod')
-//    removed. Login now goes through AppAuth::verifyCredentials(), which
-//    checks bcrypt hashes in data/auth_config.php. See that file — rotate
-//    the passwords there.
-//  - SECURITY: The upload handler's file-type filter previously only
-//    blocked filenames containing ".php" (weaker than AppMedia::import()'s
-//    own check, and NOT applied to document uploads at all). All uploads —
-//    including doc_file — now go through the shared
-//    AppMedia::isDangerousUpload() deny-list, which also blocks
-//    .asp/.aspx/.phtml/.phar/etc. This closes a real remote-code-execution
-//    path on an IIS/Plesk host, where .aspx is natively server-executable.
-//  - No behavioural/API changes beyond the above. Every action, response
-//    shape, and side effect is otherwise identical to the previous version.
+<?php
+// Version: 3.1.0 declare(strict_types=1);
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
-// ── Production-safe error handling ──────────────────────────────────────────
-// Errors are always logged; they are NEVER echoed to the client.
+ 
+ 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
 date_default_timezone_set('Asia/Kolkata');
 
-// PHP floor: 8.1 (array_is_list + match + str_*). Target production: 8.4.x
+ 
 if (PHP_VERSION_ID < 80100) {
     http_response_code(500);
     header('Content-Type: text/plain; charset=UTF-8');
@@ -46,9 +47,9 @@ if (PHP_VERSION_ID < 80100) {
 if (function_exists('locale_set_default')) { @locale_set_default('en_IN'); }
 
 set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): bool {
-    if (!(error_reporting() & $errno)) return false; // respects @-suppression
+    if (!(error_reporting() & $errno)) return false;  
     if (!class_exists('AppLog')) return true;
-    // Notices/warnings → warn level (do not flood ERROR / look like fatal production outages)
+     
     $isNoise = in_array($errno, [E_NOTICE, E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED, E_STRICT], true)
         || (defined('E_WARNING') && in_array($errno, [E_WARNING, E_USER_WARNING], true) && (
             str_contains($errstr, 'Undefined variable')
@@ -77,7 +78,7 @@ set_exception_handler(function (\Throwable $e): void {
         || (strpos($ctype, 'json') !== false)
         || (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && strpos($ctype, 'json') !== false);
     if (!headers_sent()) {
-        // Prefer 200 + JSON error for XHR optimise so UI can show message (not bare HTTP 500)
+         
         if ($isJson) {
             http_response_code(200);
             header('Content-Type: application/json; charset=utf-8');
@@ -93,23 +94,23 @@ set_exception_handler(function (\Throwable $e): void {
     echo "<div style='font-family:sans-serif;padding:2rem;text-align:center;color:#b91c1c'>Something went wrong. The issue has been logged.</div>";
 });
 
-// ── The gap that caused the "numero blank page" mystery ────────────────────
-// set_error_handler() and set_exception_handler() above catch every warning,
-// notice and THROWN Error/Exception — but PHP's genuine fatal-error class
-// (E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR — a syntax error in an
-// included file, memory exhaustion, a max-execution-time timeout) bypasses
-// BOTH handlers entirely and simply kills the script. Those handlers WERE
-// registered before every route in this file, including numero's, and were
-// therefore active — so a numero fatal that produced nothing anywhere is
-// consistent with exactly this class of error, the one kind neither handler
-// above can ever see.
-// register_shutdown_function() + error_get_last() is the only way to catch
-// it: PHP always runs registered shutdown functions on exit, fatal or not,
-// and error_get_last() reports what killed the script if anything did.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 register_shutdown_function(function () {
     $e = error_get_last();
     if (!$e || !in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-        return; // normal exit, or something already handled above — nothing to do
+        return;  
     }
 
     if (class_exists('AppLog')) {
@@ -125,9 +126,9 @@ register_shutdown_function(function () {
         ]);
     }
 
-    // A fatal this late may have already sent partial output (headers, a
-    // half-rendered page) — do not risk corrupting that with a second
-    // response body. Only speak if nothing has gone out yet.
+     
+     
+     
     if (!headers_sent() && ob_get_level() > 0 && ob_get_length() === 0) {
         http_response_code(500);
         $accept = (string)($_SERVER['HTTP_ACCEPT'] ?? '');
@@ -141,33 +142,29 @@ register_shutdown_function(function () {
 
 ob_start();
 
-// GLOBAL UTF-8 SAFETY NET (added after diagnosing WA_EMOJIS corruption):
-// This host's PHP was found to be silently corrupting raw multi-byte UTF-8
-// bytes emitted via json_encode(..., JSON_UNESCAPED_UNICODE) — almost
-// certainly mbstring's output-buffering layer attempting (and failing) an
-// automatic charset conversion. That bug wasn't limited to emoji: the same
-// mechanism would threaten the Hindi (Devanagari) text used throughout the
-// numerology report templates, which is also raw non-ASCII UTF-8. Disabling
-// mbstring's output conversion here, plus an explicit charset header, closes
-// that off globally rather than leaving it to resurface unpredictably.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if (function_exists('mb_http_output')) {
     mb_internal_encoding('UTF-8');
-    mb_http_output('pass'); // never let mbstring re-encode our output
+    mb_http_output('pass');  
 }
 if (!headers_sent()) {
     header('Content-Type: text/html; charset=UTF-8');
 }
 
 define('BASE_PATH', __DIR__);
-/**
- * Multi-tenant: domain / rc.{tenant}.* wildcard → tenants/{id}/data/
- * See app/tenant_bootstrap.php and tenants/map.json
- * Single-site (no tenants/): still uses BASE_PATH/data.
- */
+
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 if (is_file(BASE_PATH . '/app/TenantTombstone.php')) { require_once BASE_PATH . '/app/TenantTombstone.php'; }
-// VehicleCatalog loaded on-demand (fleet/cartags) — not every page
-// if (is_file(BASE_PATH . '/app/VehicleCatalog.php')) { require_once BASE_PATH . '/app/VehicleCatalog.php'; }
+ 
+ 
 if (class_exists('HostPolicy') && !HostPolicy::isHostAllowed((string)($_SERVER['HTTP_HOST'] ?? ''))) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');
@@ -175,7 +172,7 @@ if (class_exists('HostPolicy') && !HostPolicy::isHostAllowed((string)($_SERVER['
     exit;
 }
 
-// tenant_bootstrap defines DATA_PATH, IMG_PATH, DOC_PATH, SESSION_*, TENANT_ID, …
+ 
 
 if (!defined('DATA_PATH')) {
     define('DATA_PATH', BASE_PATH . '/data');
@@ -197,10 +194,6 @@ foreach ([
     if (!file_exists($dir)) @mkdir($dir, 0755, true);
 }
 
-/**
- * Windows/IIS-safe require: retries when FTP/AV locks a file
- * ("Resource temporarily unavailable").
- */
 if (!function_exists('rc_require_once')) {
     function rc_require_once(string $path, bool $required = true): bool {
         $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
@@ -228,10 +221,10 @@ if (!function_exists('rc_require_once')) {
                     && stripos($msg, 'Failed to open stream') === false) {
                     throw $e;
                 }
-                usleep(50_000 * ($i + 1)); // 50ms, 100ms, …
+                usleep(50_000 * ($i + 1));  
             }
         }
-        // Fallback: include once more without catch for clear error
+         
         if ($required) {
             http_response_code(503);
             header('Content-Type: text/plain; charset=UTF-8');
@@ -249,7 +242,7 @@ if (!function_exists('rc_require_once')) {
 }
 
 rc_require_once(BASE_PATH . '/app/bootstrap.php', true);
-// Defensive request routing (Phase-1)
+ 
 $action = class_exists('RcRequest') ? RcRequest::action('dashboard') : (string)($_GET['action'] ?? $_POST['action'] ?? 'dashboard');
 
 if (class_exists('AppLocale')) { AppLocale::boot(); }
@@ -257,7 +250,7 @@ if (class_exists('AppLocale')) { AppLocale::boot(); }
 AppAuth::setSecureHeaders();
 AppAuth::initSession();
 
-/* Cache policy: public cards brief cache; signed-in UI no-store */
+ 
 if (class_exists('RcCachePolicy', false)) {
     RcCachePolicy::applyForRequest();
 } elseif (class_exists('RcPublicCache')) {
@@ -271,8 +264,7 @@ if (class_exists('RcCachePolicy', false)) {
     unset($__hasUser, $__isCard);
 }
 
-
-/* RC_ACTION_BOOT: never leave $action undefined for error handlers / partial includes */
+ 
 if (!isset($action) || !is_string($action)) {
     $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
 }
@@ -327,12 +319,12 @@ if (!empty($rawSlug)) {
     }
 
     if ($actualSlug) {
-        // Public URL shape (?card=business&slug=…) is UNCHANGED — only the
-        // server-side filenames lost their redundant 'card_' prefix.
+         
+         
         $viewMap  = ['business' => 'cards/business.php', 'visiting' => 'cards/visiting.php', 'qr' => 'cards/qr.php', 'id' => 'cards/id.php'];
         $viewFile = $viewMap[$cardType] ?? 'cards/business.php';
 
-        // Optional signed share (ShareToken); legacy unsigned links still work unless require_sig
+         
         if (class_exists('ShareToken')) {
             $sig = isset($_GET['sig']) ? (string)$_GET['sig'] : '';
             $exp = isset($_GET['exp']) ? (int)$_GET['exp'] : 0;
@@ -344,11 +336,11 @@ if (!empty($rawSlug)) {
                     exit;
                 }
             } elseif ($sig !== '' && $exp > 0 && !ShareToken::verify($cardType, $actualSlug, $sig, $exp)) {
-                // Soft-fail: ignore bad sig and continue unsigned
+                 
             }
         }
 
-        // Fragment cache (GET only, no preview bots write)
+         
         if (class_exists('CardCache') && empty($_GET['nocache'])) {
             $cached = CardCache::get($cardType, $actualSlug);
             if ($cached !== null) {
@@ -372,19 +364,19 @@ if (!empty($rawSlug)) {
 
                 $seoTags = AppSEO::generateTags($cardCtx);
 
-                // ── View counter ──────────────────────────────────────────
-                // One increment per render, keyed by slug + card type
-                // (business/visiting/qr/id counted separately, so "3 QR scans"
-                // and "40 profile views" stay distinguishable). Deliberately a
-                // flat counter file, not a per-event log: an event row per
-                // view would grow without bound on a card that gets shared
-                // widely, for a number nobody needs at second-by-second
-                // resolution. A day bucket is kept too, cheaply, so a simple
-                // trend line is possible without full event logging.
-                //
-                // Excludes bots by user-agent sniff — imperfect, but it stops
-                // the obvious cases (link-preview crawlers hitting the URL
-                // once per share) from inflating the count.
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
                 $_ua = (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
                 if (!preg_match('/bot|crawl|spider|facebookexternalhit|whatsapp|telegrambot|slackbot|preview/i', $_ua)) {
                     $_vf = DATA_PATH . '/card_views.json';
@@ -394,8 +386,8 @@ if (!empty($rawSlug)) {
                     if (!isset($_vd[$_vk])) $_vd[$_vk] = ['total' => 0, 'days' => []];
                     $_vd[$_vk]['total']++;
                     $_vd[$_vk]['days'][$_today] = ($_vd[$_vk]['days'][$_today] ?? 0) + 1;
-                    // Cap history per card at 90 days so this file cannot grow
-                    // without bound on a card viewed daily for years.
+                     
+                     
                     if (count($_vd[$_vk]['days']) > 90) {
                         arsort($_vd[$_vk]['days']);
                         $_vd[$_vk]['days'] = array_slice($_vd[$_vk]['days'], 0, 90, true);
@@ -420,7 +412,7 @@ if (!empty($rawSlug)) {
     }
 }
 
-/** Human-readable size for the docs list. */
+ 
 function self_format_bytes(int $b): string {
     if (class_exists(\App\Rc\Support\Bytes::class, false) || class_exists('App\Rc\Support\Bytes')) {
         return \App\Rc\Support\Bytes::format($b);
@@ -432,16 +424,16 @@ function self_format_bytes(int $b): string {
 }
 
 function sendJson($data, bool $cacheable = true) {
-    // Prefer shared helper when present (always exits)
+     
     $jr = BASE_PATH . '/app/Rc/Http/JsonResponse.php';
     if (is_file($jr)) {
         require_once $jr;
     }
     if (class_exists(\App\Rc\Http\JsonResponse::class, false) || class_exists('App\Rc\Http\JsonResponse')) {
         \App\Rc\Http\JsonResponse::send($data, $cacheable);
-        exit; // belt-and-braces if send() ever changes
+        exit;  
     }
-    // Inline fallback — always emit a body (never 304 when !$cacheable)
+     
     while (ob_get_level() > 0) {
         @ob_end_clean();
     }
@@ -474,10 +466,6 @@ function sendJson($data, bool $cacheable = true) {
     exit;
 }
 
-/**
- * Pre-generate UPI QR PNG into images/ for a bank record.
- * Returns filename (relative to images/) or null.
- */
 function generateBankQrPng(array $bank): ?string {
     if (class_exists(\App\Rc\Domain\Bank\UpiQr::class, false) || class_exists('App\Rc\Domain\Bank\UpiQr')) {
         return \App\Rc\Domain\Bank\UpiQr::generatePng($bank);
@@ -485,29 +473,26 @@ function generateBankQrPng(array $bank): ?string {
     return null;
 }
 
-
-
-
-// Request routing primitives — defined before any action dispatch
+ 
 $input = [];
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
 
 $currentUser = $_SESSION['user'] ?? null;
-// Normalize legacy crm → public
+ 
 if ($currentUser === 'crm') {
     $currentUser = 'public';
     $_SESSION['user'] = 'public';
 }
 $isSuperAdmin = ($currentUser === 'super_admin');
-$isAdmin      = ($currentUser === 'admin' || $isSuperAdmin); // write access
+$isAdmin      = ($currentUser === 'admin' || $isSuperAdmin);  
 $isPublic     = ($currentUser === 'public');
 $isLoggedIn   = ($isAdmin || $isPublic || $isSuperAdmin);
 
-// ── PageSpeed / Lighthouse public preview (temporary shareable PSI URL) ──
-// Enable only with a long random token in data/psi_token.txt (one line).
-// Open: https://your-host/?psi_preview=YOUR_TOKEN&tab=team
-// Then paste that exact URL into pagespeed.web.dev → share the report link.
-// Disable: delete data/psi_token.txt (or empty it). Preview is read-only CRM.
+ 
+ 
+ 
+ 
+ 
 $psiPreviewActive = false;
 $psiTokenFilePresent = false;
 $psiTokenFile = DATA_PATH . '/psi_token.txt';
@@ -517,21 +502,21 @@ if (is_file($psiTokenFile)) {
     $psiMtime = (int)@filemtime($psiTokenFile);
     $psiAge = time() - $psiMtime;
     $psiRawLine = trim((string)@file_get_contents($psiTokenFile));
-    // Token line: SECRET  or  SECRET ips=1.2.3.4,5.6.7.8
+     
     $psiExpected = $psiRawLine;
     $psiAllowIps = [];
     if (preg_match('/^(.*?)\s+ips=([0-9a-fA-F,:.]+)\s*$/', $psiRawLine, $pm)) {
         $psiExpected = trim($pm[1]);
         $psiAllowIps = array_values(array_filter(array_map('trim', explode(',', $pm[2]))));
     }
-    if ($psiAge > 21600) { // 6 hours
+    if ($psiAge > 21600) {  
         if (class_exists('AppLog') && empty($GLOBALS['RC_PSI_EXPIRED_LOGGED'])) {
             $GLOBALS['RC_PSI_EXPIRED_LOGGED'] = true;
             @AppLog::warn('PSI preview token ignored — psi_token.txt older than 6 hours (touch file to renew)', [
                 'age_hours' => round($psiAge / 3600, 1),
             ]);
         }
-        $psiTokenFilePresent = true; // still warn admins the file exists
+        $psiTokenFilePresent = true;  
     } elseif ($psiQuery !== '' && $psiExpected !== '' && strlen($psiExpected) >= 24
         && hash_equals($psiExpected, $psiQuery)) {
         $clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '');
@@ -563,11 +548,11 @@ if (is_file($psiTokenFile)) {
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
-    // If the whole request exceeds post_max_size, PHP discards $_POST AND
-    // $_FILES entirely and carries on — the handler sees an empty POST with no
-    // action, and the browser gets a bare page back. CONTENT_LENGTH is still
-    // set, so the overflow is detectable, and saying so is far better than the
-    // silent nothing that happened before.
+     
+     
+     
+     
+     
     $_postMax = trim((string)ini_get('post_max_size'));
     if ($_postMax !== '') {
         $_unit  = strtoupper(substr($_postMax, -1));
@@ -589,8 +574,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (!is_array($input)) {
             $input = [];
         }
-        // Hosts sometimes strip custom headers; mirror JSON CSRF into $_POST
-        // so AppAuth::verify_csrf() still sees the token.
+         
+         
         foreach (['csrf_token', 'csrf', '_csrf'] as $_ck) {
             if (!empty($input[$_ck]) && empty($_POST[$_ck])) {
                 $_POST[$_ck] = (string)$input[$_ck];
@@ -609,16 +594,38 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 if (!isset($input) || !is_array($input)) {
     $input = [];
 }
-// Defensive: action from POST body (JSON/form) or query string — never undefined
+ 
 $action = $input['action'] ?? ($_GET['action'] ?? $_POST['action'] ?? '');
-// Read-only size probes may arrive as GET from the document editor
+ 
 if ($action === '' && isset($_GET['action'])) {
     $action = (string)$_GET['action'];
 }
-// Always a string — never leave $action undefined on any request path
+ 
 $action = is_string($action) ? $action : '';
 
-// ── Lightweight GET/JSON actions (after $action is defined) ───────────────
+// DPDP consent beacon (Phase C)
+if (($action ?? '') === 'consent_log' || (isset($_POST['action']) && $_POST['action'] === 'consent_log')) {
+    if (!class_exists('ConsentLog') && defined('BASE_PATH') && is_file(BASE_PATH . '/app/Compliance/ConsentLog.php')) {
+        require_once BASE_PATH . '/app/Compliance/ConsentLog.php';
+    }
+    if (class_exists('ConsentLog')) {
+        ConsentLog::write([
+            'purpose_id' => (string)($_POST['purpose_id'] ?? $_GET['purpose_id'] ?? 'analytics_optional'),
+            'action' => (string)($_POST['consent_action'] ?? $_POST['action_type'] ?? 'grant'),
+            'notice_version' => (string)($_POST['notice_version'] ?? '1'),
+            'lang' => (string)($_POST['lang'] ?? 'en'),
+        ]);
+    }
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo '{"status":"ok"}';
+    exit;
+}
+
+
+
+ 
 if ($action === 'synthetic_hosts') {
     $role = (string)($_SESSION['user'] ?? '');
     if ($role !== 'super_admin' && empty($isSuperAdmin)) {
@@ -671,15 +678,14 @@ if ($action === 'team_public_json') {
 }
 
 if ($action === 'statistics' || $action === 'stats') {
-    // Isolated statistics view — full page within dashboard shell via tab redirect
+     
     if (!headers_sent()) {
         header('Location: ?tab=statistics', true, 302);
         exit;
     }
 }
 
-
-// GET size probes (session required; no CSRF on safe GET)
+ 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && in_array($action, ['probe_doc_size', 'probe_url_size'], true)) {
     if (!$isLoggedIn) {
         http_response_code(401);
@@ -726,22 +732,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && in_array($action, ['probe_do
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
-    // capture_lead is the one write action a signed-OUT stranger must be
-    // able to reach — it is what a card visitor hits when they submit the
-    // "share your contact" form. It cannot carry a CSRF token because the
-    // visitor never had a session to get one from. That is exactly why it
-    // needs its own protections below (rate limit, honeypot, field caps)
-    // instead of relying on the session-based guard everything else uses.
-    // logout must work even with a stale CSRF/session — the goal is to leave
+     
+     
+     
+     
+     
+     
+     
     if ($action !== 'login' && $action !== 'capture_lead' && $action !== 'logout') { AppAuth::verify_csrf(); }
 
     if ($action === 'capture_lead') {
-        // A dedicated throttle, NOT AppAuth::checkRateLimit() — that limiter
-        // is shared by the login form. Reusing it here would let a burst of
-        // genuine lead submissions (a busy office behind one NAT IP) lock out
-        // that IP's login attempts, and a failed-login burst block lead
-        // submission. Same one-file-per-IP pattern already used for vehicle-
-        // tag scan verification.
+         
+         
+         
+         
+         
+         
         $_lf  = DATA_PATH . '/lead_throttle.json';
         $_lip = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
         $_lnow = time();
@@ -752,14 +758,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $_lrec['n']++; $_lrec['t'] = $_lnow;
         $_ld[$_lip] = $_lrec;
         @file_put_contents($_lf, json_encode($_ld), LOCK_EX);
-        if ($_lrec['n'] > 8) {   // 8 submissions / 15 min / IP
+        if ($_lrec['n'] > 8) {    
             sendJson(['status' => 'error', 'message' => 'Too many submissions. Please try again shortly.']);
         }
 
-        // Honeypot: a hidden field named 'website_hp' that a human never
-        // fills and a bot almost always does, by autofilling every input on
-        // the form. Silent success — telling a bot it failed only teaches it
-        // to try again differently.
+         
+         
+         
+         
         if (trim((string)($input['website_hp'] ?? '')) !== '') {
             sendJson(['status' => 'success']);
         }
@@ -780,9 +786,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             sendJson(['status' => 'error', 'message' => 'Please enter a valid email address.']);
         }
 
-        // Confirm the slug is a real, current card before accepting a lead
-        // against it — otherwise the form accepts leads for cards that were
-        // renamed or removed, which then have nowhere to surface.
+         
+         
+         
         $cardOwnerId = '';
         foreach (AppDB::read('team') ?: [] as $_m) {
             if (strcasecmp((string)($_m['slug'] ?? ''), $cardSlug) === 0) {
@@ -818,7 +824,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     if ($action === 'login') {
-        // Always answer with a real JSON body (never 304 / empty).
+         
         if (!AppAuth::checkRateLimit()) {
             sendJson(['status' => 'error', 'message' => 'Too many attempts. Please try again later.'], false);
         }
@@ -843,15 +849,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             if (class_exists('AuditLog')) {
                 @AuditLog::write('login_ok', ['role' => $role]);
             }
-            // Close session BEFORE response so locks/cookies flush cleanly (IIS)
+             
             if (session_status() === PHP_SESSION_ACTIVE) {
                 @session_write_close();
             }
-            // Drain ALL output buffers so the JSON body is the only payload
+             
             while (ob_get_level() > 0) {
                 @ob_end_clean();
             }
-            // Single path: always a real JSON body, never cacheable, never optimizer first
+             
             sendJson(['status' => 'success', 'role' => (string)$role], false);
         }
 
@@ -865,11 +871,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         sendJson(['status' => 'error', 'message' => 'Invalid Password'], false);
     }
 
-
-
-
     if ($action === 'social_fetch') {
-        // LEGACY alias → official import only (no HTML profile scraping)
+         
         if (empty($isAdmin) && empty($isSuperAdmin)) {
             http_response_code(403);
             sendJson(['status' => 'error', 'message' => 'Admin required']);
@@ -884,7 +887,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 'message' => 'Paste a single public post URL (oEmbed), or connect an official API / RSS under Media Kit connections. Profile-feed scraping is not supported.',
             ]);
         }
-        // Only accept full post URLs for oEmbed — not bare profile handles
+         
         if (!preg_match('~^https?://~i', $handle)) {
             sendJson([
                 'status' => 'error',
@@ -927,7 +930,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             'item_kind' => 'post',
             'content_fp' => $fp,
         ];
-        // merge dedupe by id/url
+         
         $found = false;
         foreach ($list as $i => $ex) {
             if (!is_array($ex)) {
@@ -1056,7 +1059,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (!is_array($payload)) {
             sendJson(['status' => 'error', 'message' => 'Invalid connections payload']);
         }
-        // Merge with existing so empty token fields don't wipe secrets on partial save
+         
         $existing = MediaKitSources::loadConnections();
         foreach (['meta', 'youtube', 'linkedin', 'x', 'rss'] as $k) {
             if (!isset($payload[$k]) || !is_array($payload[$k])) {
@@ -1064,7 +1067,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             }
             foreach ($payload[$k] as $fk => $fv) {
                 if (is_string($fv) && $fv === '' && in_array($fk, ['access_token', 'api_key', 'bearer_token'], true)) {
-                    continue; // keep existing secret
+                    continue;  
                 }
                 $existing[$k][$fk] = $fv;
             }
@@ -1094,7 +1097,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $platform = trim((string)($input['platform'] ?? $_POST['platform'] ?? ''));
         $files = $_FILES['files'] ?? $_FILES['files'] ?? null;
         if ($files === null && !empty($_FILES)) {
-            // files[] from FormData
+             
             foreach ($_FILES as $k => $v) {
                 if (is_array($v['name'] ?? null) || isset($v['tmp_name'])) { $files = $v; break; }
             }
@@ -1105,7 +1108,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (!is_array($files) || empty($files['name'])) {
             sendJson(['status' => 'error', 'message' => 'No files received']);
         }
-        // Normalize multi vs single
+         
         $names = $files['name'];
         $isMulti = is_array($names);
         $count = $isMulti ? count($names) : 1;
@@ -1178,7 +1181,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             }
             @chmod($destPath, 0664);
-            // Optional optimise raster (non-fatal)
+             
             if (in_array($ext, ['jpg','jpeg','png','webp'], true) && class_exists('Optimizer')) {
                 try {
                     if (method_exists('Optimizer', 'optimiseFile')) {
@@ -1218,7 +1221,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $list[] = $row;
             $created[] = $row;
         }
-        // Dedupe list
+         
         $seen = [];
         $out = [];
         foreach ($list as $row) {
@@ -1253,7 +1256,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             sendJson(['status' => 'error', 'message' => 'Library URL must start with https://']);
         }
         if ($url !== '' && !preg_match('~^https?://[a-z0-9.-]+\.[a-z]{2,}(/.*)?$~i', $url) && !preg_match('~sharepoint\.com|onedrive\.live\.com|1drv\.ms~i', $url)) {
-            // still allow sharepoint short links with :f:
+             
             if (!preg_match('~^https?://~i', $url)) {
                 sendJson(['status' => 'error', 'message' => 'Invalid library URL']);
             }
@@ -1279,7 +1282,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     if ($action === 'logout') {
-        // Full sign-out — must never 500 (PHP 8 rejects empty/invalid SameSite)
+         
         try {
             if (session_status() === PHP_SESSION_ACTIVE) {
                 $_SESSION = [];
@@ -1293,7 +1296,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     if (!in_array($ss, ['lax', 'strict', 'none'], true)) {
                         $ss = 'lax';
                     }
-                    // SameSite=None requires Secure
+                     
                     $secure = !empty($p['secure']) || ($ss === 'none');
                     $opts = [
                         'expires'  => time() - 42000,
@@ -1307,13 +1310,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                         $opts['domain'] = $domain;
                     }
                     @setcookie((string)session_name(), '', $opts);
-                    // Legacy fall-back clear (some proxies ignore options array)
+                     
                     @setcookie((string)session_name(), '', time() - 42000, $path);
                 }
                 @session_destroy();
             }
         } catch (Throwable $e) {
-            // still report success so the client leaves the shell
+             
             if (class_exists('AppLog')) {
                 @AppLog::error('Logout cookie/session cleanup failed', ['err' => $e->getMessage()]);
             }
@@ -1326,7 +1329,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 @AuditLog::write('logout', []);
             }
         } catch (Throwable $e) {
-            // ignore audit failures
+             
         }
         while (ob_get_level() > 0) {
             @ob_end_clean();
@@ -1360,7 +1363,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             fclose($fh);
             sendJson(['status' => 'error', 'message' => 'CSV has no header row.']);
         }
-        // Strip UTF-8 BOM from first cell
+         
         if (isset($header[0]) && is_string($header[0])) {
             $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]) ?? $header[0];
         }
@@ -1562,8 +1565,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         sendJson(['status' => 'success']);
     }
 
-
-    // ── Document size probes (authenticated; admin for write-path consistency) ──
+     
     if ($action === 'probe_doc_size' || $action === 'probe_url_size') {
         if (!$isLoggedIn) {
             http_response_code(401);
@@ -1584,7 +1586,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $bytes = (int) filesize($realFile);
             sendJson(['ok' => true, 'bytes' => $bytes, 'formatted' => self_format_bytes($bytes), 'file' => $file]);
         }
-        // probe_url_size
+         
         $url = trim((string)($input['url'] ?? $_GET['url'] ?? ''));
         if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
             sendJson(['ok' => false, 'error' => 'Invalid URL']);
@@ -1613,7 +1615,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             if ($code >= 200 && $code < 400 && $len !== false && (float)$len > 0) {
                 $bytes = (int) round((float)$len);
             }
-            // Some hosts reject HEAD — fall back to ranged GET
+             
             if ($bytes <= 0) {
                 $ch = curl_init($url);
                 curl_setopt_array($ch, [
@@ -1642,8 +1644,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         sendJson(['ok' => false, 'bytes' => 0, 'error' => 'Remote size unavailable']);
     }
 
-
-    // Super Admin role switch must run even when viewing as public (General HR)
+     
     if ($action === 'switch_role') {
         $true = (string)($_SESSION['true_role'] ?? '');
         if ($true !== 'super_admin') {
@@ -1684,8 +1685,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         sendJson(['status' => 'error', 'message' => 'Unauthorized: View Access Only']);
     }
 
-
-    // ── Provision / map tenant (Super Admin) ───────────────────────────────
+     
     if ($action === 'tenant_provision') {
         $role = (string)($_SESSION['user'] ?? '');
         if ($role !== 'super_admin') {
@@ -1703,7 +1703,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             sendJson(['status' => 'error', 'message' => 'Provide host (e.g. rc.dhruvkhandelwal.in) or tenant id.']);
         }
         if ($tenantId === '' && $host !== '') {
-            // rc.{slug}.tld → slug
+             
             if (preg_match('/^rc\.([a-z0-9][a-z0-9\-]{0,62})\./i', $host, $m)) {
                 $tenantId = strtolower($m[1]);
             } elseif (preg_match('/^([a-z0-9][a-z0-9\-]{0,62})\./i', $host, $m)) {
@@ -1718,7 +1718,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (in_array($tenantId, ['map', 'default', 'tenants'], true)) {
             sendJson(['status' => 'error', 'message' => 'Reserved tenant id.']);
         }
-        // Intentional re-provision clears tombstone so folder may return
+         
         if (class_exists('TenantTombstone')) {
             TenantTombstone::clear($tenantId);
         }
@@ -1772,7 +1772,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 'created_at' => date('c'),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
         }
-        // Update map.json exact hosts
+         
         $mapFile = $tenantsDir . '/map.json';
         $map = ['exact' => [], 'rules' => [], 'fallback' => 'default'];
         if (is_file($mapFile)) {
@@ -1790,7 +1790,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $map['exact']['www.' . $host] = $tenantId;
             }
         }
-        // Ensure wildcard rules present
+         
         if (empty($map['rules']) || !is_array($map['rules'])) {
             $map['rules'] = [
                 ['match' => '/^rc\\.([a-z0-9][a-z0-9-]{0,62})\\./i', 'group' => 1, 'comment' => 'rc.{tenant}.tld'],
@@ -1814,7 +1814,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         ]);
     }
 
-    if ($action === 'tenant_update') { /* audit on success below */
+    if ($action === 'tenant_update') {  
         $role = (string)($_SESSION['user'] ?? '');
         if ($role !== 'super_admin') {
             http_response_code(403);
@@ -1830,7 +1830,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
         $displayName = trim((string)($input['name'] ?? ''));
         $hostsRaw = trim((string)($input['hosts'] ?? ''));
-        // hosts: comma or newline separated
+         
         $newHosts = [];
         foreach (preg_split('/[\s,;]+/', $hostsRaw) ?: [] as $h) {
             $h = strtolower(trim($h));
@@ -1863,7 +1863,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             sendJson(['status' => 'error', 'message' => 'Could not write tenants/' . $tenantId . '/config.json — check folder permissions.']);
         }
 
-        // map.json shape: { "exact": { host: tenantId }, "rules": [...], "fallback": "default" }
+         
         $mapFile = BASE_PATH . '/tenants/map.json';
         $map = [];
         if (is_file($mapFile)) {
@@ -1874,7 +1874,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
         if (!isset($map['exact']) || !is_array($map['exact'])) {
             $map['exact'] = [];
-            // Migrate any accidental flat host keys from older broken saves
+             
             foreach (array_keys($map) as $hk) {
                 if (in_array($hk, ['exact', 'rules', 'fallback', 'notes'], true)) {
                     continue;
@@ -1885,7 +1885,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             }
         }
-        // Drop exact entries that pointed at this tenant
+         
         foreach (array_keys($map['exact']) as $hk) {
             if (($map['exact'][$hk] ?? '') === $tenantId) {
                 unset($map['exact'][$hk]);
@@ -1934,7 +1934,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if ($confirm !== $tenantId) {
             sendJson(['status' => 'error', 'message' => 'Type the tenant id to confirm deletion.']);
         }
-        // Never delete the tenant currently serving this request
+         
         if (defined('TENANT_ID') && TENANT_ID === $tenantId) {
             sendJson(['status' => 'error', 'message' => 'Cannot delete the active tenant for this host. Open Super Admin from another tenant host.']);
         }
@@ -1942,7 +1942,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (!is_dir($tenantRoot)) {
             sendJson(['status' => 'error', 'message' => 'Tenant folder not found.']);
         }
-        // Remove map entries (exact host map only — preserve rules/fallback)
+         
         $mapFile = BASE_PATH . '/tenants/map.json';
         if (is_file($mapFile)) {
             $map = json_decode((string)@file_get_contents($mapFile), true) ?: [];
@@ -1955,7 +1955,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                         unset($map['exact'][$hk]);
                     }
                 }
-                // Clean accidental flat keys
+                 
                 foreach (array_keys($map) as $hk) {
                     if (in_array($hk, ['exact', 'rules', 'fallback', 'notes'], true)) {
                         continue;
@@ -1967,7 +1967,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 @file_put_contents($mapFile, json_encode($map, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
             }
         }
-        // Recursive delete tenant folder
+         
         $rii = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($tenantRoot, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::CHILD_FIRST
@@ -1978,11 +1978,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
         @rmdir($tenantRoot);
         if (class_exists('TenantTombstone')) { TenantTombstone::mark($tenantId, (string)($_SESSION['user'] ?? 'super_admin')); }
-        // Remove ghost folders on next optimise; hide from lists immediately
+         
         if (class_exists('AuditLog')) AuditLog::write('tenant_delete', ['tenant_id' => $tenantId ?? '']);
         sendJson(['status' => 'success', 'tenant_id' => $tenantId, 'message' => 'Tenant removed from map and disk.']);
     }
-
 
     if (in_array($action, ['save', 'delete'], true)) {
         $nsToCheck = preg_replace('/[^a-z_]/', '', (string)($input['ns'] ?? ''));
@@ -1995,8 +1994,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $ns = preg_replace('/[^a-z_]/', '', (string)($input['ns'] ?? ''));
         $id = $input['id'] ?? '';
 
-        // Registry data must not outlive the tag it describes — otherwise
-        // deleted vehicles leave orphaned third-party data on disk.
+         
+         
         if ($ns === 'cartags' && $id !== '') {
             require_once BASE_PATH . '/app/VehicleRegistry.php';
             foreach (AppDB::read('cartags') ?: [] as $_row) {
@@ -2020,21 +2019,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
     }
 
-    // ── Vehicle registry lookup (paid API; admin-triggered only) ─────────────
-    // Deliberately NOT reachable from the public scan page: a billable call
-    // behind an anonymous QR scan is a cost-amplification vector.
-    // ── Settings / Integrations config read-write ────────────────────────────
-    // Admin-only. Backs the Settings tab. Each integration's config file
-    // remains the single source of truth (the classes that USE these — e.g.
-    // VehicleRegistry, GoogleWallet, SmtpMailer — read the files directly,
-    // not through this endpoint), so a config edited by hand over FTP and
-    // one edited through this UI behave identically. This is a convenience
-    // layer over the same files, not a second source of truth.
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
     if ($action === 'settings_get' || $action === 'settings_save') {
         if (!$isAdmin) { http_response_code(403); sendJson(['status' => 'error', 'message' => 'Admin access required.']); }
 
         $_settingsMap = [
-            'google_wallet' => ['file' => 'google_wallet_config.php', 'secrets' => []],  // secret lives in a separate JSON key file, not this array
+            'google_wallet' => ['file' => 'google_wallet_config.php', 'secrets' => []],   
             'vehicle_registry' => ['file' => 'registry_config.php', 'secrets' => ['api_key']],
             'whatsapp' => ['file' => 'whatsapp_config.php', 'secrets' => ['access_token']],
             'smtp' => ['file' => 'smtp_config.php', 'secrets' => ['password']],
@@ -2048,9 +2047,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
         if ($action === 'settings_get') {
             $_cfg = is_readable($_path) ? (array)(@include $_path) : [];
-            // Secrets are never sent to the browser in cleartext — only whether
-            // one is already set. A config page that echoes stored API keys
-            // back into the page source is a needless exposure surface.
+             
+             
+             
             foreach ($_meta['secrets'] as $_s) {
                 $_cfg['_has_' . $_s] = !empty($_cfg[$_s]);
                 unset($_cfg[$_s]);
@@ -2062,9 +2061,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $_payload = is_array($input['payload'] ?? null) ? $input['payload'] : [];
             $_existing = is_readable($_path) ? (array)(@include $_path) : [];
 
-            // A secret field left blank in the form means "keep the existing
-            // value", not "clear it" — otherwise every save that doesn't
-            // re-type the password would silently wipe it.
+             
+             
+             
             foreach ($_meta['secrets'] as $_s) {
                 if (!isset($_payload[$_s]) || trim((string)$_payload[$_s]) === '') {
                     $_payload[$_s] = $_existing[$_s] ?? '';
@@ -2072,8 +2071,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             }
 
             $_merged = array_merge($_existing, $_payload);
-            // Never let arbitrary POST data invent new top-level keys — only
-            // keys the existing template already defines may be written.
+             
+             
             $_merged = array_intersect_key($_merged, $_existing ?: $_merged);
 
             $_php = "<?php
@@ -2105,14 +2104,14 @@ return " . var_export($_merged, true) . ";
         ]);
     }
 
-    // ── Cleanup scanner: report only, deletes nothing ────────────────────────
+     
     if ($action === 'cleanup_scan') {
         if (class_exists('AppLog')) AppLog::info('Cleanup scan requested');
         sendJson(SystemDataOptimizer::scanCleanup());
     }
 
-    // ── Cleanup apply: deletes ONLY the paths the admin confirmed, and only
-    //    after applyCleanup() re-validates each one against a fresh scan.
+     
+     
     if ($action === 'cleanup_apply') {
         $paths = $input['paths'] ?? [];
         if (!is_array($paths) || empty($paths)) {
@@ -2124,7 +2123,7 @@ return " . var_export($_merged, true) . ";
         sendJson(SystemDataOptimizer::applyCleanup($paths));
     }
 
-    // ── Delete a single orphaned data/*.json file (Monitor Storage Integrity)
+     
     if ($action === 'delete_orphan') {
         if (empty($isAdmin)) {
             http_response_code(403);
@@ -2135,7 +2134,7 @@ return " . var_export($_merged, true) . ";
             sendJson(['status' => 'error', 'message' => 'Invalid file name.']);
         }
         $path = (defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/' . $file;
-        // Never delete core namespaces even if scanner mislabels them
+         
         $protected = ['team.json','company.json','banking.json','locations.json','documents.json',
                       'events.json','statutory.json','departments.json','designations.json',
                       'cartags.json','settings.json','users.json'];
@@ -2154,7 +2153,6 @@ return " . var_export($_merged, true) . ";
         sendJson(['status' => 'success', 'message' => 'Deleted ' . $file, 'file' => $file]);
     }
 
-
     if ($action === 'optimise') {
         $super = !empty($isSuperAdmin) || (($_SESSION['user'] ?? '') === 'super_admin');
         if (!$super) {
@@ -2164,7 +2162,7 @@ return " . var_export($_merged, true) . ";
         if (class_exists('AppLog')) {
             AppLog::info('System Optimizer Run Initiated (manual, all tenants)');
         }
-        // Capture fatals (OOM, parse) that bypass try/catch and return JSON
+         
         $GLOBALS['RC_OPT_FATAL_BUFFER'] = '';
         register_shutdown_function(static function (): void {
             $err = error_get_last();
@@ -2203,7 +2201,7 @@ return " . var_export($_merged, true) . ";
             if (empty($result['status'])) {
                 $result['status'] = 'success';
             }
-            // Cap log payload so response stays JSON-friendly
+             
             if (!empty($result['logs']) && is_array($result['logs']) && count($result['logs']) > 400) {
                 $result['logs'] = array_slice($result['logs'], -400);
                 array_unshift($result['logs'], '… log truncated to last 400 lines …');
@@ -2231,7 +2229,7 @@ return " . var_export($_merged, true) . ";
         }
     }
 
-    // Watched folders + JSON namespaces for Monitor
+     
     if ($action === 'layout_inventory') {
         if (empty($isSuperAdmin) && ($_SESSION['user'] ?? '') !== 'super_admin') {
             http_response_code(403);
@@ -2240,14 +2238,13 @@ return " . var_export($_merged, true) . ";
         sendJson(SystemDataOptimizer::inventoryWatched());
     }
 
-
-    // Batch Windows installers (per-tenant ARP + shortcut) — Super Admin only
+     
     if ($action === 'installer_build') {
         if (empty($isSuperAdmin) && (($_SESSION['user'] ?? '') !== 'super_admin')) {
             http_response_code(403);
             sendJson(['status' => 'error', 'message' => 'Super Admin only.']);
         }
-        // CSRF: accept token from JSON body or header
+         
         $csrf = (string)($input['csrf_token'] ?? $input['csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
         $sess = (string)($_SESSION['csrf_token'] ?? '');
         if ($sess === '' || $csrf === '' || !hash_equals($sess, $csrf)) {
@@ -2269,7 +2266,7 @@ return " . var_export($_merged, true) . ";
             header('X-Robots-Tag: noindex');
             readfile($zipPath);
             @unlink($zipPath);
-            // clean temp dir
+             
             foreach (glob($tmp . '/*') ?: [] as $f) { @unlink($f); }
             @rmdir($tmp);
             exit;
@@ -2279,7 +2276,7 @@ return " . var_export($_merged, true) . ";
         }
     }
 
-    // Force layout migration; optional removal of empty legacy folders
+     
     if ($action === 'layout_migrate') {
         if (empty($isSuperAdmin) && ($_SESSION['user'] ?? '') !== 'super_admin') {
             http_response_code(403);
@@ -2293,7 +2290,7 @@ return " . var_export($_merged, true) . ";
         sendJson($result);
     }
 
-    // ── toggle_slug_lock ──────────────────────────────────────────────────────
+     
     if ($action === 'toggle_slug_lock') {
         $ns     = preg_replace('/[^a-z_]/', '', (string)($input['ns'] ?? 'team'));
         $id     = trim((string)($input['id'] ?? ''));
@@ -2349,8 +2346,7 @@ return " . var_export($_merged, true) . ";
         ]);
     }
 
-
-        // Auto logo plate background from ink luminance (once at upload)
+         
         if (!function_exists('rc_logo_mean_luminance')) {
             function rc_logo_mean_luminance(string $path): ?float {
                 if (!is_file($path) || !function_exists('imagecreatefromstring')) {
@@ -2358,7 +2354,7 @@ return " . var_export($_merged, true) . ";
                 }
                 $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
                 if (in_array($ext, ['svg', 'svgz'], true)) {
-                    return null; // treat SVG as dark-ink default via caller
+                    return null;  
                 }
                 $blob = @file_get_contents($path);
                 if ($blob === false || $blob === '') {
@@ -2385,7 +2381,7 @@ return " . var_export($_merged, true) . ";
                             continue;
                         }
                         $a = ($rgb & 0x7F000000) >> 24;
-                        // GD alpha 0=opaque 127=transparent
+                         
                         if ($a > 100) {
                             continue;
                         }
@@ -2406,7 +2402,7 @@ return " . var_export($_merged, true) . ";
             http_response_code(403);
             sendJson(['status' => 'error', 'message' => 'Administrator required to update brand images']);
         }
-        // Dedicated brand-image save — does not go through generic list/edit save.
+         
         $co = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
         if (isset($co[0]) && is_array($co[0]) && !isset($co['name'])) {
             $co = $co[0];
@@ -2435,14 +2431,14 @@ return " . var_export($_merged, true) . ";
             'favicon' => ['stem' => 'company-favicon', 'allow' => ['png','jpg','jpeg','webp','svg','svgz','ico']],
             'cover' => ['stem' => 'company-cover', 'allow' => ['png','jpg','jpeg','webp']],
         ];
-        // Alias field names some clients send
+         
         foreach (['brand_logo' => 'logo', 'brand_favicon' => 'favicon', 'brand_cover' => 'cover',
                   'company_logo' => 'logo', 'company_favicon' => 'favicon', 'company_cover' => 'cover'] as $alias => $canon) {
             if (!empty($_FILES[$alias]['name']) && empty($_FILES[$canon]['name'])) {
                 $_FILES[$canon] = $_FILES[$alias];
             }
         }
-        // Debug: which file keys arrived
+         
         $receivedKeys = [];
         foreach ($_FILES as $fk => $fi) {
             if (!empty($fi['name'])) {
@@ -2452,7 +2448,7 @@ return " . var_export($_merged, true) . ";
         $finfo = function_exists('finfo_open') ? finfo_open(FILEINFO_MIME_TYPE) : false;
 
         
-        // Empty multipart diagnostic (post_max_size / upload_max_filesize)
+         
         if ($receivedKeys === [] && !empty($_SERVER['CONTENT_TYPE'])
             && stripos((string)$_SERVER['CONTENT_TYPE'], 'multipart/form-data') !== false) {
             $cl = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
@@ -2529,7 +2525,7 @@ return " . var_export($_merged, true) . ";
                     $errors[] = $field . ': could not store file';
                     continue;
                 }
-                // Optimise rasters only (not ico)
+                 
                 if ($ext !== 'ico' && class_exists('SystemDataOptimizer') && is_file($destPath)) {
                     try {
                         $edge = ($field === 'favicon') ? 192 : (($field === 'cover') ? 1200 : 1600);
@@ -2544,14 +2540,14 @@ return " . var_export($_merged, true) . ";
                             $destPath = (string)($opt['path'] ?? $destPath);
                         }
                     } catch (Throwable $e) {
-                        // Keep original upload if optimiser fails
-                        // non-fatal: keep original file
+                         
+                         
                         $warnings[] = $field . ': optim skipped (' . $e->getMessage() . ')';
                     }
                 }
             }
             @chmod($destPath, 0664);
-            // Remove sibling extensions
+             
             $stem = $cfg['stem'];
             foreach (['svg', 'png', 'webp', 'jpg', 'jpeg', 'gif', 'ico'] as $sx) {
                 if (strtolower((string)pathinfo($filename, PATHINFO_EXTENSION)) === $sx) {
@@ -2572,7 +2568,7 @@ return " . var_export($_merged, true) . ";
             @finfo_close($finfo);
         }
 
-        // logo_sig from browser
+         
         if (!empty($_FILES['logo_sig']['tmp_name']) && (int)($_FILES['logo_sig']['error'] ?? 0) === UPLOAD_ERR_OK) {
             $sigDest = rtrim((string)$destDir, '/\\') . DIRECTORY_SEPARATOR . 'company-logo.sig.png';
             if (@move_uploaded_file($_FILES['logo_sig']['tmp_name'], $sigDest) || @copy($_FILES['logo_sig']['tmp_name'], $sigDest)) {
@@ -2597,8 +2593,8 @@ return " . var_export($_merged, true) . ";
             sendJson(['status' => 'error', 'message' => implode('; ', $errors), 'errors' => $errors, 'received' => implode(', ', $receivedKeys ?? [])]);
         }
         if ($saved === []) {
-            // No brand file was stored. Report clearly — do not claim success as "plate updated"
-            // unless the client only sent logo_bg with zero file parts.
+             
+             
             $hasFilePart = false;
             foreach (['logo', 'favicon', 'cover', 'logo_sig'] as $__fk) {
                 if (!empty($_FILES[$__fk]['name'])) { $hasFilePart = true; break; }
@@ -2611,7 +2607,7 @@ return " . var_export($_merged, true) . ";
                     'received' => implode(', ', $receivedKeys ?? []),
                 ]);
             }
-            // True plate-only: still save logo_bg
+             
             $co['logo_bg'] = $lbg;
         }
 
@@ -2697,7 +2693,7 @@ return " . var_export($_merged, true) . ";
             $newData['logo_bg'] = strtolower(trim((string)$input['logo_bg']));
         }
 
-        // Company is a singleton: image-only / partial saves must not wipe other fields
+         
         if ($ns === 'company') {
             $__existing = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
             if (isset($__existing[0]) && is_array($__existing[0]) && !isset($__existing['name']) && !isset($__existing['id'])) {
@@ -2706,7 +2702,7 @@ return " . var_export($_merged, true) . ";
             if (!is_array($newData)) {
                 $newData = [];
             }
-            // Strip client-only preview blobs
+             
             foreach (['_logoPreview', '_photoPreview', 'photoPreview'] as $__k) {
                 unset($newData[$__k]);
             }
@@ -2715,14 +2711,14 @@ return " . var_export($_merged, true) . ";
                     unset($newData[$__ik]);
                 }
             }
-            // Keys ABSENT from the payload keep their stored value -- that alone is
-            // what protects an image-only save ({logo_bg} + a file) from wiping
-            // name/address/social. Do NOT also drop empty-string values: that made
-            // it impossible to clear any company field (phone, tagline, website,
-            // address...) because the blank was filtered out and the stored value
-            // merged straight back in. Only JSON null is treated as "not supplied".
-            // The organisation name cannot be blanked this way either way:
-            // SavePrep rejects a name shorter than 2 characters after this merge.
+             
+             
+             
+             
+             
+             
+             
+             
             $newData = array_merge(
                 is_array($__existing) ? $__existing : [],
                 array_filter(
@@ -2734,7 +2730,7 @@ return " . var_export($_merged, true) . ";
             );
         }
 
-        // ── Field prep (Phase 8 SavePrep) ─────────────────────────────────────
+         
         if (class_exists(\App\Rc\Http\Handlers\SavePrep::class, false) || class_exists('App\Rc\Http\Handlers\SavePrep')) {
             $prep = \App\Rc\Http\Handlers\SavePrep::prepare($ns, is_array($newData) ? $newData : [], $id, $isEdit);
             $newData = $prep['data'];
@@ -2742,7 +2738,7 @@ return " . var_export($_merged, true) . ";
                 sendJson(['status' => 'error', 'message' => $prep['error']]);
             }
         } else {
-            // Fallback if Rc Handlers missing on disk
+             
             if (!empty($newData['name'])) {
                 $newData['name'] = mb_convert_case(mb_strtolower(trim((string)$newData['name']), 'UTF-8'), MB_CASE_TITLE, 'UTF-8');
             }
@@ -2791,11 +2787,11 @@ return " . var_export($_merged, true) . ";
 
         if (!empty($_FILES)) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            // Map alternate client field names onto canonical keys
+             
             if (!empty($_FILES['team_photo']['name']) && empty($_FILES['photo']['name'])) {
                 $_FILES['photo'] = $_FILES['team_photo'];
             }
-            // Email-signature PNG can arrive without a new primary logo file
+             
             if ($ns === 'company' && !empty($_FILES['logo_sig']['tmp_name'])
                 && (int)($_FILES['logo_sig']['error'] ?? 0) === UPLOAD_ERR_OK) {
                 $__sigTmp = (string)$_FILES['logo_sig']['tmp_name'];
@@ -2812,7 +2808,7 @@ return " . var_export($_merged, true) . ";
                     }
                 }
             }
-            // Snapshot existing company brand paths so cover/favicon never wipe logo
+             
             $__coSnap = ['logo' => '', 'favicon' => '', 'cover' => ''];
             if ($ns === 'company') {
                 $__coPrev = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
@@ -2824,7 +2820,7 @@ return " . var_export($_merged, true) . ";
                         $__coSnap[$__ck] = (string)($__coPrev[$__ck] ?? '');
                     }
                 }
-                // Only treat fields that actually have a real upload in this request
+                 
                 $__coUploaded = [];
                 foreach (['logo', 'favicon', 'cover'] as $__ck) {
                     if (!empty($_FILES[$__ck]['name']) && (int)($_FILES[$__ck]['error'] ?? 4) === UPLOAD_ERR_OK) {
@@ -2837,14 +2833,14 @@ return " . var_export($_merged, true) . ";
 
                 if (empty($_FILES[$field]['name'])) continue;
 
-                // ── Report upload failures instead of skipping them ──────────
-                // BUG (fixed 260906.22): this branch previously required
-                // error === UPLOAD_ERR_OK and had no else. Any other outcome —
-                // most commonly a file larger than PHP's upload_max_filesize,
-                // which is often only 2 MB on shared hosting — was silently
-                // ignored. The record then saved successfully WITHOUT the file
-                // and the user was shown a success message, with nothing
-                // anywhere to indicate the document had not been stored.
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+                 
                 $upErr = (int)($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE);
                 if ($upErr !== UPLOAD_ERR_OK) {
                     finfo_close($finfo);
@@ -2860,20 +2856,20 @@ return " . var_export($_merged, true) . ";
 
                     $mime = (string)finfo_file($finfo, $tmp);
 
-                    // FIX: previously only checked "contains .php" / mime substring
-                    // "php"/"executable" — did not block .asp/.aspx/.phtml/etc.,
-                    // and this shared check was never applied to doc_file at all.
-                    // Now every upload field, including documents, goes through
-                    // the same deny-list used by AppMedia::import().
+                     
+                     
+                     
+                     
+                     
                     $ext = strtolower(pathinfo((string)$_FILES[$field]['name'], PATHINFO_EXTENSION));
                     $allowSvgField = in_array($field, ['logo', 'favicon'], true)
                         || ($ns === 'locations' && in_array($field, ['logo', 'photo'], true));
-                    // Trust .svg extension for brand marks (IIS finfo often returns octet-stream)
+                     
                     $isLogoSvg = ($allowSvgField && in_array($ext, ['svg', 'svgz'], true));
                     $isFavIco = ($field === 'favicon' && $ext === 'ico');
-                    // ICO is binary icon data — not dangerous; skip false positives on octet-stream
+                     
                     if ($isFavIco) {
-                        // allow through
+                         
                     } elseif (class_exists('AppMedia') && AppMedia::isDangerousUpload((string)$_FILES[$field]['name'], $mime, $isLogoSvg)) {
                         finfo_close($finfo);
                         sendJson(['status' => 'error', 'message' => "Security Block: Executable or script files are prohibited."]);
@@ -2905,8 +2901,8 @@ return " . var_export($_merged, true) . ";
                     if (!is_dir($destDir)) {
                         @mkdir($destDir, 0775, true);
                     }
-                    // A non-writable destination was also silent before: the
-                    // move simply returned false and the save reported success.
+                     
+                     
                     if (!is_dir($destDir) || !is_writable($destDir)) {
                         finfo_close($finfo);
                         if (class_exists('AppLog')) AppLog::error('Upload destination not writable', ['dir' => $destDir]);
@@ -2915,13 +2911,13 @@ return " . var_export($_merged, true) . ";
 
                     $destPath = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $destDir), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
                     if ($isLogoSvg ?? false) {
-                        // Read the upload via move_uploaded_file() into the media folder, NOT
-                        // file_get_contents($tmp). On shared/Plesk hosts open_basedir often
-                        // excludes PHP's upload temp dir: reading it directly then fails
-                        // silently (the @ hid it) and the SVG was reported as "unsafe" and
-                        // never saved, while PNG/WebP uploads -- which already use
-                        // move_uploaded_file() -- kept working, so only SVGs seemed broken.
-                        // Reproduced with open_basedir set and the temp dir outside it.
+                         
+                         
+                         
+                         
+                         
+                         
+                         
                         $upSize = (int)($_FILES[$field]['size'] ?? 0);
                         if ($upSize <= 0) {
                             finfo_close($finfo);
@@ -2933,7 +2929,7 @@ return " . var_export($_merged, true) . ";
                             $rawSvg = (string)@file_get_contents($stage);
                             @unlink($stage);
                         } else {
-                            $rawSvg = (string)@file_get_contents($tmp); // hosts where only a direct read works
+                            $rawSvg = (string)@file_get_contents($tmp);  
                         }
                         if ($rawSvg === '') {
                             if (class_exists('AppLog')) {
@@ -2958,7 +2954,7 @@ return " . var_export($_merged, true) . ";
                             $filename = pathinfo($filename, PATHINFO_FILENAME) . '.svg';
                         }
                         $destPath = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $destDir), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $filename;
-                        // Ensure XML declaration for picky consumers; keep sanitised body
+                         
                         if (!str_starts_with(ltrim($cleanSvg), '<?xml')) {
                             $cleanSvg = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . $cleanSvg;
                         }
@@ -2972,7 +2968,7 @@ return " . var_export($_merged, true) . ";
                             sendJson(['status' => 'error', 'message' => 'SVG logo write verification failed.']);
                         }
                         $newData[$field] = $filename;
-                        // Drop sibling raster/vector so the new SVG is the only company-{field}.*
+                         
                         if ($ns === 'company' && in_array($field, ['logo', 'favicon', 'cover'], true)) {
                             $stem = pathinfo($filename, PATHINFO_FILENAME);
                             foreach (['png', 'webp', 'jpg', 'jpeg', 'gif'] as $__sx) {
@@ -2987,7 +2983,7 @@ return " . var_export($_merged, true) . ";
                         }
                     } elseif (move_uploaded_file($tmp, $destPath)) {
                         @chmod($destPath, 0664);
-                        // Optimise every image at save time (incl. large WebP) — no deferred skip
+                         
                         $imageFields = ['logo', 'favicon', 'cover', 'photo'];
                         $__extNow = strtolower((string)pathinfo($destPath, PATHINFO_EXTENSION));
                         if (in_array($field, $imageFields, true) && class_exists('SystemDataOptimizer')
@@ -3005,7 +3001,7 @@ return " . var_export($_merged, true) . ";
                             }
                         }
                         $newData[$field] = $filename;
-                        // Company brand: drop sibling extensions so stale PNG does not shadow new SVG
+                         
                         if ($ns === 'company' && in_array($field, ['logo', 'favicon', 'cover'], true)) {
                             $stem = pathinfo($filename, PATHINFO_FILENAME);
                             $curExt = strtolower((string)pathinfo($filename, PATHINFO_EXTENSION));
@@ -3019,15 +3015,15 @@ return " . var_export($_merged, true) . ";
                                 }
                             }
                         }
-                        // Locations: photo and logo are aliases of the same asset
+                         
                         if ($ns === 'locations' && in_array($field, ['photo', 'logo'], true)) {
                             $newData['logo'] = $filename;
                             $newData['photo'] = $filename;
                         }
-                        // Company brand assets are independent — never copy cover/favicon onto logo
+                         
                         if ($ns === 'company' && in_array($field, ['cover', 'favicon'], true)) {
-                            // Drop accidental logo key if payload sent the same file under logo
-                            // (keep existing logo from merge; only this field changes)
+                             
+                             
                             if (isset($newData['logo']) && $newData['logo'] === $filename) {
                                 $__existCo = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
                                 if (isset($__existCo[0]) && is_array($__existCo[0])) {
@@ -3042,7 +3038,7 @@ return " . var_export($_merged, true) . ";
                             if (is_string($__sigPng) && $__sigPng !== '') {
                                 $newData['logo_sig'] = $__sigPng;
                             }
-                            // Browser-rasterised PNG (preferred on hosts without Imagick)
+                             
                             if (!empty($_FILES['logo_sig']['tmp_name']) && (int)($_FILES['logo_sig']['error'] ?? 0) === UPLOAD_ERR_OK) {
                                 $__sigTmp = (string)$_FILES['logo_sig']['tmp_name'];
                                 $__sigMime = (string)@finfo_file($finfo, $__sigTmp);
@@ -3114,19 +3110,19 @@ if ($ns === 'docs') {
             finfo_close($finfo);
         }
 
-        // Company: restore logo/favicon/cover that were NOT uploaded in this request
+         
         if ($ns === 'company' && isset($__coSnap) && is_array($__coSnap)) {
             foreach (['logo', 'favicon', 'cover'] as $__ck) {
                 $uploaded = !empty($__coUploaded[$__ck]);
                 if (!$uploaded) {
-                    // Keep previous path; strip any accidental assignment of another brand file
+                     
                     if ($__coSnap[$__ck] !== '') {
                         $newData[$__ck] = $__coSnap[$__ck];
                     } else {
                         unset($newData[$__ck]);
                     }
                 } else {
-                    // Uploaded this field — reject cross-contamination (cover path must not be logo)
+                     
                     $fn = basename((string)($newData[$__ck] ?? ''));
                     if ($__ck === 'logo' && preg_match('/^company-(cover|favicon)\./i', $fn)) {
                         $newData['logo'] = $__coSnap['logo'];
@@ -3139,7 +3135,7 @@ if ($ns === 'docs') {
                     }
                 }
             }
-            // Absolute: logo key must never equal cover/favicon file names from this request
+             
             $logoFn = basename((string)($newData['logo'] ?? ''));
             $coverFn = basename((string)($newData['cover'] ?? ''));
             if ($logoFn !== '' && $coverFn !== '' && $logoFn === $coverFn) {
@@ -3164,7 +3160,7 @@ if ($ns === 'docs') {
             }
 
             $merged = array_merge(is_array($dbData) ? $dbData : [], $newData);
-            // Force image keys ONLY when this request actually uploaded that field
+             
             foreach (['logo', 'favicon', 'cover'] as $__ik) {
                 $didUpload = !empty($__coUploaded[$__ik]);
                 if ($didUpload && !empty($newData[$__ik]) && is_string($newData[$__ik]) && !str_starts_with($newData[$__ik], 'data:')) {
@@ -3175,7 +3171,7 @@ if ($ns === 'docs') {
             }
             foreach (['logo_sig', 'logo_png', 'logo_raster'] as $__ik) {
                 if (!empty($newData[$__ik]) && is_string($newData[$__ik]) && !str_starts_with($newData[$__ik], 'data:')) {
-                    // logo_sig only when logo was uploaded
+                     
                     if ($__ik === 'logo_sig' && empty($__coUploaded['logo'])) {
                         continue;
                     }
@@ -3199,7 +3195,7 @@ if ($ns === 'docs') {
                 'logo' => (string)($merged['logo'] ?? ''),
                 'favicon' => (string)($merged['favicon'] ?? ''),
             ]);
-            // Cache-bust tokens for the client (mtime of files on disk)
+             
             $__v = [];
             foreach (['logo', 'favicon', 'cover'] as $__ik) {
                 $__fn = basename((string)($merged[$__ik] ?? ''));
@@ -3233,7 +3229,7 @@ if ($ns === 'docs') {
                 if (empty($newData['id'])) $newData['id'] = uniqid();
                 $list[] = $newData;
             }
-            // Bank: pre-generate static UPI QR into images/ (no live generator links on share)
+             
             if ($ns === 'bank') {
                 if ($isEdit) {
                     foreach ($list as &$__b) {
@@ -3256,7 +3252,6 @@ if ($ns === 'docs') {
                     }
                 }
             }
-
 
             if ($ns === 'mediakit' && is_array($list)) {
                 $__mkSeenId = [];
@@ -3286,7 +3281,7 @@ if ($ns === 'docs') {
         }
     }
 
-    // ── XLSX / bulk import — namespace-isolated (never cross-write) ─────────
+     
     if ($action === 'import') {
         try {
             if (!$isAdmin && empty($isSuperAdmin)) {
@@ -3306,7 +3301,7 @@ if ($ns === 'docs') {
                 sendJson(['status' => 'error', 'message' => 'Too many rows (max 2000 per import).']);
             }
 
-            // Detect spreadsheet shape — refuse writing bank sheets into team (and vice versa)
+             
             $headerBlob = '';
             $sample = $rows[0] ?? [];
             if (is_array($sample)) {
@@ -3327,7 +3322,7 @@ if ($ns === 'docs') {
                 ]);
             }
 
-            /** @return array<string,mixed> */
+             
             $normalizeRow = static function (array $raw, string $ns): array {
                 $row = [];
                 foreach ($raw as $k => $v) {
@@ -3336,7 +3331,7 @@ if ($ns === 'docs') {
                     if ($key === '') continue;
                     $row[$key] = is_scalar($v) ? trim((string)$v) : $v;
                 }
-                // Lowercase alias map → canonical
+                 
                 $aliases = [
                     'employee id' => 'slug', 'emp id' => 'slug', 'employee_id' => 'slug',
                     'full name' => 'name', 'employee name' => 'name',
@@ -3353,7 +3348,7 @@ if ($ns === 'docs') {
                     'branch name' => 'branch',
                     'vehicle number' => 'reg_no', 'registration' => 'reg_no', 'reg no' => 'reg_no',
                 ];
-                // Also map exact case-insensitive keys to canonical when key differs only by case
+                 
                 $lowerMap = [];
                 foreach ($row as $k => $v) {
                     $lowerMap[strtolower(str_replace([' ', '-'], ['_', '_'], $k))] = $k;
@@ -3369,7 +3364,7 @@ if ($ns === 'docs') {
                         }
                     }
                 }
-                // Copy lowercase-identical canonical keys (holder_name already present etc.)
+                 
                 foreach (['id','slug','holder_name','bank_name','acc_no','ifsc','branch','upi_id','name','phone','email'] as $ck) {
                     if (!isset($row[$ck])) {
                         foreach ($row as $k => $v) {
@@ -3382,7 +3377,7 @@ if ($ns === 'docs') {
                 }
 
                 if ($ns === 'bank') {
-                    // STRICT whitelist — never carry team fields into banking.json
+                     
                     $allowed = ['id','slug','holder_name','bank_name','acc_no','ifsc','branch','upi_id','qr_image'];
                     $clean = [];
                     foreach ($allowed as $f) {
@@ -3391,7 +3386,7 @@ if ($ns === 'docs') {
                         }
                     }
                     if (empty($clean['holder_name']) && empty($clean['acc_no']) && empty($clean['bank_name'])) {
-                        return []; // skip empty / non-bank rows
+                        return [];  
                     }
                     if (empty($clean['slug']) && !empty($clean['bank_name']) && !empty($clean['acc_no'])) {
                         $tail = preg_replace('/\D/', '', (string)$clean['acc_no']);
@@ -3403,7 +3398,7 @@ if ($ns === 'docs') {
                 }
 
                 if ($ns === 'team') {
-                    // Never accept bank-only columns as a person row
+                     
                     if (!empty($row['acc_no']) && empty($row['name']) && empty($row['phone'])) {
                         return [];
                     }
@@ -3415,11 +3410,11 @@ if ($ns === 'docs') {
             if (!is_array($existing)) {
                 $existing = [];
             }
-            // Ensure list shape
+             
             $existing = array_values(array_filter($existing, 'is_array'));
             $byId = [];
             $bySlug = [];
-            $byAcc = []; // bank dedupe on account number
+            $byAcc = [];  
             foreach ($existing as $i => $row) {
                 if (!empty($row['id'])) $byId[strtolower((string)$row['id'])] = $i;
                 if (!empty($row['slug'])) $bySlug[strtolower((string)$row['slug'])] = $i;
@@ -3450,7 +3445,7 @@ if ($ns === 'docs') {
                     $merged = array_merge($existing[$matchIdx], $row);
                     $merged['id'] = $existing[$matchIdx]['id'] ?? ($row['id'] ?? uniqid($ns . '_', true));
                     if ($ns === 'bank') {
-                        // Re-whitelist after merge
+                         
                         $allowed = ['id','slug','holder_name','bank_name','acc_no','ifsc','branch','upi_id','qr_image'];
                         $clean = [];
                         foreach ($allowed as $f) {
@@ -3481,7 +3476,7 @@ if ($ns === 'docs') {
                 }
             }
 
-            // CRITICAL: only write the requested namespace — never touch team when ns=bank
+             
             if (!AppDB::save($ns, array_values($existing))) {
                 sendJson(['status' => 'error', 'message' => 'Atomic save failed while importing into ' . $ns . '.']);
             }
@@ -3550,7 +3545,7 @@ if ($ns === 'docs') {
             $headers = $tpl[0];
             $sample = $tpl[1] ?? array_fill(0, count($headers), '');
             $rows = [array_combine($headers, $headers)];
-            // Better: first row headers as keys for sheet_to_json compatibility when re-exported
+             
             $rows = [array_combine($headers, $sample)];
             sendJson([
                 'status'  => 'success',
@@ -3569,12 +3564,12 @@ $dashboardFile = BASE_PATH . '/app/views/dashboard.php';
 if (file_exists($dashboardFile)) {
     if (!$isLoggedIn) { if (ob_get_length()) ob_end_flush(); require BASE_PATH . '/app/views/login.php'; exit; }
     if (function_exists('rc_analytics_touch_visit')) { rc_analytics_touch_visit(); }
-    // Never let a browser, CDN, or reverse proxy cache the authenticated
-    // dashboard page. Added after diagnosing a case where an updated
-    // dashboard.php's JavaScript wasn't reflected in the browser even
-    // after redeploying — a caching layer serving a stale copy is
-    // functionally indistinguishable from "the fix didn't work" from the
-    // user's side, so this closes off that entire failure class.
+     
+     
+     
+     
+     
+     
     if (!headers_sent()) {
         header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         header('Pragma: no-cache');
@@ -3582,14 +3577,14 @@ if (file_exists($dashboardFile)) {
     }
     $__tab = preg_replace('/[^a-z0-9_-]/i', '', (string)($_GET['tab'] ?? 'team')) ?: 'team';
     $viewData = ['jsData' => class_exists('AppLookup') ? (AppLookup::all() ?: []) : [], 'company' => AppDB::read('company') ?? ['name' => 'Organization'], 'isAdmin' => $isAdmin, 'isSuperAdmin' => !empty($isSuperAdmin), 'isPublic' => !empty($isPublic), 'currentTab' => $__tab];
-    // Perf (20261009.31): slim DASHBOARD_STATE — full data only for core + active tab.
-    // Other namespaces contribute a COUNT only so nav badges stay correct without
-    // embedding mediakit/docs/bank payloads into every HTML response.
+     
+     
+     
     $__tab = (string)($viewData['currentTab'] ?? 'team');
     $__coreFull = ['team', 'locations', 'departments', 'designations', 'events'];
-    // Active tab always gets its full dataset
+     
     $__needFull = array_values(array_unique(array_merge($__coreFull, [$__tab])));
-    // Map aliases
+     
     if ($__tab === 'banking') $__needFull[] = 'bank';
     if ($__tab === 'fleet' || $__tab === 'assets') $__needFull[] = 'cartags';
 
@@ -3601,11 +3596,11 @@ if (file_exists($dashboardFile)) {
         if (!is_array($rows)) {
             $rows = [];
         }
-        // Normalize list shape for count
+         
         if ($rows !== [] && !isset($rows[0]) && !isset($rows['id']) && !isset($rows['name'])) {
             $rows = array_values(array_filter($rows, 'is_array'));
         } elseif (isset($rows['id']) || isset($rows['name']) || isset($rows['file'])) {
-            // single object
+             
             if ($k !== 'company') {
                 $rows = [$rows];
             }
@@ -3627,12 +3622,12 @@ if (file_exists($dashboardFile)) {
         if (in_array($k, $__needFull, true)) {
             $viewData['jsData'][$k] = $rows;
         } else {
-            // Empty array in Alpine — badge uses _counts
+             
             $viewData['jsData'][$k] = [];
         }
     }
 
-    // Bank logos — only on treasury tab
+     
     if ($__tab === 'bank' || $__tab === 'banking') {
         if (is_file(BASE_PATH . '/app/MasterDirectory.php')) {
             require_once BASE_PATH . '/app/MasterDirectory.php';
@@ -3665,7 +3660,7 @@ if (file_exists($dashboardFile)) {
             unset($_brow);
         }
     }
-    // OEM logos — only on fleet tab
+     
     if (($__tab === 'cartags' || $__tab === 'fleet')
         && !empty($viewData['jsData']['cartags']) && is_array($viewData['jsData']['cartags'])) {
         if (is_file(BASE_PATH . '/app/VehicleCatalog.php')) {
@@ -3698,8 +3693,8 @@ if (file_exists($dashboardFile)) {
         unset($_crow);
     }
 
-    // Release session lock BEFORE rendering HTML so parallel media_serve /
-    // asset requests are not blocked on this long response.
+     
+     
     if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE) {
         @session_write_close();
     }

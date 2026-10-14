@@ -1,13 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Root backup entry — use when /tools/ is blocked by IIS hiddenSegments.
- * Version: 20260929.20
- *
- * HARDENED: session + role gate runs HERE before including tools/backup.php,
- * so a missing/broken tools path cannot skip auth. No user-supplied file path
- * is accepted on this entry point (full archive only).
- */
+
 $rootPath = str_replace('\\', '/', __DIR__);
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $rootPath);
@@ -52,7 +45,7 @@ if (!$allowed) {
     exit;
 }
 
-// Reject any attempt to pass a free-form path (this endpoint only runs full backup)
+ 
 foreach (['file', 'path', 'f', 'name', 'download'] as $k) {
     if (isset($_GET[$k]) || isset($_POST[$k])) {
         http_response_code(400);
@@ -70,5 +63,5 @@ if (!is_file($backup)) {
     exit;
 }
 
-// tools/backup.php will re-check auth; double gate is intentional.
+ 
 require $backup;

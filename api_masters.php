@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Master directory API — banks & vehicle OEMs (JSON file backed).
- * GET ?kind=banks|oems
- * Version: 20260929.35
- */
+
 define('BASE_PATH', str_replace('\\', '/', dirname(__FILE__)));
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 require_once BASE_PATH . '/app/bootstrap.php';

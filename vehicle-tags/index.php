@@ -1,29 +1,29 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-// vehicle-tags/index.php — PUBLIC scan landing page. This is the QR target.
-//
-// FIXES vs the supplied v1:
-//  * BROKEN VERIFICATION (critical): v1's submitVerification() POSTed the
-//    last-4 check to the server, ignored the response entirely, and then ran
-//    `this.step = 3` unconditionally. Anyone could type any 4 characters —
-//    or leave the field blank — and still reach the contact step. The comment
-//    claimed "Server-side also validates", but nothing acted on that result.
-//    The server now returns JSON and the client only advances on success.
-//  * NO RATE LIMIT: v1 logged and accepted unlimited POSTs per visitor, so
-//    the last-4 code (10k combinations, often far fewer in practice) could be
-//    brute-forced and the log file grown without bound. Now capped per IP.
-//  * OWNER PHONE LEAK RISK: the flow is deliberately kept as "message
-//    security, quoting the tag ID" — the owner's own number is never sent to
-//    the browser. Preserved from v1 and worth keeping that way.
-//  * SEO: added noindex — scan landing pages should never appear in search.
-//  * a11y: v1 set user-scalable=no (blocks pinch-zoom, WCAG 1.4.4). Removed.
-//  * Data now lives in the app's AppDB (data/cartags.json) instead of the
-//    module's private store.php, so writes use the same atomic/locked path.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 $rootPath = dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-// BUG FIX: this file defined DATA_PATH/IMG_PATH/DOC_PATH directly from
+ 
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('IMG_PATH'))  define('IMG_PATH',  BASE_PATH . '/images');
 if (!defined('DOC_PATH'))  define('DOC_PATH',  BASE_PATH . '/docs');
@@ -31,7 +31,7 @@ if (!defined('DOC_PATH'))  define('DOC_PATH',  BASE_PATH . '/docs');
 require_once BASE_PATH . '/app/bootstrap.php';
 require_once BASE_PATH . '/app/VehicleDecoder.php';
 
-/** Look up a tag by its printed short ID. */
+ 
 function ct_find_tag(string $tagId): ?array {
     if ($tagId === '') return null;
     foreach (AppDB::read('cartags') ?: [] as $t) {
@@ -54,16 +54,12 @@ function ct_log(array $entry): void {
     $logs = AppDB::read('cartag_logs') ?: [];
     $entry['id'] = bin2hex(random_bytes(6));
     $entry['ts'] = date('c');
-    // Keep the log bounded — oldest entries roll off.
+     
     $logs[] = $entry;
     if (count($logs) > 5000) $logs = array_slice($logs, -5000);
     AppDB::save('cartag_logs', $logs);
 }
 
-/**
- * Per-IP throttle. The last-4 plate check is a small keyspace, so without
- * this it is trivially brute-forceable and the log file becomes a spam sink.
- */
 function ct_rate_ok(): bool {
     $file = DATA_PATH . '/cartag_throttle.json';
     $ip   = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
@@ -75,14 +71,14 @@ function ct_rate_ok(): bool {
     $rec['n']++; $rec['t'] = $now;
     $data[$ip] = $rec;
     @file_put_contents($file, json_encode($data), LOCK_EX);
-    return $rec['n'] <= 12; // 12 attempts / 15 min / IP
+    return $rec['n'] <= 12;  
 }
 
 $tagId = trim((string)($_GET['t'] ?? ''));
 $tagId = preg_replace('/[^A-Za-z0-9_-]/', '', $tagId);
 $tag   = ct_find_tag($tagId);
 
-// ── AJAX verification endpoint ───────────────────────────────────────────
+ 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -100,16 +96,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $phone   = mb_substr($phone, 0, 20);
     $ok      = ($last4 !== '' && $last4 === ct_last4((string)($tag['registration_number'] ?? $tag['plate'] ?? '')));
 
-    // Optional coordinates. Only stored when the scanner explicitly opted in
-    // via the browser permission prompt AND the plate check passed — an
-    // unverified scanner's location is never retained.
+     
+     
+     
     $lat = $lng = null;
     if ($ok && isset($_POST['lat'], $_POST['lng'])) {
         $la = (float)$_POST['lat']; $ln = (float)$_POST['lng'];
-        // Reject obviously bogus values rather than storing noise.
+         
         if ($la >= -90 && $la <= 90 && $ln >= -180 && $ln <= 180 && ($la !== 0.0 || $ln !== 0.0)) {
-            // ~5 decimals is roughly 1 m — precise enough to walk to a car,
-            // and no more precise than the purpose requires.
+             
+             
             $lat = round($la, 5); $lng = round($ln, 5);
         }
     }
@@ -132,34 +128,34 @@ $company  = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
 $orgName  = (string)($company['name'] ?? 'Vehicle Contact');
 $waNumber = preg_replace('/\D/', '', (string)($company['security_whatsapp'] ?? $company['phone'] ?? ''));
 
-// If the tag is linked to a directory member, route the message to that
-// person directly rather than via security. The owner's number is resolved
-// SERVER-SIDE and only the resulting wa.me link is rendered — the raw number
-// is never placed in the page for an unverified scanner to harvest, and the
-// link is only built after the plate check has passed.
+ 
+ 
+ 
+ 
+ 
 $ownerWa = '';
-$ownerName = trim((string)($tag['owner_name'] ?? ''));   // free-text fallback
+$ownerName = trim((string)($tag['owner_name'] ?? ''));    
 if ($tag && !empty($tag['member_id']) && class_exists('AppDB')) {
     foreach (AppDB::read('team') ?: [] as $_m) {
         if ((string)($_m['id'] ?? '') !== (string)$tag['member_id']) continue;
 
-        // Owner's given name only. A full legal name in a message from a
-        // stranger reads as surveillance; a first name reads as a neighbour.
+         
+         
         $_full = trim((string)($_m['name'] ?? ''));
         if ($_full !== '') $ownerName = explode(' ', $_full)[0];
 
-        // WhatsApp username, if this member has set one — shorter, more
-        // memorable, and matches what the digital business card itself
-        // already prefers (see cards/business.php). No way to verify a
-        // given scanner's WhatsApp actually resolves username links (that
-        // depends on THEIR app/region, not anything checkable here), so this
-        // stays a preference with the phone number as the working fallback,
-        // exactly as on the card.
+         
+         
+         
+         
+         
+         
+         
         $_wu = ltrim(trim((string)($_m['whatsapp_username'] ?? '')), '@');
         $_wu = preg_replace('~^https?://(www\.)?wa\.me/~i', '', $_wu);
         $_wu = mb_strtolower($_wu);
-        // Same rule as cards/business.php: 3-35 chars, lowercase, at least
-        // one letter — verified against WhatsApp's actual published policy.
+         
+         
         if (preg_match('/^(?=.*[a-z])[a-z0-9._]{3,35}$/', $_wu)) {
             $ownerWa = $_wu;
             break;
@@ -216,15 +212,15 @@ if ($tag && !empty($tag['member_id']) && class_exists('AppDB')) {
 
 <header>
   <?php
-  // Vehicle photo, if one was uploaded when the tag was created — a real
-  // photo of THIS car, shown here so a scanner can visually confirm they
-  // have the right vehicle at a glance, before reading any text below.
-  // Not a generic stock photo of the make/model: that would need a paid
-  // image-search API, and wouldn't show this vehicle's actual colour,
-  // condition or angle anyway — which is the part that actually helps
-  // someone standing in a car park compare a photo to what is in front
-  // of them. Falls back to the existing org-initial badge when no photo
-  // is set, so nothing regresses for tags created before this existed.
+   
+   
+   
+   
+   
+   
+   
+   
+   
   $tagPhoto = (!empty($tag['photo']) && is_file(IMG_PATH . '/' . basename($tag['photo'])))
       ? '/images/' . rawurlencode(basename($tag['photo'])) : '';
   ?>
@@ -250,10 +246,10 @@ if ($tag && !empty($tag['member_id']) && class_exists('AppDB')) {
 <?php else: ?>
 
   <?php
-  // Free offline decode. Only the REGION is shown publicly: it reassures a
-  // genuine scanner they have the right vehicle, while revealing nothing
-  // about the owner. The plate itself stays masked — that mask is what makes
-  // the last-4 verification step meaningful.
+   
+   
+   
+   
   $vd = VehicleDecoder::decode((string)($tag['registration_number'] ?? $tag['plate'] ?? ''));
   ?>
   <div class="card">
@@ -261,8 +257,8 @@ if ($tag && !empty($tag['member_id']) && class_exists('AppDB')) {
     <div class="plate"><?= htmlspecialchars(ct_mask_plate((string)($tag['registration_number'] ?? $tag['plate'] ?? ''))) ?></div>
     <div class="muted">
         <?php
-        // Descriptors help a genuine scanner confirm they have the right
-        // vehicle before messaging — and make a wrong-tag scan obvious.
+         
+         
         $desc = array_values(array_filter([
             (string)($tag['vehicle_class'] ?? $tag['vehicle_type'] ?? 'Vehicle'),
             (string)($tag['make_model'] ?? ''),
@@ -349,10 +345,10 @@ if ($tag && !empty($tag['member_id']) && class_exists('AppDB')) {
       'make'   => (string)($tag['make_model'] ?? ''),
       'colour' => (string)($tag['colour'] ?? ''),
       'class'  => (string)($tag['vehicle_class'] ?? $tag['vehicle_type'] ?? ''),
-      // NOTE: no 'area' from the tag record. The owner's base location says
-      // where they work, not where their vehicle is obstructing someone —
-      // those are different places, and using the former was simply wrong.
-      // Location now comes entirely from the scanner's own position.
+       
+       
+       
+       
   ], JSON_UNESCAPED_UNICODE) ?>;
   // Owner number when the tag is linked, else the security number.
   var WA  = <?= json_encode($ownerWa ?: $waNumber) ?>;

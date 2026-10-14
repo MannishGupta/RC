@@ -6,11 +6,6 @@ if (!defined('BASE_PATH')) {
 }
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 
-/**
- * Dynamic robots.txt — host-aware Sitemap URL.
- * Served as text/plain for any domain (rc.fusionlimited.in, rc.arthsathi.com, …).
- */
-
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
       || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
       || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
@@ -19,7 +14,7 @@ $base = ($https ? 'https://' : 'http://') . $host;
 
 header('Content-Type: text/plain; charset=UTF-8');
 header('Cache-Control: public, max-age=3600');
-header('X-Robots-Tag: noindex'); // this endpoint is the robots file itself
+header('X-Robots-Tag: noindex');  
 
 echo "# Organic search — Resource Center portal (India)\n";
 echo "# Generated for: {$base}\n";

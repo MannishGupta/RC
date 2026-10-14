@@ -1,19 +1,19 @@
 <?php
-// error.php — Version: 260916.14
-// error.php - V2.0.SYSTEM_DIAGNOSTICS_AUTH_GATED
-// CHANGELOG v2.0: previously gated only by a hardcoded `?key=debug` string
-// literally readable in this file's own source — anyone who saw the source
-// (or guessed) got PHP version, server details, directory permissions, JSON
-// validity of every data file, and the last 50 lines of the application log.
-// Now requires an active admin/crm dashboard session, matching print.php.
-// Also: display_errors is no longer forced on here — this page shows its
-// OWN diagnostics panel regardless; forcing global error display is what
-// let stray warnings leak elsewhere in the app.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-// BUG FIX: this file -- the permission/diagnostics validator itself --
+ 
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('SESSION_PATH')) define('SESSION_PATH', DATA_PATH . '/sessions');
 
@@ -36,7 +36,7 @@ $diagnostics = [
     'logs' => []
 ];
 
-// 1. Environment Checks
+ 
 $diagnostics['env']['PHP Version'] = PHP_VERSION;
 $diagnostics['env']['Server Software'] = $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown';
 $diagnostics['env']['Memory Limit'] = ini_get('memory_limit');
@@ -44,7 +44,7 @@ $diagnostics['env']['Upload Max Size'] = ini_get('upload_max_filesize');
 $diagnostics['env']['External Fetch (allow_url_fopen)'] = ini_get('allow_url_fopen') ? '<span class="text-emerald-500 font-bold">Yes</span>' : '<span class="text-red-500 font-bold">No</span>';
 $diagnostics['env']['display_errors'] = ini_get('display_errors') ? '<span class="text-red-500 font-bold">ON — should be off in production</span>' : '<span class="text-emerald-500 font-bold">Off (correct)</span>';
 
-// 2. Directory Permissions
+ 
 $dirsToCheck = ['data', 'data/sessions', 'data/logs', 'images', 'docs'];
 foreach ($dirsToCheck as $dir) {
     $path = BASE_PATH . '/' . $dir;
@@ -57,7 +57,7 @@ foreach ($dirsToCheck as $dir) {
     }
 }
 
-// 3. JSON Data Integrity
+ 
 $jsonFiles = glob(DATA_PATH . '/*.json');
 if ($jsonFiles) {
     foreach ($jsonFiles as $file) {
@@ -81,7 +81,7 @@ if ($jsonFiles) {
     $diagnostics['data']['Status'] = '<span class="text-red-500 font-bold">No JSON files found in /data!</span>';
 }
 
-// 4. Read Last 50 Lines of App Log
+ 
 $logPath = DATA_PATH . '/logs/app.log';
 if (file_exists($logPath)) {
     $logLines = file($logPath);

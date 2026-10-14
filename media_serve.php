@@ -1,12 +1,5 @@
 <?php
-/**
- * Version: 260921.51
- * Public media gateway — serves files from data/media/images (and legacy images/)
- * under the stable public URL shape /images/{filename}.
- *
- * Why: IMG_PATH moved under data/, and .htaccess denies HTTP access to /data/.
- * Card/team markup still uses /images/photo.webp → 404 on Linux without this bridge.
- */
+
 declare(strict_types=1);
 
 $base = __DIR__;
@@ -21,7 +14,7 @@ if (!defined('IMG_PATH')) {
     define('IMG_PATH', DATA_PATH . '/media/images');
 }
 
-// Super-admin master brand logos: ?m=banks/icici.svg or oems/tata.png
+ 
 $m = (string)($_GET['m'] ?? '');
 if ($m !== '') {
     $m = str_replace(['\\', "\0"], ['/', ''], $m);
@@ -110,7 +103,7 @@ foreach ([
 
 $resolved = null;
 
-// Fast path: primary image dir only (avoids multi-dir + scandir on the hot path)
+ 
 if ($resolved === null && defined('IMG_PATH') && is_dir(IMG_PATH)) {
     $cand = rtrim(IMG_PATH, '/\\') . DIRECTORY_SEPARATOR . $f;
     if (is_file($cand) && is_readable($cand)) {
@@ -125,7 +118,7 @@ if ($mediaType === 'doc' || $mediaType === 'docs') {
         array_unshift($searchDirs, $docPath);
     }
 }
-// Also look in common mediakit subfolders
+ 
 foreach ([
     (defined('DATA_PATH') ? DATA_PATH : '') . '/media/images/mediakit',
     (defined('IMG_PATH') ? IMG_PATH : '') . '/mediakit',
@@ -146,7 +139,7 @@ foreach ($searchDirs as $dir) {
 }
 }
 
-// Sibling extension fallback (optimizer may have rewritten .png → .webp)
+ 
 if ($resolved === null) {
     $stem = pathinfo($f, PATHINFO_FILENAME);
     $alts = ['webp', 'jpg', 'jpeg', 'png', 'gif', 'avif', 'svg'];
@@ -162,7 +155,7 @@ if ($resolved === null) {
     }
 }
 
-// Linux case-insensitive fallback only (Windows FS is already case-insensitive)
+ 
 if ($resolved === null && strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN') {
     $lower = strtolower($f);
     foreach ($searchDirs as $dir) {
@@ -249,16 +242,16 @@ if ($ext === 'pdf') {
     header('Content-Disposition: inline; filename="' . str_replace('"', '', $f) . '"');
 }
 if ($ext === 'svg') {
-    // Allow SVG in <img> (sandbox blocks some browsers from painting the image)
+     
     header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:");
     header('Content-Disposition: inline; filename="' . str_replace('"', '', $f) . '"');
 }
 header('Content-Length: ' . (string)$size);
-// Company brand images keep a FIXED filename (company-logo.*, company-favicon.*,
-// company-cover.*), so the bytes behind a URL change when the logo is replaced.
-// 'immutable' + 7 days made browsers keep showing the previous file for up to a
-// week on every page that requests the plain /images/ URL (public cards, favicon,
-// share previews). They must revalidate; the ETag below makes that a cheap 304.
+ 
+ 
+ 
+ 
+ 
 if (preg_match('/^company-(logo|favicon|cover)\./i', basename($real))) {
     header('Cache-Control: no-cache, must-revalidate');
 } else {

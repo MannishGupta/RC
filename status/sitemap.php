@@ -1,12 +1,5 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   sitemap.php — XML sitemap with image entries.
 
-   Served as .php, not sitemap.xml, on purpose: the resource centre's root
-   web.config rewrites ^sitemap.xml$ to its OWN sitemap.php, and that rule is
-   anchored at the application root, so it would not reach a file here. Submit
-   this URL directly in Search Console.
-   ───────────────────────────────────────────────────────────────────────── */
 declare(strict_types=1);
 require_once __DIR__ . '/lib.php';
 AppLocale::boot();
@@ -32,7 +25,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>', "\n";
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"', "\n";
 echo '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">', "\n";
 
-/* Home — carries the photographs, so Google Images can index them. */
+ 
 echo "  <url>\n    <loc>", $x(canonicalUrl('')), "</loc>\n";
 echo "    <lastmod>", $x($lastmod), "</lastmod>\n";
 echo "    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n";
@@ -42,7 +35,7 @@ foreach ($updates as $u) {
     $job = $c ? (string)($c['job'] ?? '') : (string)($u['legacy_title'] ?? '');
     $pn  = $c ? (string)($projMap[$c['project_id']]['name'] ?? '') : '';
     foreach ((array)($u['images'] ?? []) as $img) {
-        if ($seen >= 1000) { break 2; }   // sitemap limit per URL
+        if ($seen >= 1000) { break 2; }    
         $seen++;
         echo "    <image:image>\n";
         echo "      <image:loc>", $x(canonicalUrl(assetPath((string)$img))), "</image:loc>\n";

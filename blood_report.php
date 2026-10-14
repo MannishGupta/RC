@@ -1,18 +1,12 @@
 <?php
-/**
- * Version: 20261003.04
- * Full Open Graph / Twitter / canonical SEO for share previews
- * India distribution, physiological highlights, awareness action plan + compatibility chart
- * Blood Group Intelligence Report — team compatibility + positive lore
- * Educational / workplace fun only — NOT medical advice.
- */
+
 declare(strict_types=1);
 
 $base = __DIR__;
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $base);
 }
-// BUG FIX: checked for tenant_bootstrap.php at BASE_PATH root, which never
+ 
 if (is_file($base . '/app/tenant_bootstrap.php')) {
     require_once $base . '/app/tenant_bootstrap.php';
 }
@@ -23,7 +17,7 @@ if (!defined('DATA_PATH')) {
     define('DATA_PATH', BASE_PATH . '/data');
 }
 
-// Session must use same AppAuth path as index.php (tenant session name + cookie)
+ 
 if (class_exists('AppAuth')) {
     AppAuth::initSession();
 } elseif (session_status() === PHP_SESSION_NONE) {
@@ -73,7 +67,7 @@ function bg_is_hi(): bool {
     return bg_lang() === 'hi';
 }
 
-/** @param array{0:string,1:string}|string $pair */
+ 
 function bg_t($pair): string {
     if (is_array($pair)) {
         return bg_is_hi() ? (string)($pair[1] ?? $pair[0] ?? '') : (string)($pair[0] ?? '');
@@ -95,9 +89,9 @@ function bg_norm_group(?string $raw): string {
         if ($rh === '+') {
             return $abo . '+';
         }
-        return $abo; // ABO only
+        return $abo;  
     }
-    // loose: A+, B+, AB+, O+
+     
     if (preg_match('/\b(A|B|AB|O)\s*([\+\-]|POS|NEG)?/i', (string)$raw, $m)) {
         $abo = strtoupper($m[1]);
         $rh = strtoupper($m[2] ?? '');
@@ -125,17 +119,10 @@ function bg_rh(string $g): string {
     return '';
 }
 
-/**
- * Canonical 8-type RBC donor→recipient matrix (educational textbook model).
- * Order matches common charts: O− O+ B− B+ A− A+ AB− AB+.
- */
 function bg_type_order(): array {
     return ['O-', 'O+', 'B-', 'B+', 'A-', 'A+', 'AB-', 'AB+'];
 }
 
-/**
- * Normalize to one of the 8 chart types when possible (append + if Rh missing).
- */
 function bg_chart_type(string $raw): string {
     $g = bg_norm_group($raw);
     if ($g === '') {
@@ -144,7 +131,7 @@ function bg_chart_type(string $raw): string {
     if (in_array($g, bg_type_order(), true)) {
         return $g;
     }
-    // ABO only → treat as positive for chart highlighting (common workplace data)
+     
     $abo = bg_abo($g);
     if (in_array($abo . '+', bg_type_order(), true)) {
         return $abo . '+';
@@ -152,12 +139,12 @@ function bg_chart_type(string $raw): string {
     return '';
 }
 
-/** Educational RBC transfusion: can $donor give to $recipient? */
+ 
 function bg_can_donate_to(string $donor, string $recipient): bool {
     $d = bg_chart_type($donor);
     $r = bg_chart_type($recipient);
     if ($d === '' || $r === '') {
-        // Fall back to ABO-only if incomplete
+         
         $d0 = bg_norm_group($donor);
         $r0 = bg_norm_group($recipient);
         if ($d0 === '' || $r0 === '') {
@@ -173,15 +160,15 @@ function bg_can_donate_to(string $donor, string $recipient): bool {
             default => false,
         };
     }
-    // Exact matrix from standard chart (donor columns × recipient rows)
-    // CODE QUALITY FIX: this table was previously assigned twice -- a first
-    // block immediately overwritten by a second before anything ever read
-    // it, pure dead code. Verified both held the exact same sets (only
-    // reordered, which in_array() doesn't care about), so this was never a
-    // logic bug -- the actually-used table was and is correct, checked
-    // directly against the standard ABO+Rh donor compatibility chart for
-    // all 8 types. Removed the dead first block so a future edit to one
-    // table can't silently drift from the other while both look live.
+     
+     
+     
+     
+     
+     
+     
+     
+     
     static $ok = null;
     if ($ok === null) {
         $ok = [
@@ -202,7 +189,7 @@ function bg_can_receive_from(string $recipient, string $donor): bool {
     return bg_can_donate_to($donor, $recipient);
 }
 
-/** Render standard 8×8 chart; highlight focus type row+col and optional team types. */
+ 
 function bg_render_standard_chart(string $focusType, array $teamTypes = []): void {
     $types = bg_type_order();
     $focusType = bg_chart_type($focusType);
@@ -281,11 +268,6 @@ function bg_render_standard_chart(string $focusType, array $teamTypes = []): voi
     echo '</div>';
 }
 
-
-/**
- * India-aware positive facts (population / evolutionary context).
- * Not personality determinism; not personal medical advice.
- */
 function bg_lore(string $group): array {
     $abo = bg_abo(bg_norm_group($group));
     $map = [
@@ -556,9 +538,6 @@ function bg_base_url(): string {
     return ($https ? 'https://' : 'http://') . $host;
 }
 
-/**
- * @param array{name?:string,group?:string,slug?:string,photo?:string,designation?:string} $ctx
- */
 function bg_header(string $title, array $ctx = []): void {
     $lang = bg_lang();
     $other = $lang === 'hi' ? 'en' : 'hi';
@@ -568,7 +547,7 @@ function bg_header(string $title, array $ctx = []): void {
 
     $base = bg_base_url();
     $reqPath = (string)($_SERVER['REQUEST_URI'] ?? '/blood_report.php');
-    // Canonical without fragment; prefer clean query for slug reports
+     
     $canonQs = [];
     if (!empty($ctx['slug'])) {
         $canonQs['slug'] = (string)$ctx['slug'];
@@ -593,7 +572,7 @@ function bg_header(string $title, array $ctx = []): void {
             ? 'रक्त समूह अनुकूलता, भारत वितरण व जागरूकता — शैक्षिक रिपोर्ट।'
             : 'Blood group compatibility, India distribution and awareness — educational report.');
 
-    // OG image: member photo → dynamic SVG card
+     
     $photo = trim((string)($ctx['photo'] ?? ''));
     $ogImg = '';
     if ($photo !== '') {
@@ -624,7 +603,7 @@ function bg_header(string $title, array $ctx = []): void {
     echo '<meta name="description" content="' . bg_h($desc) . '">';
     echo '<meta name="robots" content="' . bg_h($robots) . '">';
     echo '<link rel="canonical" href="' . bg_h($canonical) . '">';
-    // Open Graph
+     
     echo '<meta property="og:type" content="profile">';
     echo '<meta property="og:site_name" content="' . bg_h($site) . '">';
     echo '<meta property="og:locale" content="' . bg_h($locale) . '">';
@@ -636,7 +615,7 @@ function bg_header(string $title, array $ctx = []): void {
     echo '<meta property="og:image:width" content="1200">';
     echo '<meta property="og:image:height" content="630">';
     echo '<meta property="og:image:alt" content="' . bg_h($title) . '">';
-    // Twitter
+     
     echo '<meta name="twitter:card" content="summary_large_image">';
     echo '<meta name="twitter:title" content="' . bg_h($title) . '">';
     echo '<meta name="twitter:description" content="' . bg_h($desc) . '">';
@@ -658,7 +637,7 @@ function bg_footer(): void {
     ])) . '</p></div></body></html>';
 }
 
-// ── Resolve focus person ──────────────────────────────────────────
+ 
 $team = bg_load_team();
 $members = bg_members_with_group($team);
 $slug = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($_GET['slug'] ?? ''));
@@ -693,7 +672,7 @@ if ($focus === null && $groupQ !== '') {
     ];
 }
 if ($focus === null && $members !== []) {
-    // pick first with a group
+     
     foreach ($members as $m) {
         if ($m['group'] !== '') {
             $focus = $m;
@@ -727,7 +706,7 @@ bg_header($title, [
     'designation' => (string)($focus['designation'] ?? ''),
 ]);
 
-// Hero
+ 
 echo '<div class="card">';
 echo '<div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">';
 $photoHero = trim((string)($focus['photo'] ?? ''));
@@ -748,7 +727,7 @@ if ($focus['designation'] !== '') {
 }
 echo '</div></div></div>';
 
-// Positive traits
+ 
 echo '<div class="card"><h2>✨ ' . bg_h(bg_t(['Clinical & population highlights', 'नैदानिक व जनसंख्या झलक'])) . '</h2>';
 echo '<p class="meta" style="margin:0 0 .65rem">' . bg_h(bg_t([
     'Population and evolutionary themes from published literature — not personal medical advice.',
@@ -772,7 +751,7 @@ echo '</ul></div>';
 bg_render_india_context();
 bg_render_action_plan();
 
-// Standard chart (focus row + column highlighted)
+ 
 $focusChart = bg_chart_type($g);
 $teamTypeList = [];
 foreach ($members as $_m) {
@@ -784,7 +763,7 @@ echo '<div class="card" style="padding:0;overflow:hidden;border:none;background:
 bg_render_standard_chart($focusChart, $teamTypeList);
 echo '</div>';
 
-// Team compatibility person matrix
+ 
 $withGroup = array_values(array_filter($members, static fn($m) => $m['group'] !== ''));
 echo '<div class="card"><h2>🩸 ' . bg_h(bg_t(['Team blood map', 'टीम ब्लड मैप'])) . '</h2>';
 
@@ -799,7 +778,7 @@ if ($withGroup === []) {
         'हरा = सरलीकृत “किसे डोनेट कर सकता है” (पाठ्य मॉडल)। चिकित्सकीय उपयोग नहीं।',
     ])) . '</p>';
 
-    // Pills
+     
     echo '<div style="margin:0 0 1rem">';
     foreach ($withGroup as $m) {
         $href = 'blood_report.php?slug=' . rawurlencode($m['slug']) . '&lang=' . bg_lang();
@@ -809,7 +788,7 @@ if ($withGroup === []) {
     }
     echo '</div>';
 
-    // Matrix (limit size for readability)
+     
     $matrix = array_slice($withGroup, 0, 24);
     if (count($withGroup) > 24) {
         echo '<p class="meta">' . bg_h(bg_t(['Showing first 24 members with groups.', 'ग्रुप वाले पहले 24 सदस्य।'])) . '</p>';
@@ -833,7 +812,7 @@ if ($withGroup === []) {
     }
     echo '</tbody></table></div>';
 
-    // Highlight matches for focus person
+     
     if ($g !== '') {
         $canGive = [];
         $canTake = [];
@@ -858,7 +837,7 @@ if ($withGroup === []) {
 }
 echo '</div>';
 
-// Quick picker if many members
+ 
 echo '<div class="card no-print"><h2>' . bg_h(bg_t(['Open another member', 'अन्य सदस्य खोलें'])) . '</h2>';
 echo '<form method="get" style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center">';
 echo '<input type="hidden" name="lang" value="' . bg_h(bg_lang()) . '">';

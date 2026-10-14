@@ -1,14 +1,14 @@
 <?php
-// flush_cache.php
-// Version: 260916.14
-// CHANGELOG: previously had ZERO authentication — anyone who requested this
-// URL could force an opcache reset. Now requires an active admin/crm session,
-// mirroring the pattern already used correctly in print.php.
+ 
+ 
+ 
+ 
+ 
 
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-// BUG FIX: this file defined DATA_PATH/IMG_PATH/DOC_PATH directly from
+ 
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('SESSION_PATH')) define('SESSION_PATH', DATA_PATH . '/sessions');
 

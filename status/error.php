@@ -1,9 +1,5 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0
-   error.php — custom error page. Referenced by <httpErrors> if you enable it.
-   Safe to deploy even when web.config does not use it. (Audit §16)
-   ───────────────────────────────────────────────────────────────────────── */
+
 declare(strict_types=1);
 require_once __DIR__ . '/lib.php';
 AppLocale::boot();

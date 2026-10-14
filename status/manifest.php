@@ -1,6 +1,5 @@
 <?php
-/* manifest.php — web app manifest. A .php endpoint because the resource
-   centre's root web.config disallows .json via requestFiltering. */
+
 declare(strict_types=1);
 require_once __DIR__ . '/lib.php';
 AppLocale::boot();

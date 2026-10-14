@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * status/serve.php — stream upload files from tenant OR legacy status/uploads.
- * Query: ?f=uploads/…  (no .., no absolute paths)
- */
+
 require_once __DIR__ . '/lib.php';
 
 $rel = (string)($_GET['f'] ?? '');
@@ -38,7 +35,7 @@ foreach ($candidates as $abs) {
     if ($r === false) {
         continue;
     }
-    // Jail: must stay under UPLOAD_DIR or status/uploads
+     
     $allowedRoots = [];
     if (defined('UPLOAD_DIR') && UPLOAD_DIR !== '') {
         $tr = realpath(rtrim(UPLOAD_DIR, '/\\'));

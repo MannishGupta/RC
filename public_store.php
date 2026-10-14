@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Public store / premises locator — minimal SEO page. Version: 260921.40
- */
+
 define('BASE_PATH', str_replace('\\', '/', __DIR__));
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 $company = [];

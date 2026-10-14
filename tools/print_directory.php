@@ -1,11 +1,5 @@
 <?php
-/**
- * tools/print_directory.php — Corporate visiting-card directory print
- * Version: 20261003.29
- *
- * Stacked visiting cards: Photo, Name, Designation, Department, Location, Phone, Email
- * Excluded: Project, social links, website, technical fields
- */
+
 declare(strict_types=1);
 
 $base = dirname(__DIR__);
@@ -106,7 +100,7 @@ $photoUrl = static function (array $m) use ($origin): string {
         return $photo;
     }
     $base = basename($photo);
-    // Prefer media_serve (multi-tenant safe)
+     
     return rtrim($origin, '/') . '/media_serve.php?f=' . rawurlencode($base);
 };
 
@@ -366,7 +360,7 @@ foreach ($team as $m) {
     }
     $printed++;
 
-    // Resolve like AppLookup::map — try id, code, raw value (lowercase keys)
+     
     $dKey = strtolower(trim((string)($m['designation_id'] ?? $m['designation_code'] ?? $m['designation'] ?? '')));
     $desig = trim((string)($m['designation_name'] ?? ($desigName[$dKey] ?? '')));
     if ($desig === '' && $dKey !== '') {
@@ -415,7 +409,7 @@ foreach ($team as $m) {
     $email = trim((string)($m['email'] ?? ''));
     $purl = $photoUrl($m);
     $initial = mb_strtoupper(mb_substr($name, 0, 1));
-    // Sex symbol + current age (below photo) — no blood/DOB row
+     
     $sexRaw = strtolower(trim((string)($m['gender'] ?? $m['sex'] ?? '')));
     $sexSym = '';
     if ($sexRaw !== '') {
@@ -467,7 +461,7 @@ foreach ($team as $m) {
                 if ($desig !== '') $__p['title'] = $desig;
                 if ($dept !== '') $__p['department_name'] = $dept;
                 $__vt = VcardBuilder::buildForQr($__p, ['name' => $compName]);
-                // Prefer compact vCard when it stays scannable on a small print QR
+                 
                 if ($__vt !== '' && strlen($__vt) < 900) {
                     $__qr = $__vt;
                 }

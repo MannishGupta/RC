@@ -1,8 +1,5 @@
 <?php
-/**
- * flush_cache.php — manual OPcache flush (administrator only).
- * Version: 20260929.20
- */
+
 declare(strict_types=1);
 
 define('BASE_PATH', __DIR__);
@@ -35,7 +32,7 @@ if (!$isAdmin) {
     exit;
 }
 
-// Simple file-based rate limit: max 1 flush / 30s per tenant data dir
+ 
 $rateFile = (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/.flush_cache_rate';
 $now = time();
 if (!$isCli && is_file($rateFile)) {

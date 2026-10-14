@@ -1,11 +1,8 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0 (2026-10-11)
-   Single release version across all files. See CHANGELOG.md for changes.
-   ───────────────────────────────────────────────────────────────────── */
-// admin_backend.php — Admin Logic Engine
-// Brute-force throttle, HTTPS-safe cookies, CSP, random IDs,
-// extended analytics (top project/tower/referrer/device), privacy-clean IPs
+
+ 
+ 
+ 
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
@@ -18,13 +15,13 @@ ini_set('session.cookie_secure', isHttps() ? '1' : '0');
 ini_set('session.use_strict_mode', '1');
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.gc_maxlifetime',  (string)$IDLE_TIMEOUT);
-ini_set('session.cookie_lifetime', '0');      // cookie lives until browser close
+ini_set('session.cookie_lifetime', '0');       
 session_name(cfg('site.cookie_prefix', 'fusion') . '_admin_secure');
 session_start();
 if (isset($_SESSION['logged_in'])) {
-    // Idle timeout: kill session if admin has been inactive for >8 hours.
-    // The comparison MUST happen before _last_active is refreshed, otherwise
-    // the elapsed time is always 0 and the timeout never fires.
+     
+     
+     
     if (isset($_SESSION['_last_active']) && (time() - (int)$_SESSION['_last_active']) > $IDLE_TIMEOUT) {
         $_SESSION = [];
         session_destroy();
@@ -34,7 +31,7 @@ if (isset($_SESSION['logged_in'])) {
     $_SESSION['_last_active'] = time();
 }
 
-// ─── 1. Security / Content-Security-Policy headers ─────────────────────────
+ 
 if (!headers_sent()) {
     header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';");
     header('X-Content-Type-Options: nosniff');
@@ -43,8 +40,8 @@ if (!headers_sent()) {
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
 }
 
-// A storage failure must never leave a half-written state, dump a trace, or show
-// a blank page. Report it to the admin and stop before anything else is written.
+ 
+ 
 set_exception_handler(static function (Throwable $e): void {
     error_log('admin_backend: ' . $e->getMessage());
     if (!headers_sent()) {
@@ -53,17 +50,17 @@ set_exception_handler(static function (Throwable $e): void {
     exit;
 });
 
-// ─── Asset paths (configurable) ──────────────────────────────────────────────
+ 
 $projectLogo = assetPath('assets/BnR.png');
 $companyLogo = assetPath('assets/ag-image.png');
 $favicon     = 'assets/favicon.ico?v=' . (@filemtime(__DIR__ . '/assets/favicon.ico') ?: time());
 
-// Ensure data directory exists
+ 
 if (!is_dir(DATA_DIR)) mkdir(DATA_DIR, 0755, true);
 
-// ─── Admin password hash ─────────────────────────────────────────────────────
-// Sourced from config.php, which prefers the ADMIN_HASH environment variable.
-// Set it in Plesk and remove the fallback from config.php. (Audit §11)
+ 
+ 
+ 
 define('ADMIN_HASH', (string)cfg('admin.hash', ''));
 if (ADMIN_HASH === '') {
     http_response_code(500);
@@ -76,13 +73,13 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
-// ─── 2. Login with brute-force throttle ──────────────────────────────────────
+ 
 define('LOGIN_MAX_ATTEMPTS', max(1, (int)cfg('admin.login_attempts', 5)));
 define('LOGIN_LOCKOUT_SECS', max(30, (int)cfg('admin.login_lockout', 900)));
 
-// Throttle state is held server-side keyed on the client IP — NOT in the
-// session. A session-held counter is no throttle at all: the attacker owns the
-// cookie, so dropping it resets the count and the lockout never bites.
+ 
+ 
+ 
 $loginLockedMinutes = 0;
 
 if (isset($_POST['login']) && is_string($_POST['password'] ?? null)) {
@@ -101,13 +98,13 @@ if (isset($_POST['login']) && is_string($_POST['password'] ?? null)) {
         exit;
     } else {
         throttleRegisterFailure();
-        // Uniform delay on failure: blunts rapid-fire guessing and flattens the
-        // timing difference between a wrong password and a lockout.
+         
+         
         usleep(400000);
     }
 }
 
-// ─── 3. Initialize View Variables ────────────────────────────────────────────
+ 
 $activeTab          = in_array($_GET['tab'] ?? '', ['updates','components','projects','analytics'], true) ? $_GET['tab'] : 'updates';
 $editProjData       = ['id'=>'','name'=>'','rera'=>'','logo'=>''];
 $editCompData       = ['id'=>'','project_id'=>'','type'=>'','job'=>''];
@@ -131,19 +128,19 @@ $a_topTower         = '—';
 $a_topReferrer      = 'Direct';
 $a_deviceBreakdown  = ['Desktop' => 0, 'Mobile' => 0, 'Tablet' => 0, 'Unknown' => 0];
 
-// Not logged in — halt backend execution
+ 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     return;
 }
 
-// ─── 4. CSRF Protection — per session ───────────────────────────────────────
-// Previously derived from ADMIN_HASH alone, which made the token identical for
-// every session forever: a token leaked through browser history, a proxy log or
-// a Referer header stayed valid indefinitely. It is now bound to a random
-// per-session seed, so it rotates with the login. (Audit §10)
-//
-// Note: this invalidates any bookmarked admin delete URLs — they carry the old
-// token and will be rejected. That is the intended behaviour.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 function makeCsrfToken(): string {
     if (empty($_SESSION['_csrf_seed']) || !is_string($_SESSION['_csrf_seed'])) {
         $_SESSION['_csrf_seed'] = bin2hex(random_bytes(32));
@@ -164,7 +161,7 @@ function validateGetToken(): bool {
     return !empty($token) && hash_equals(makeCsrfToken(), $token);
 }
 
-// ─── 5. Action Router (GET) ──────────────────────────────────────────────────
+ 
 if (isset($_GET['delete_project'])) {
     if (!validateGetToken()) { header('Location: admin.php?tab=projects&msg=' . urlencode('Invalid security token.')); exit; }
     $projects = readStoreForWrite(PROJ_FILE);
@@ -195,7 +192,7 @@ if (isset($_GET['delete_update'])) {
     exit;
 }
 
-// ─── 6. Action Router (POST) ─────────────────────────────────────────────────
+ 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
 
@@ -203,10 +200,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $configFile = DATA_DIR . DIRECTORY_SEPARATOR . 'site_config.json';
         $existing = safeReadJson($configFile);
 
-        // Accept BOTH an app-relative path (assets/wip.mp4) and an absolute
-        // http(s) URL. The field used to be <input type="url">, which made the
-        // browser reject the relative form the placeholder itself suggested —
-        // so a relative path could never be saved at all.
+         
+         
+         
+         
         $rawUrl = trim($_POST['video_url'] ?? '');
         $rawUrl = ltrim($rawUrl, '/');
         $safe   = $rawUrl !== ''
@@ -226,10 +223,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $updates    = readStoreForWrite(UPD_FILE);
         $analytics  = readStoreForWrite(ANALYTICS_FILE);
 
-        // ── Phase 0: Normalise media filenames ───────────────────────────────
-        // The site-root web.config's LowerCaseRule1 301-redirects any URL with an
-        // uppercase letter, which broke every legacy image. Fold names to
-        // lowercase and strip spaces/'&' so no rewrite rule fires on a media URL.
+         
+         
+         
+         
         [$nameMap, $nameSkipped] = normaliseMediaNames(['uploads', 'assets']);
 
         if ($nameMap) {
@@ -256,17 +253,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ── Phase 1: Convert all existing raster images to WebP ──────────────
-        // Converts JPEG/PNG/AVIF → WebP at 82% quality with max 1600px resize.
-        // Updates JSON references and deletes the original file on success.
-        // Skips files already in .webp, .svg, or .gif format.
+         
+         
+         
+         
         $converted  = 0;
         $convErrors = 0;
 
-        // max_execution_time is 30s. Image conversion is the only unbounded part
-        // of this run, so stop accepting new work at 20s and finish cleanly —
-        // the JSON still gets written and the pass is idempotent, so clicking
-        // Optimise again simply continues where this one stopped.
+         
+         
+         
+         
         $deadline  = microtime(true) + 20.0;
         $ranOutOfTime = false;
 
@@ -295,10 +292,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $w = imagesx($source);
             $h = imagesy($source);
 
-            // Guard against zero-dimension (corrupted) images
+             
             if ($w <= 0 || $h <= 0) { imagedestroy($source); $convErrors++; return $relPath; }
 
-            // EXIF auto-rotation for JPEG
+             
             if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
                 $exif = @exif_read_data($absPath);
                 if (!empty($exif['Orientation'])) {
@@ -310,7 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
             }
 
-            // Proportional resize to max 1600x1600
+             
             $maxW = 1600; $maxH = 1600;
             $ratio = $w / $h;
             if ($maxW / $maxH > $ratio) { $maxW = (int) round($maxH * $ratio); }
@@ -346,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             return $relPath;
         };
 
-        // Convert update images
+         
         foreach ($updates as &$u) {
             if (empty($u['images']) || !is_array($u['images'])) continue;
             foreach ($u['images'] as &$img) { $img = $convertToWebp($img); }
@@ -354,13 +351,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         unset($u);
 
-        // Convert project logos
+         
         foreach ($projects as &$p) {
             if (!empty($p['logo'])) { $p['logo'] = $convertToWebp($p['logo']); }
         }
         unset($p);
 
-        // ── Phase 2: Purge orphaned upload files ──────────────────────────────
+         
         $validFiles = [];
         foreach ($projects as $p) {
             if (!empty($p['logo'])) {
@@ -398,13 +395,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
 
-        // ── Phase 2a: rebuild the social card so its date follows the data ───
+         
         $ogCards = ogBuildImages();
 
-        // ── Phase 2b: DPDP retention — drop analytics past its keep-period ───
+         
         $purged = analyticsPurgeExpired();
 
-        // ── Phase 3: Compact analytics log ───────────────────────────────────
+         
         if (count($analytics) > ANALYTICS_CAP) {
             $analytics = array_slice($analytics, -ANALYTICS_CAP);
             atomicWriteJson(ANALYTICS_FILE, $analytics);
@@ -463,8 +460,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             if (isset($raw['updates']) && is_array($raw['updates'])) {
                 $ups = $validate($raw['updates'], ['id', 'component_id', 'date', 'description', 'images', 'legacy_title']);
-                // Imported cells never passed through save_update()'s filter — sanitise here
-                // or a crafted .xlsx writes arbitrary markup straight into the store.
+                 
+                 
                 foreach ($ups as &$_row) {
                     $_row['description']  = sanitizeRichText($_row['description'] ?? '');
                     $_row['legacy_title'] = trim(strip_tags((string)($_row['legacy_title'] ?? '')));
@@ -539,7 +536,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $existingImgs = json_decode($_POST['existing_images'] ?? '[]', true);
         if (!is_array($existingImgs)) $existingImgs = [];
 
-        // Delete marked images — validate path before unlinking
+         
         if (!empty($_POST['delete_images']) && is_array($_POST['delete_images'])) {
             foreach ($_POST['delete_images'] as $delImg) {
                 $delImg = (string)$delImg;
@@ -601,7 +598,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// ─── 7. View Data Preparation ────────────────────────────────────────────────
+ 
 $projects   = safeReadJson(PROJ_FILE);
 $components = safeReadJson(COMP_FILE);
 $updates    = safeReadJson(UPD_FILE);
@@ -610,7 +607,7 @@ $analytics  = safeReadJson(ANALYTICS_FILE);
 [$projMap, $compMap] = buildMaps($projects, $components);
 sortUpdates($updates, $compMap, $projMap);
 
-// Edit context defaults
+ 
 $defaultUpdateData = ['id' => '', 'component_id' => '', 'date' => date('Y-m-d'), 'description' => '', 'images' => [], 'legacy_title' => ''];
 
 if (isset($_GET['edit_proj'])) {
@@ -634,11 +631,11 @@ if (isset($_GET['edit'])) {
     }
 }
 
-// Ensure proper date format for HTML inputs
+ 
 $dtForInput   = DateTime::createFromFormat('d-M-Y', $editUpdateData['date']) ?: DateTime::createFromFormat('Y-m-d', $editUpdateData['date']);
 $dateForInput = $dtForInput ? $dtForInput->format('Y-m-d') : date('Y-m-d');
 
-// ─── 8. Analytics Aggregation ────────────────────────────────────────────────
+ 
 $a_totalVisits = 0;
 $a_ips         = [];
 $a_totalSecs   = 0;
@@ -711,7 +708,7 @@ $siteConfig  = safeReadJson(DATA_DIR . '/site_config.json');
 $videoUrl    = $siteConfig['video_url']   ?? '';
 $videoTitle  = $siteConfig['video_title'] ?? 'Site Aerial Overview';
 
-// ─── 9. Render Groupings ─────────────────────────────────────────────────────
+ 
 $feedGroups    = [];
 $legacyUpdates = [];
 foreach ($updates as $u) {

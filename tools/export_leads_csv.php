@@ -1,16 +1,10 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-/**
- * tools/export_leads_csv.php — Export captured leads as CSV.
- *
- * CSV, not vCard — leads are prospects to follow up with in a spreadsheet or
- * CRM import, not contacts to save to a phone.
- */
 
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-// BUG FIX: this file defined DATA_PATH/IMG_PATH/DOC_PATH directly from
+ 
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('IMG_PATH'))  if (!defined('IMG_PATH')) define('IMG_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/images');
 if (!defined('DOC_PATH'))  if (!defined('DOC_PATH')) define('DOC_PATH', (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/media/documents');
@@ -38,7 +32,7 @@ header('Content-Disposition: attachment; filename="' . date('ymd') . '_leads.csv
 header('Cache-Control: no-store');
 
 $out = fopen('php://output', 'w');
-fwrite($out, "\xEF\xBB\xBF");   // UTF-8 BOM so Excel does not mangle non-ASCII names
+fwrite($out, "\xEF\xBB\xBF");    
 fputcsv($out, ['Date', 'Name', 'Email', 'Phone', 'Company', 'Note', 'Card Owner', 'Status']);
 foreach ($leads as $l) {
     fputcsv($out, [

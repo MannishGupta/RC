@@ -1,22 +1,5 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0
-   reminder.php — periodic "please update the portal" e-mail.
 
-   Fixes audit §8. Previously this file was:
-     - reachable by anyone who knew the URL, with no authentication;
-     - fatal on every request, because it requires vendor/autoload.php which
-       is not in the source tree;
-     - leaking $mail->ErrorInfo (SMTP host, username, server errors) straight
-       to an anonymous caller.
-
-   It now runs from the command line by default. To call it over HTTP, set a
-   REMINDER_TOKEN environment variable and pass ?token=… ; anything else gets
-   a flat 404. SMTP detail is written to the error log, never to the response.
-
-   Plesk: Websites & Domains → Scheduled Tasks → run
-       php /path/to/httpdocs/status/reminder.php
-   ───────────────────────────────────────────────────────────────────────── */
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
@@ -34,7 +17,7 @@ if (!$isCli) {
     header('Content-Type: text/plain; charset=UTF-8');
 }
 
-/** Say only what a caller may safely know; log the detail. */
+ 
 function out(string $publicMsg, ?string $logDetail = null): never {
     if ($logDetail !== null) {
         error_log('reminder.php: ' . $logDetail);
@@ -123,7 +106,7 @@ try {
     out('Reminder sent successfully.');
 
 } catch (Throwable $e) {
-    // Never echo ErrorInfo — it names the SMTP host and account.
+     
     out('Reminder not sent: the mail server rejected the message.',
         'SMTP error: ' . ($mail->ErrorInfo ?: $e->getMessage()));
 }

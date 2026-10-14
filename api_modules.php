@@ -1,15 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Super Admin — per-tenant module matrix API.
- * GET  → catalogue + current config + write probe
- * POST → save modules.json for active tenant under DATA_PATH/config/
- * Version: 20261002.07
- *
- * CRITICAL: Must use AppAuth::initSession() so session name/path match the
- * dashboard (RCSESSID / RCSESS_{tenant}). A bare session_start() reads a
- * different cookie → "Super Admin required" while the UI is clearly logged in.
- */
+
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 
@@ -22,16 +13,13 @@ if (is_file(BASE_PATH . '/app/ModuleRegistry.php')) {
     require_once BASE_PATH . '/app/ModuleRegistry.php';
 }
 
-// Same session cookie as index.php / dashboard
+ 
 if (class_exists('AppAuth')) {
     AppAuth::initSession();
 } elseif (session_status() !== PHP_SESSION_ACTIVE) {
     @session_start();
 }
 
-/**
- * Super Admin — same conventions as index.php / dashboard.
- */
 $isSuper = false;
 $user = (string)($_SESSION['user'] ?? '');
 $true = (string)($_SESSION['true_role'] ?? '');
@@ -40,7 +28,7 @@ $role = (string)($_SESSION['role'] ?? '');
 if ($user === 'super_admin' || $true === 'super_admin' || $role === 'super_admin') {
     $isSuper = true;
 }
-// Original password role preserved when switched to Company Admin / Visitor
+ 
 if ($true === 'super_admin') {
     $isSuper = true;
 }

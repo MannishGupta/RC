@@ -1,8 +1,5 @@
 <?php
-/**
- * health.php — lightweight uptime probe (no auth, no tenant, no DB).
- * Version: 20261006.0
- */
+
 declare(strict_types=1);
 
 try {

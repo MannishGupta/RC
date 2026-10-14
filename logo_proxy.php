@@ -1,10 +1,5 @@
 <?php
-/**
- * logo_proxy.php — fetch & cache brand logos by domain (banks / OEMs).
- * Server-side logo fetch + disk cache; works on shared hosting with allow_url_fopen.
- * Usage: /logo_proxy.php?d=icicibank.com&sz=256
- *        /logo_proxy.php?d=bmw.in&sz=256
- */
+
 declare(strict_types=1);
 
 $base = __DIR__;
@@ -27,8 +22,7 @@ if ($domain === '' || str_contains($domain, '..')) {
     exit;
 }
 
-
-// Rate-limit distinct fetches (cache hits do not count) — 30 / 10 min per IP
+ 
 $clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
 $throttleFile = (defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data')) . '/logo_proxy_throttle.json';
 $throttle = [];
@@ -55,7 +49,7 @@ $cacheKey = preg_replace('/[^a-z0-9.\-]/', '_', $domain) . '_' . $sz;
 $cacheFile = $cacheDir . '/' . $cacheKey . '.img';
 $metaFile = $cacheDir . '/' . $cacheKey . '.meta';
 
-// Serve cache if fresh (< 30 days)
+ 
 if (is_file($cacheFile) && is_readable($cacheFile) && (time() - (int)@filemtime($cacheFile)) < 2592000) {
     $ctype = 'image/png';
     if (is_file($metaFile)) {
@@ -64,7 +58,7 @@ if (is_file($cacheFile) && is_readable($cacheFile) && (time() - (int)@filemtime(
     if (str_contains(strtolower($ctype), 'svg')) {
         @unlink($cacheFile);
         @unlink($metaFile);
-        // fall through to re-fetch as raster or PNG fallback
+         
     } else {
         header('Content-Type: ' . $ctype);
         header('Cache-Control: public, max-age=604800');
@@ -95,7 +89,7 @@ $ctx = stream_context_create([
     ],
 ]);
 
-// Distinct domain fetch counts against rate limit (cache hits already returned)
+ 
 if (count($entries) >= $maxFetches) {
     http_response_code(429);
     header('Content-Type: image/png');
@@ -113,7 +107,7 @@ foreach ($candidates as $url) {
     if ($data === false || strlen($data) < 40) {
         continue;
     }
-    // Skip tiny error placeholders
+     
     if (strlen($data) < 80) {
         continue;
     }
@@ -127,7 +121,7 @@ foreach ($candidates as $url) {
     } elseif (str_starts_with($data, 'RIFF')) {
         $ctype = 'image/webp';
     } elseif (str_contains($data, '<svg') || str_starts_with(ltrim($data), '<?xml') || str_contains(strtolower($data), '<svg')) {
-        // Never cache or serve SVG (scriptable on RC origin)
+         
         continue;
     } elseif (str_starts_with($data, "\x00\x00\x01\x00") || str_starts_with($data, "\x00\x00\x02\x00")) {
         $ctype = 'image/x-icon';
@@ -138,7 +132,7 @@ foreach ($candidates as $url) {
 }
 
 if ($bin === null || !in_array($ctype, ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/x-icon'], true)) {
-    // 1x1 transparent PNG fallback — never store/serve SVG or unknown
+     
     $bin = $png1x1;
     $ctype = 'image/png';
     header('X-Logo-Cache: miss-empty');

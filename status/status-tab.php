@@ -1,50 +1,12 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   status-tab.php — Construction Progress as a resource-centre module.
 
-   Written against github.com/MannishGupta/RC as it stands on main:
-
-     · emits NO <html>, <head>, <body> or headers — the host app owns the shell,
-       and card views there are included with `require $viewFile` inside an
-       output buffer, so this file must be safe in that position;
-     · starts no session and sets no cookies — the host app's session is already
-       open, and calling session_start() again would raise a notice;
-     · all markup sits inside .rc-status and loads assets/app-embed.css, a build
-       of app.css in which every one of 273 selectors is prefixed, so nothing
-       can reach the resource centre's own styles;
-     · honours ModuleRegistry::isEnabled('status') when that class is loaded, so
-       the per-tenant modules.json switch works. ModuleRegistry::isEnabled()
-       returns true for ids it does not know, so the tab works before anyone
-       edits catalogue();
-     · read-only. No POST handler, no CSRF surface, no admin action. Editing
-       stays in the standalone console at status/admin.php.
-
-   HOW TO MOUNT IT  (three lines in the resource centre)
-
-     1. In the tab dispatch:
-            if ($tab === 'status') { require __DIR__ . '/status/status-tab.php'; }
-
-     2. In app/ModuleRegistry.php → catalogue(), to make it configurable:
-            'status' => [
-                'label'    => 'Construction Status',
-                'group'    => 'Projects',
-                'features' => ['status_feed' => 'Tower-wise progress and photographs'],
-            ],
-
-     3. Add the tab to the navigation however the shell builds it, pointing at
-        ?tab=status
-
-   Nothing else in the resource centre needs to change. The portal keeps its own
-   data/ directory, so it is tenant-independent; see INTEGRATION.md if you want
-   per-tenant status data instead.
-   ───────────────────────────────────────────────────────────────────────── */
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
 require_once __DIR__ . '/version.php';
 AppLocale::boot();
 
-/* Respect the host's per-tenant module switch when it is available. */
+ 
 if (cfg('integration.respect_registry', true) && class_exists('ModuleRegistry')) {
     $moduleId = (string)cfg('integration.module_id', 'status');
     if (method_exists('ModuleRegistry', 'isEnabled') && !ModuleRegistry::isEnabled($moduleId)) {
@@ -58,7 +20,7 @@ $rcUpdates    = function_exists('statusLoadJson') ? statusLoadJson('updates.json
 [$rcProjMap, $rcCompMap] = buildMaps($rcProjects, $rcComponents);
 sortUpdates($rcUpdates, $rcCompMap, $rcProjMap);
 
-/* Same per-tower cap as the public page, so the embed cannot become enormous. */
+ 
 $rcPerComp = max(1, (int)cfg('feed.per_component', 12));
 $rcSeen    = [];
 $rcFeed    = [];
@@ -69,7 +31,7 @@ foreach ($rcUpdates as $u) {
     $rcFeed[] = $u;
 }
 
-/* Group by project then component type, mirroring the standalone layout. */
+ 
 $rcTree = [];
 foreach ($rcProjects as $p) { $rcTree[(string)$p['id']] = ['info' => $p, 'types' => []]; }
 foreach ($rcComponents as $c) {

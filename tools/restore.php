@@ -1,13 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * tools/restore.php — Validate and restore a RC backup ZIP (manifest + checksums).
- *
- * CLI:  php tools/restore.php --file=/path/to/backup.zip [--dry-run] [--target=/path]
- * Web:  super-admin only, POST file=…&dry_run=1&csrf=
- *
- * Refuses incomplete/corrupt archives. Never serves archives from web root.
- */
+
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 
@@ -85,7 +78,7 @@ if ($zip->open($zipFile) !== true) {
 
 $manifestRaw = $zip->getFromName('MANIFEST.json');
 if ($manifestRaw === false) {
-    // accept legacy backups without manifest but warn
+     
     $manifest = null;
 } else {
     $manifest = json_decode($manifestRaw, true);
@@ -110,7 +103,7 @@ for ($i = 0; $i < $zip->numFiles; $i++) {
     if ($name === false || str_ends_with($name, '/')) {
         continue;
     }
-    // Path traversal guard
+     
     $norm = str_replace('\\', '/', $name);
     if (str_contains($norm, '..') || str_starts_with($norm, '/')) {
         $errors[] = "Unsafe path in archive: {$name}";
@@ -169,7 +162,7 @@ if ($dryRun) {
     exit;
 }
 
-// Extract under target (tenants/ and data paths only)
+ 
 $allowedPrefixes = ['tenants/', 'data/', 'MANIFEST.json'];
 $written = 0;
 for ($i = 0; $i < $zip->numFiles; $i++) {

@@ -1,5 +1,5 @@
 <?php
-// Version: 1.2 — tenant bootstrap always; auth via $_SESSION[user]
+ 
 declare(strict_types=1);
 
 error_reporting(E_ALL);

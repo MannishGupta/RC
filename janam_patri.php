@@ -1,12 +1,5 @@
 <?php
-/**
- * Version: 20261002.19 — public share: no import / directory
- * Gochar transits · Ashtakavarga strength · interpretive blurbs · prior tabs
- * A4 portrait print layout · 15mm margins · dedicated print action
- * Janam Patri & Kundli Milan — North Indian · Delhi Baniya gotra-aware
- * Default locale: Hindi (hi_IN) · instant English (en_IN) toggle
- * View charts from query params without mandatory save
- */
+
 declare(strict_types=1);
 
 function jp_theme_css(): void {
@@ -32,9 +25,6 @@ $_jpEmbed = isset($_GET['embed']) && (string)$_GET['embed'] === '1';
 $_jpTheme = preg_replace('/[^a-z]/', '', strtolower((string)($_GET['theme'] ?? 'light'))) ?: 'light';
 if (!in_array($_jpTheme, ['light','dark','reserve'], true)) { $_jpTheme = 'light'; }
 
-
-
-
 $base = __DIR__;
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $base);
@@ -52,7 +42,7 @@ if (!is_dir(JP_STORAGE)) {
     @mkdir(JP_STORAGE, 0775, true);
 }
 
-// Session for admin vs public (shared patri links must not expose import / all profiles)
+ 
 if (is_file(BASE_PATH . '/app/bootstrap.php')) {
     require_once BASE_PATH . '/app/bootstrap.php';
 }
@@ -62,7 +52,7 @@ if (class_exists('AppAuth')) {
     @session_start();
 }
 
-/** Company Admin / Super Admin may manage profiles, import, and delete. */
+ 
 function jp_can_manage(): bool {
     $u = (string)($_SESSION['user'] ?? '');
     $true = (string)($_SESSION['true_role'] ?? '');
@@ -107,8 +97,7 @@ echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="vie
     exit;
 }
 
-
-/** Locale: hi (default) | en — cookie + query */
+ 
 function jp_lang(): string {
     static $lang = null;
     if ($lang !== null) {
@@ -139,7 +128,7 @@ function jp_is_hi(): bool {
     return jp_lang() === 'hi';
 }
 
-/** @param array{0:string,1:string}|string $pair en, hi or single string */
+ 
 function jp_t($pair): string {
     if (is_array($pair)) {
         return jp_is_hi() ? (string)($pair[1] ?? $pair[0] ?? '') : (string)($pair[0] ?? '');
@@ -154,11 +143,10 @@ function jp_lang_toggle_url(): string {
     return 'janam_patri.php' . ($q !== '' ? '?' . $q : '');
 }
 
-
-// Legacy BASE_PATH/storage/janam retired — all data under DATA_PATH/janam (JP_STORAGE).
+ 
 
 const JP_RASHIS = ['Mesha','Vrishabha','Mithuna','Karka','Simha','Kanya','Tula','Vrischika','Dhanu','Makara','Kumbha','Meena'];
-/** Western zodiac labels + Unicode glyphs (aligned 0=Mesha/Aries … 11=Meena/Pisces). */
+ 
 const JP_ZODIAC = [
     ['Aries', '♈'],
     ['Taurus', '♉'],
@@ -181,7 +169,7 @@ const JP_NAK = [
 ];
 const JP_PNAMES = ['Su'=>'Surya','Mo'=>'Chandra','Ma'=>'Mangal','Me'=>'Budha','Ju'=>'Guru','Ve'=>'Shukra','Sa'=>'Shani','Ra'=>'Rahu','Ke'=>'Ketu'];
 
-/** Devanagari + English-India display maps (render-time; storage stays Latin keys). */
+ 
 const JP_RASHIS_HI = ['मेष','वृषभ','मिथुन','कर्क','सिंह','कन्या','तुला','वृश्चिक','धनु','मकर','कुम्भ','मीन'];
 const JP_RASHIS_EN = ['Mesha','Vrishabha','Mithuna','Karka','Simha','Kanya','Tula','Vrischika','Dhanu','Makara','Kumbha','Meena'];
 const JP_ZODIAC_EN = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
@@ -263,8 +251,6 @@ function jp_manglik_label(bool $yes, int $house = 0): string {
     return jp_t(['No · not Manglik', 'नहीं · अमंगलिक']);
 }
 
-
-
 function jp_h(string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
@@ -274,15 +260,15 @@ function jp_normalize_dob(string $raw): string {
     if ($raw === '') {
         return '';
     }
-    // Already ISO
+     
     if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $raw, $m)) {
         return $m[1] . '-' . $m[2] . '-' . $m[3];
     }
-    // DD-MM-YYYY or DD/MM/YYYY
+     
     if (preg_match('/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/', $raw, $m)) {
         return sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
     }
-    // DD-MM-YY
+     
     if (preg_match('/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})$/', $raw, $m)) {
         $y = (int)$m[3];
         $y += ($y < 50) ? 2000 : 1900;
@@ -308,7 +294,6 @@ function jp_normalize_tob(string $raw): string {
     }
     return '12:00';
 }
-
 
 function jp_storage(string $file): string {
     return JP_STORAGE . '/' . $file;
@@ -367,12 +352,12 @@ function jp_load_team(): array {
     return is_array($data) ? array_values(array_filter($data, 'is_array')) : [];
 }
 
-// ── Astronomy (indicative approximations) ──────────────────────────────────
+ 
 
 function jp_name_key(string $name): string {
     $n = mb_strtolower(trim($name), 'UTF-8');
     $n = preg_replace('/\s+/', ' ', $n) ?? $n;
-    // strip common double letters for fuzzy (Mannish~Manish, Anjalli~Anjali)
+     
     $n = preg_replace('/(.)\1+/u', '$1', $n) ?? $n;
     return $n;
 }
@@ -385,7 +370,7 @@ function jp_match_team_member(?string $slug, ?string $name, ?string $dob): ?arra
     $slug = strtolower(trim((string)$slug));
     $name = mb_strtolower(trim((string)$name), 'UTF-8');
     $dobN = jp_normalize_dob((string)$dob);
-    // 1) exact slug / id
+     
     if ($slug !== '') {
         foreach ($team as $m) {
             if (!is_array($m)) continue;
@@ -395,7 +380,7 @@ function jp_match_team_member(?string $slug, ?string $name, ?string $dob): ?arra
             }
         }
     }
-    // 2) name + dob
+     
     if ($name !== '' && $dobN !== '') {
         foreach ($team as $m) {
             if (!is_array($m)) continue;
@@ -406,7 +391,7 @@ function jp_match_team_member(?string $slug, ?string $name, ?string $dob): ?arra
             }
         }
     }
-    // 3) name only (unique)
+     
     if ($name !== '') {
         $hits = [];
         foreach ($team as $m) {
@@ -469,13 +454,6 @@ function jp_profile_from_team(array $m): array {
     ];
 }
 
-
-
-
-/**
- * Positive life themes for the client (indicative), with symbols.
- * @return list<array{icon:string,title:string,text:string}>
- */
 function jp_client_positives(array $p, array $chart): array {
     $out = [];
     $lagna = (int)($chart['lagna'] ?? 0);
@@ -566,7 +544,7 @@ function jp_client_positives(array $p, array $chart): array {
         ];
     }
 
-    // Benefic house themes (simplified): Guru/Shukra in kendra/trikona style positive framing
+     
     $benefic = ['Ju' => 'Jupiter', 'Ve' => 'Venus', 'Mo' => 'Moon', 'Me' => 'Mercury'];
     $glyph = ['Ju' => '♃', 'Ve' => '♀', 'Mo' => '☽', 'Me' => '☿', 'Su' => '☉', 'Ma' => '♂', 'Sa' => '♄'];
     foreach ($benefic as $code => $label) {
@@ -610,9 +588,6 @@ function jp_rashi_label(int $rashiIdx): string {
     return $name . ' · ' . $glyph . ' ' . $west;
 }
 
-/**
- * Resolve a displayable photo URL for a janam profile (team photo preferred).
- */
 function jp_resolve_photo(array $p): string {
     $candidates = [];
     foreach (['photo', 'image', 'avatar', 'img'] as $k) {
@@ -649,7 +624,7 @@ function jp_resolve_photo(array $p): string {
         if ($file === '' || $file === '.' || $file === '..') {
             continue;
         }
-        // Prefer public /images/ gateway (media_serve)
+         
         return '/images/' . rawurlencode($file);
     }
     return '';
@@ -730,9 +705,6 @@ function jp_navamsha(float $lon): int {
     return ($start[$sign] + $nav) % 12;
 }
 
-/**
- * Classical-style varga sign (0–11). Indicative; matches common software patterns for D-3/4/7/9/10/12.
- */
 function jp_varga_sign(float $lon, int $varga): int {
     $lon = jp_norm($lon);
     $sign = jp_rashi($lon);
@@ -747,10 +719,10 @@ function jp_varga_sign(float $lon, int $varga): int {
     if ($varga === 9) {
         return jp_navamsha($lon);
     }
-    // Odd rashis in 1-based = even index 0,2,4… in 0-based
+     
     $odd = ($sign % 2 === 0);
     if ($varga === 3) {
-        // Drekkana: 0–10° same, 10–20° +4, 20–30° +8
+         
         $part = min(2, (int)floor($deg / 10.0));
         return ($sign + $part * 4) % 12;
     }
@@ -765,28 +737,24 @@ function jp_varga_sign(float $lon, int $varga): int {
     }
     if ($varga === 10) {
         $part = min(9, (int)floor($deg / 3.0));
-        $base = $odd ? $sign : (($sign + 8) % 12); // even → 9th
+        $base = $odd ? $sign : (($sign + 8) % 12);  
         return ($base + $part) % 12;
     }
     if ($varga === 12) {
         $part = min(11, (int)floor($deg / 2.5));
         return ($sign + $part) % 12;
     }
-    // Generic fallback: longitude × N
+     
     return (int)floor(fmod($lon * $varga, 360.0) / 30.0) % 12;
 }
 
-/**
- * Build 12-house map for a varga: each house gets sign + planet codes.
- * @return array<int, array{sign:int,sign_name:string,planets:list<string>}>
- */
 function jp_varga_houses(array $placementsLon, int $varga, int $lagnaSignD1): array {
-    // Divisional lagna from ascendant longitude if provided as 'La', else from D-1 lagna sign only for D-1
+     
     $lagnaLon = $placementsLon['La'] ?? null;
     if ($lagnaLon !== null) {
         $lagnaV = jp_varga_sign((float)$lagnaLon, $varga);
     } else {
-        // Approximate: treat mid-sign of D-1 lagna
+         
         $lagnaV = jp_varga_sign($lagnaSignD1 * 30.0 + 15.0, $varga);
     }
     $houses = [];
@@ -812,7 +780,7 @@ function jp_varga_houses(array $placementsLon, int $varga, int $lagnaSignD1): ar
     return $houses;
 }
 
-/** Julian day for a DateTimeImmutable at given clock (IST → UT approx −5.5h). */
+ 
 function jp_jd_from_dt(\DateTimeInterface $dt): float {
     $ist = \DateTimeImmutable::createFromInterface($dt)->setTimezone(new DateTimeZone('Asia/Kolkata'));
     $y = (int)$ist->format('Y');
@@ -822,17 +790,13 @@ function jp_jd_from_dt(\DateTimeInterface $dt): float {
     return jp_julian($y, $m, $d, $ut);
 }
 
-/**
- * Sade Sati: Saturn in 12th / 1st / 2nd from natal Moon.
- * @return array{active:bool,phase:int,phase_label:string,moon_sign:int,saturn_sign:int,as_of:string,next_start:?string,phases:list<array>}
- */
 function jp_sade_sati(array $chart): array {
     $moonSign = (int)($chart['moon_rashi'] ?? 0);
     $now = new DateTimeImmutable('now', new DateTimeZone('Asia/Kolkata'));
     $jd = jp_jd_from_dt($now);
     $pos = jp_sidereal_positions($jd);
     $saSign = jp_rashi((float)$pos['Sa']);
-    $rel = ($saSign - $moonSign + 12) % 12; // 0=Moon sign, 11=12th, 1=2nd
+    $rel = ($saSign - $moonSign + 12) % 12;  
     $phase = 0;
     if ($rel === 11) {
         $phase = 1;
@@ -847,7 +811,7 @@ function jp_sade_sati(array $chart): array {
         2 => jp_t(['Phase 2 of 3 — peak (on Moon sign)', 'चरण 2/3 — शिखर (चंद्र राशि पर)']),
         3 => jp_t(['Phase 3 of 3 — setting (2nd from Moon)', 'चरण 3/3 — अस्त (चंद्र से 2री)']),
     ];
-    // Scan ~30 years yearly for next window start (when Saturn enters 12th from Moon)
+     
     $nextStart = null;
     if ($phase === 0) {
         $cursor = $now;
@@ -879,11 +843,6 @@ function jp_sade_sati(array $chart): array {
     ];
 }
 
-
-/**
- * Today's gochar (transit) vs natal lagna houses.
- * @return array{as_of:string,items:list<array>,houses:array<int,list<string>>}
- */
 function jp_gochar(array $chart): array {
     $now = new DateTimeImmutable('now', new DateTimeZone('Asia/Kolkata'));
     $jd = jp_jd_from_dt($now);
@@ -901,7 +860,7 @@ function jp_gochar(array $chart): array {
         $house = jp_house($lagna, $sign);
         $natalH = (int)($chart['placements'][$pk]['house'] ?? 0);
         $natalS = (int)($chart['placements'][$pk]['rashi'] ?? -1);
-        // notable houses
+         
         $notable = in_array($house, [1, 5, 7, 9, 10], true);
         $items[] = [
             'planet' => $pk,
@@ -955,7 +914,7 @@ function jp_render_gochar(array $chart): void {
         . jp_h(jp_t(['Natal Lagna fixed; planets shown in transit houses', 'जन्म लग्न स्थिर; ग्रह गोचर भावों में'])) . '</p>';
     echo '</section>';
 
-    // Build hybrid houses: natal sign structure + transit planet markers
+     
     $lagna = (int)$g['lagna'];
     $houses = [];
     for ($h = 1; $h <= 12; $h++) {
@@ -974,7 +933,7 @@ function jp_render_gochar(array $chart): void {
             'transit' => $tr,
         ];
     }
-    // Custom diamond with transit suffixes
+     
     echo '<div class="card"><h2>' . jp_h(jp_t(['Transit overlay (natal + gochar)', 'गोचर परत (जन्म + गोचर)'])) . '</h2>';
     echo '<p class="meta">' . jp_h(jp_t(['Solid = natal · ( ) = transit today', 'बिना कोष्ठक = जन्म · ( ) = आज का गोचर'])) . '</p>';
     $html = '<div class="ni-chart" aria-label="Gochar chart">';
@@ -995,7 +954,7 @@ function jp_render_gochar(array $chart): void {
     echo '<table><thead><tr><th>' . jp_h(jp_t(['Graha','ग्रह'])) . '</th><th>' . jp_h(jp_t(['Transit rashi','गोचर राशि'])) . '</th><th>' . jp_h(jp_t(['House','भाव'])) . '</th><th>' . jp_h(jp_t(['Note','टिप्पणी'])) . '</th></tr></thead><tbody>';
     foreach ($g['items'] as $it) {
         if (empty($it['notable']) && !in_array($it['planet'], ['Ju', 'Sa', 'Ra'], true)) {
-            continue; // keep list short: notables + slow grahas
+            continue;  
         }
         echo '<tr><td>' . jp_h($it['name']) . '</td><td>' . jp_h($it['sign_name']) . '</td><td>' . jp_h(jp_bhava_loc((int)$it['house'])) . '</td><td>' . jp_h($it['blurb']) . '</td></tr>';
     }
@@ -1006,13 +965,8 @@ function jp_render_gochar(array $chart): void {
     ])) . '</p></div>';
 }
 
-/**
- * Simplified Sarvashtakavarga-style house scores (indicative).
- * Uses compact relative bindu offsets per graha (not full classical recon tables).
- * @return array{scores:array<int,int>,max:int,min:int,as_of:string}
- */
 function jp_ashtakavarga_sav(array $chart): array {
-    // Relative house offsets (1–12) that receive a bindu from each planet — simplified educational set
+     
     $tables = [
         'Su' => [1, 2, 4, 7, 8, 9, 10, 11],
         'Mo' => [3, 6, 7, 8, 10, 11],
@@ -1030,14 +984,14 @@ function jp_ashtakavarga_sav(array $chart): array {
         }
         $sign = (int)($pl['rashi'] ?? 0);
         foreach ($offs as $o) {
-            // house counted from planet's sign as "1"
+             
             $targetSign = ($sign + $o - 1) % 12;
             $lagna = (int)($chart['lagna'] ?? 0);
             $h = jp_house($lagna, $targetSign);
             $scores[$h] = ($scores[$h] ?? 0) + 1;
         }
     }
-    // mild lagna contribution
+     
     $scores[1] = min(56, $scores[1] + 1);
     $max = max($scores);
     $min = min($scores);
@@ -1087,7 +1041,6 @@ function jp_render_ashtakavarga(array $chart): void {
     ])) . '</p></div>';
 }
 
-
 function jp_render_sade_sati(array $chart): void {
     $s = jp_sade_sati($chart);
     $badge = $s['active'] ? 'warn' : 'ok';
@@ -1135,13 +1088,13 @@ function jp_render_varga_switcher(array $chart, array $p, string $pid): void {
     if (!isset($allowed[$v])) {
         $v = 1;
     }
-    // Build lon map from chart placements
+     
     $lons = [];
     foreach ($chart['placements'] ?? [] as $pk => $pl) {
         if (isset($pl['lon'])) {
             $lons[$pk] = (float)$pl['lon'];
         } elseif (isset($pl['degree'])) {
-            // degree within sign only — reconstruct approx from rashi
+             
             $r = (int)($pl['rashi'] ?? 0);
             $lons[$pk] = $r * 30.0 + (float)$pl['degree'];
         } elseif (isset($pl['rashi'])) {
@@ -1149,7 +1102,7 @@ function jp_render_varga_switcher(array $chart, array $p, string $pid): void {
         }
     }
     $lagna = (int)($chart['lagna'] ?? 0);
-    // Prefer D-1 houses from chart for varga 1 and 9 if precomputed
+     
     if ($v === 1 && !empty($chart['houses_d1'])) {
         $houses = $chart['houses_d1'];
     } elseif ($v === 9 && !empty($chart['houses_d9'])) {
@@ -1173,14 +1126,13 @@ function jp_render_varga_switcher(array $chart, array $p, string $pid): void {
     ])) . '</p></div>';
 }
 
-
 function jp_build_chart(array $p): array {
     [$yh, $mh, $dh] = array_map('intval', explode('-', (string)$p['dob']));
     $tob = (string)($p['tob'] ?? '12:00');
     [$hh, $mm] = array_map('intval', array_pad(explode(':', $tob), 2, 0));
     $lat = (float)($p['lat'] ?? 28.6139);
     $lng = (float)($p['lng'] ?? 77.2090);
-    // IST → UT
+     
     $ut = $hh + $mm / 60.0 - 5.5;
     $jd = jp_julian($yh, $mh, $dh, $ut);
     $pos = jp_sidereal_positions($jd);
@@ -1213,7 +1165,7 @@ function jp_build_chart(array $p): array {
         }
         $housesD1[$h] = ['sign' => $sign, 'sign_name' => JP_RASHIS[$sign], 'planets' => $pl];
     }
-    $navLagna = (int)$placements['Su']['navamsha']; // approx anchor
+    $navLagna = (int)$placements['Su']['navamsha'];  
     $navLagna = jp_navamsha(($lagna * 30.0) + 15.0);
     $housesD9 = [];
     for ($h = 1; $h <= 12; $h++) {
@@ -1248,7 +1200,7 @@ function jp_build_chart(array $p): array {
     ];
 }
 
-/** Richer Manglik: mutual cancel + common classical exceptions (indicative). */
+ 
 function jp_manglik_analysis(array $boyChart, array $girlChart): array {
     $b = !empty($boyChart['manglik']);
     $g = !empty($girlChart['manglik']);
@@ -1260,12 +1212,12 @@ function jp_manglik_analysis(array $boyChart, array $girlChart): array {
         $cancelled = true;
         $reasons[] = 'Mutual Manglik — classical cancellation applies';
     }
-    // Same house Mars for both often treated as milder / cancelling in folk practice
+     
     if ($b && $g && $bh === $gh && $bh > 0) {
         $cancelled = true;
         $reasons[] = 'Mars occupies the same house number in both charts';
     }
-    // 7th-house Mars for both (marriage house) — mutual
+     
     if ($b && $g && $bh === 7 && $gh === 7) {
         $cancelled = true;
         $reasons[] = 'Both have Mars in the 7th — mutual Kuja pattern';
@@ -1291,7 +1243,7 @@ function jp_manglik_analysis(array $boyChart, array $girlChart): array {
     ];
 }
 
-// ── Ashtakoot ──────────────────────────────────────────────────────────────
+ 
 function jp_varna(int $r): int {
     $map = [3 => 4, 7 => 4, 11 => 4, 0 => 3, 4 => 3, 8 => 3, 1 => 2, 5 => 2, 9 => 2, 2 => 1, 6 => 1, 10 => 1];
     return $map[$r] ?? 1;
@@ -1476,7 +1428,7 @@ function jp_diamond(array $houses, string $title, int $lagna): string {
         $pl = implode(' ', array_map(static fn($p) => jp_planet_short((string)$p), $d['planets'] ?? []));
         return '<div class="dc"><span class="ds">' . jp_h((string)($d['sign_name'] ?? '')) . '</span><span class="dp">' . jp_h($pl) . '</span><span class="dh">' . $h . '</span></div>';
     };
-    // North Indian diamond: fixed house positions
+     
     return '<div class="diamond" role="img" aria-label="' . jp_h($title) . '">'
         . '<div class="d-row">' . $cell(2) . $cell(1) . $cell(12) . '</div>'
         . '<div class="d-row">' . $cell(3) . $cell(0) . $cell(11) . '</div>'
@@ -1484,7 +1436,7 @@ function jp_diamond(array $houses, string $title, int $lagna): string {
         . '<div class="d-row">' . $cell(8) . $cell(9) . '</div>'
         . '</div>';
 }
-// Fix diamond: house 0 invalid — use proper layout
+ 
 function jp_diamond_ni(array $houses, string $title): string {
     $html = '<div class="ni-chart" aria-label="' . jp_h($title) . '">';
     for ($h = 1; $h <= 12; $h++) {
@@ -1501,12 +1453,6 @@ function jp_diamond_ni(array $houses, string $title): string {
 function jp_disclaimer(): string {
     return '<p class="jp-disclaimer no-print">' . jp_h(jp_t(['Indicative algorithmic chart only (Lahiri-style approximations). Not priest-grade. Consult a qualified jyotishi for formal decisions.','यह संकेतात्मक एल्गोरिद्मिक कुंडली है (लाहड़ी शैली)। पौरोहित्य प्रमाणित नहीं। संस्कार/निर्णय हेतु योग्य ज्योतिषी से परामर्श करें।'])) . '</p>';
 }
-
-
-/**
- * A4 portrait print stylesheet — normal bleed (~15mm), high-contrast, clean breaks.
- * Invoked once from jp_header after screen styles.
- */
 
 function jp_print_masthead(string $title, string $subtitle = ''): void {
     $brand = 'Arthsathi Limited';
@@ -1543,8 +1489,7 @@ function jp_print_action_bar(string $labelEn = 'Print Janam Patri', string $labe
     echo '</div>';
 }
 
-
-/** Shared report-family chrome (matches Numerology action placement). */
+ 
 function jp_report_chrome_css(): void {
     echo <<<'CSS'
 <style id="jp-report-chrome">
@@ -1664,7 +1609,7 @@ function jp_render_dasha_now(array $dasha): void {
     }
     echo '</section>';
 
-    // Full timeline bar
+     
     $periods = $dasha['periods'] ?? [];
     $totalY = 0.0;
     foreach ($periods as $p) {
@@ -1711,7 +1656,7 @@ function jp_render_dasha_now(array $dasha): void {
 function jp_render_doshas(array $chart): void {
     $manglik = !empty($chart['manglik']);
     $marsH = (int)($chart['mars_house'] ?? 0);
-    // Kaal Sarp heuristic: all planets between Ra and Ke longitudes (simplified)
+     
     $raLon = (float)($chart['placements']['Ra']['lon'] ?? $chart['placements']['Ra']['degree'] ?? -1);
     $keLon = (float)($chart['placements']['Ke']['lon'] ?? $chart['placements']['Ke']['degree'] ?? -1);
     $kaal = false;
@@ -1761,7 +1706,6 @@ function jp_render_doshas(array $chart): void {
         'स्थिति एल्गोरिद्मिक व संकेतात्मक है — भय फैलाने वाला निर्णय नहीं। व्यावसायिक मिलान मानवीय विवेक है।',
     ])) . '</p></div>';
 }
-
 
 function jp_print_css(): void {
     echo <<<'CSS'
@@ -2001,7 +1945,6 @@ function jp_print_css(): void {
 CSS;
 }
 
-
 function jp_css(): void {
     echo <<<'CSS'
 <style>
@@ -2062,17 +2005,16 @@ button.rc-chrome-btn.pri,a.rc-chrome-btn.pri{color:#ffffff!important;background:
 CSS;
 }
 
-
-/** Build a transient profile array from request + team (no disk write). */
+ 
 
 function jp_vimshottari_full(array $chart, string $dobYmd = ''): array {
-    // Classic Vimshottari: lord sequence by Moon nakshatra; balance from pada/longitude fraction.
+     
     $lords = ['Ke', 'Ve', 'Su', 'Mo', 'Ma', 'Ra', 'Ju', 'Sa', 'Me'];
     $years = ['Ke' => 7.0, 'Ve' => 20.0, 'Su' => 6.0, 'Mo' => 10.0, 'Ma' => 7.0, 'Ra' => 18.0, 'Ju' => 16.0, 'Sa' => 19.0, 'Me' => 17.0];
     $nak = (int)($chart['moon_nakshatra'] ?? $chart['moon_nak'] ?? 0);
     $pada = max(1, min(4, (int)($chart['moon_pada'] ?? 1)));
     $startIdx = $nak % 9;
-    // Fraction elapsed in nakshatra: prefer longitude if present, else pada midpoints
+     
     $moonLon = null;
     if (isset($chart['placements']['Mo']['lon'])) {
         $moonLon = (float)$chart['placements']['Mo']['lon'];
@@ -2108,7 +2050,7 @@ function jp_vimshottari_full(array $chart, string $dobYmd = ''): array {
 
     $periods = [];
     $cursor = $birth;
-    // First mahadasha: only remaining balance from birth
+     
     $end1 = $cursor->modify('+' . (int)round($balanceYears * 365.25) . ' days');
     $periods[] = [
         'lord' => $firstLord,
@@ -2152,7 +2094,7 @@ function jp_vimshottari_full(array $chart, string $dobYmd = ''): array {
             $p['progress'] = min(1.0, $doneSec / $spanSec);
             $p['remaining_days'] = (int)round($remSec / 86400);
             $p['remaining_years'] = round($remSec / (365.25 * 86400), 2);
-            // Assign AFTER progress fields — $current = $p is a copy, not a reference
+             
             $current = $p;
             $currentIdx = $i;
         } else {
@@ -2162,7 +2104,7 @@ function jp_vimshottari_full(array $chart, string $dobYmd = ''): array {
         }
     }
     unset($p);
-    // Safety: if somehow no current matched but periods exist spanning now, recompute
+     
     if ($current === null && $periods !== []) {
         foreach ($periods as $i => $p) {
             if ($nowTs >= $p['from_ts'] && $nowTs < $p['to_ts']) {
@@ -2181,7 +2123,7 @@ function jp_vimshottari_full(array $chart, string $dobYmd = ''): array {
         }
     }
 
-    // Antardasha of current mahadasha (same 9 lords starting from maha lord)
+     
     $antars = [];
     if ($current !== null) {
         $mahaLord = $current['lord'];
@@ -2193,7 +2135,7 @@ function jp_vimshottari_full(array $chart, string $dobYmd = ''): array {
         $aCursor = (new DateTimeImmutable('@' . $current['from_ts']))->setTimezone(new DateTimeZone('Asia/Kolkata'));
         for ($j = 0; $j < 9; $j++) {
             $al = $lords[($mahaIdx + $j) % 9];
-            // antar duration = mahaYears * (full_years[al] / 120)
+             
             $aYears = $mahaYears * ($years[$al] / 120.0);
             $aEnd = $aCursor->modify('+' . max(1, (int)round($aYears * 365.25)) . ' days');
             $aFromTs = $aCursor->getTimestamp();
@@ -2234,7 +2176,7 @@ function jp_vimshottari_full(array $chart, string $dobYmd = ''): array {
     ];
 }
 
-/** @deprecated alias */
+ 
 function jp_vimshottari_approx(array $chart): array {
     $full = jp_vimshottari_full($chart, '');
     return $full['periods'];
@@ -2249,7 +2191,7 @@ function jp_combust_retro_notes(array $chart): array {
     foreach ($chart['placements'] ?? [] as $pk => $pl) {
         $deg = (float)($pl['degree'] ?? $pl['lon'] ?? 0);
         $name = jp_planet_loc((string)$pk);
-        // Fake retro flag from hash of name+house for display stability (engine may not compute true retro)
+         
         $retro = !empty($pl['retro']) || !empty($pl['vakri']);
         $combust = !empty($pl['combust']) || !empty($pl['astha']);
         if ($retro) {
@@ -2335,7 +2277,7 @@ function jp_ephemeral_profile(): ?array {
             'team_slug' => $qSlug,
         ];
     }
-    // Overlay explicit query fields
+     
     if ($qName !== '') $p['name'] = $qName;
     if ($qDob !== '') $p['dob'] = $qDob;
     if ($qTob !== '') $p['tob'] = $qTob;
@@ -2352,7 +2294,6 @@ function jp_ephemeral_profile(): ?array {
     }
     return $p;
 }
-
 
 function jp_css_vedic(): void {
     echo <<<'CSS'
@@ -2637,7 +2578,7 @@ function jp_save_profile(array $in): array {
         }
     }
     if (!$found) {
-        // de-dupe by team_slug
+         
         if ($teamSlug !== '') {
             foreach ($profiles as $i => $p) {
                 if ((string)($p['team_slug'] ?? '') === $teamSlug) {
@@ -2658,7 +2599,7 @@ function jp_save_profile(array $in): array {
     return ['status' => 'ok', 'id' => $id, 'profile' => $row, 'updated' => $found];
 }
 
-// ── API ────────────────────────────────────────────────────────────────────
+ 
 $action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
 if ($action === 'api_save_profile' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     jp_require_manage('save profiles');
@@ -2810,13 +2751,12 @@ if ($action === 'api_delete_profiles' && ($_SERVER['REQUEST_METHOD'] ?? '') === 
     exit;
 }
 
-
 $profiles = jp_load_profiles();
 $view = (string)($_GET['view'] ?? 'home');
 
-// Public / visitor: only single-chart patri (or query-driven chart) — no directory / import
+ 
 if (!jp_can_manage()) {
-    $pubOk = in_array($view, ['patri', 'home'], true); // home only if forced into single chart below
+    $pubOk = in_array($view, ['patri', 'home'], true);  
     if (in_array($view, ['import', 'new', 'edit', 'milan', 'history', 'match', 'logs'], true)) {
         jp_require_manage('use ' . $view);
     }
@@ -2825,7 +2765,7 @@ if (!jp_can_manage()) {
     }
 }
 
-// Live preview: query params can open patri without saving first
+ 
 if ($view === 'home' && (isset($_GET['name']) || isset($_GET['dob']) || isset($_GET['slug']))) {
     if (isset($_GET['preview']) || (string)($_GET['nosave'] ?? '') === '1' || !isset($_GET['edit'])) {
         $view = 'patri';
@@ -2837,7 +2777,7 @@ $pid = (string)($_GET['id'] ?? '');
 $mid = (string)($_GET['boy'] ?? '');
 $fid = (string)($_GET['girl'] ?? '');
 
-// ── Views ──────────────────────────────────────────────────────────────────
+ 
 if ($view === 'new' || $view === 'edit') {
     $edit = ($view === 'edit' && $pid !== '') ? jp_find($profiles, $pid) : null;
     $qName = trim((string)($_GET['name'] ?? ''));
@@ -2847,7 +2787,7 @@ if ($view === 'new' || $view === 'edit') {
     $qGotra = trim((string)($_GET['gotra'] ?? ''));
     $qSlug = trim((string)($_GET['slug'] ?? $_GET['team_slug'] ?? ''));
     $qGender = strtolower(trim((string)($_GET['gender'] ?? '')));
-    // Prefer existing janam profile by team_slug or name+dob
+     
     if ($edit === null && $qSlug !== '') {
         foreach ($profiles as $_p) {
             if ((string)($_p['team_slug'] ?? '') === $qSlug || (string)($_p['id'] ?? '') === $qSlug) {
@@ -2866,7 +2806,7 @@ if ($view === 'new' || $view === 'edit') {
             }
         }
     }
-    // Hydrate from Human Capital Index (team.json) when still a blank draft
+     
     if ($edit === null || (empty($edit['id']) && (empty($edit['gotra']) || empty($edit['tob']) || empty($edit['gender'])))) {
         $tm = jp_match_team_member($qSlug !== '' ? $qSlug : (string)($edit['team_slug'] ?? ''), $qName !== '' ? $qName : (string)($edit['name'] ?? ''), $qDob !== '' ? $qDob : (string)($edit['dob'] ?? ''));
         if (is_array($tm)) {
@@ -2882,7 +2822,7 @@ if ($view === 'new' || $view === 'edit') {
                         }
                     }
                 }
-                // Always prefer explicit team gender/tob/gotra when query omitted them
+                 
                 if ($qGender === '' && !empty($fromTeam['gender'])) {
                     $edit['gender'] = $fromTeam['gender'];
                 }
@@ -2909,7 +2849,7 @@ if ($view === 'new' || $view === 'edit') {
             'team_slug' => $qSlug,
         ];
     } else {
-        // Query string overrides when explicitly provided
+         
         if ($qName !== '') {
             $edit['name'] = $qName;
         }
@@ -2932,7 +2872,7 @@ if ($view === 'new' || $view === 'edit') {
             $edit['team_slug'] = $qSlug;
         }
     }
-    // Normalize dob for date input
+     
     if (!empty($edit['dob'])) {
         $edit['dob'] = jp_normalize_dob((string)$edit['dob']);
     }
@@ -2952,7 +2892,7 @@ if ($view === 'new' || $view === 'edit') {
             $placeSuggest[$pl] = true;
         }
     }
-    // Common Delhi Baniya gotras as baseline suggestions
+     
     foreach (['Garg', 'Goyal', 'Gupta', 'Bansal', 'Mittal', 'Singhal', 'Kansal', 'Bindal', 'Jindal', 'Tayal', 'Mangal', 'Airan', 'Tibrewal', 'Kashyap', 'Bharadwaj', 'Agarwal', 'Aggarwal'] as $g0) {
         $gotraSuggest[$g0] = true;
     }
@@ -3105,7 +3045,7 @@ if ($view === 'import') {
             $tob = trim((string)($m['time_of_birth'] ?? $m['tob'] ?? $m['birth_time'] ?? ''));
             $pob = trim((string)($m['place_of_birth'] ?? $m['birth_place'] ?? $m['pob'] ?? ''));
             $gotra = trim((string)($m['gotra'] ?? ''));
-            // Mandatory for Janam import: DOB, TOB, place of birth, gotra (+ team slug)
+             
             $missing = [];
             if ($dobRaw === '' || jp_normalize_dob($dobRaw) === '') {
                 $missing[] = 'DOB';
@@ -3314,7 +3254,7 @@ if ($view === 'patri') {
         default => 'patri',
     };
     jp_report_chrome($chromeCtx, 'Print / PDF', 'प्रिंट / PDF');
-    // jp_print_action_bar removed — chrome already has Print
+     
     jp_patri_subtabs((string)($p['id'] ?? $pid), $patriTab);
 
     if ($patriTab === 'dasha') {
@@ -3322,7 +3262,7 @@ if ($view === 'patri') {
         echo '<div class="card" style="margin-bottom:0.75rem"><h2 style="margin:0">' . jp_h((string)$p['name']) . '</h2>';
         echo '<p class="meta" style="margin:0.25rem 0 0">' . jp_h(jp_t(['Vimshottari from Moon nakshatra', 'चंद्र नक्षत्र से विंशोत्तरी'])) . ' · DOB ' . jp_h((string)$p['dob']) . '</p></div>';
         jp_render_dasha_now($dashaPack);
-        // Sade Sati companion on Dasha tab (compact)
+         
         jp_render_sade_sati($chart);
         jp_print_footer_block();
         jp_footer();
@@ -3379,7 +3319,7 @@ if ($view === 'patri') {
     }
     echo '<div style="flex:1;min-width:12rem">';
     echo '<h2 style="margin:0 0 0.5rem">' . jp_h((string)$p['name']) . '</h2>';
-    // Rashi (bold) + Zodiac with icons
+     
     echo '<div class="jp-rashi-block" style="display:flex;flex-direction:column;gap:0.4rem;margin:0.35rem 0 0.75rem">';
     echo '<div style="font-size:1.05rem;line-height:1.35"><span class="meta" style="display:inline-block;min-width:7.5rem">' . jp_h(jp_t(['Lagna rashi', 'लग्न राशि'])) . '</span> '
         . '<strong style="font-weight:800;color:#0f172a">' . jp_h($lagnaRashi) . '</strong> '
@@ -3414,8 +3354,8 @@ if ($view === 'patri') {
         echo '<div><dt class="meta" style="margin:0">Last updated</dt><dd style="margin:0;font-weight:600">' . jp_h((string)$p['updated_at']) . '</dd></div>';
     }
     echo '</dl>';
-    echo '</div></div>'; // hero
-    // print bar: only in report chrome (avoid duplicate)
+    echo '</div></div>';  
+     
     jp_print_masthead(jp_t(['Janam Patri', 'जन्म पत्री']) . ' — ' . (string)$p['name'], (string)($p['dob'] ?? '') . ' · ' . (string)($p['place'] ?? ''));
     echo '<div class="no-print" style="margin:.35rem 0">';
     echo '<a class="btn secondary" href="?view=edit&amp;id=' . jp_h($pid) . '">Edit</a></div>';
@@ -3439,10 +3379,10 @@ if ($view === 'patri') {
     }
     echo '</tbody></table></div></div></div>';
     
-    // ── Expanded Vedic blocks (indicative) ──
+     
     $dashaPack = jp_vimshottari_full($chart, (string)($p['dob'] ?? ''));
     $dashas = $dashaPack['periods'];
-    // Compact teaser → full Dasha tab
+     
     echo '<div class="no-print" style="margin:0 0 1rem">';
     jp_render_dasha_now($dashaPack);
     echo '<p style="margin:.35rem 0 0"><a class="rc-chrome-btn" href="?view=patri&id=' . rawurlencode((string)($p['id'] ?? $pid)) . '&tab=dasha&lang=' . jp_lang() . '">' . jp_h(jp_t(['Open full Dasha timeline', 'पूर्ण दशा समय-रेखा खोलें'])) . '</a></p></div>';
@@ -3505,7 +3445,7 @@ if ($view === 'patri') {
     echo '<div class="jp-upaya-card"><strong>🎨 ' . jp_h(jp_t(['Colors','रंग'])) . '</strong><p class="meta" style="margin:0.35rem 0 0">' . jp_h((string)$upaya['color']) . '</p></div>';
     echo '</div></div>';
 
-// Positive aspects panel
+ 
     $positives = jp_client_positives($p, $chart);
     echo '<div class="card jp-positives" style="margin-top:1rem">';
     echo '<h2 style="margin:0 0 0.65rem">🌟 ' . jp_h(jp_t(['Positive aspects & strengths', 'सकारात्मक पक्ष एवं शक्तियाँ'])) . '</h2>';
@@ -3572,15 +3512,15 @@ if ($view === 'match') {
         echo '<p class="meta">' . jp_h(jp_t(['Chandra:', 'चंद्र:'])) . ' ' . jp_h(jp_rashi_loc((int)($boyChart['moon_rashi'] ?? 0))) . ' (' . jp_h(jp_nak_loc((int)($boyChart['moon_nakshatra'] ?? 0))) . ') · ' . jp_h(jp_rashi_loc((int)($girlChart['moon_rashi'] ?? 0))) . ' (' . jp_h(jp_nak_loc((int)($girlChart['moon_nakshatra'] ?? 0))) . ')</p></div>';
         $badge = $result['total'] >= 24 ? 'ok' : ($result['total'] >= 18 ? 'warn' : 'bad');
         echo '<span class="badge ' . $badge . '">' . ($result['total'] >= 28 ? 'Uttam' : ($result['total'] >= 24 ? 'Madhyam+' : ($result['total'] >= 18 ? 'Madhyam' : 'Heen'))) . '</span></div>';
-        // VISUAL ENRICHMENT: this table previously showed raw numbers with
-        // no colour meaning at all -- a scanner had to mentally compare
-        // points against max for each of the eight kootas one by one. Each
-        // row now gets the SAME ok/warn/bad language already used
-        // consistently elsewhere in this report (Gotra/Nadi/Manglik,
-        // the overall verdict badge), scored by that row's own
-        // points-to-max ratio, plus a small proportional bar so the
-        // relative strength of each koota is visible at a glance, not
-        // just readable as a number.
+         
+         
+         
+         
+         
+         
+         
+         
+         
         echo '<table style="margin-top:1rem"><thead><tr><th>Koota</th><th>Points</th><th>Max</th><th style="width:90px"></th></tr></thead><tbody>';
         foreach ($result['kootas'] as $k) {
             $max = max(1.0, (float)$k['max']);
@@ -3623,7 +3563,7 @@ if ($view === 'match') {
         }
         echo '</div></div>';
         jp_report_chrome('milan', 'Print Milan / PDF', 'मिलान प्रिंट / PDF');
-        // duplicate print bar removed — chrome already includes Print
+         
         jp_print_masthead(jp_t(['Kundli Milan', 'कुंडली मिलान']), (string)($boy['name'] ?? '') . ' · ' . (string)($girl['name'] ?? ''));
         jp_print_footer_block();
         echo '</div>';
@@ -3632,7 +3572,7 @@ if ($view === 'match') {
     exit;
 }
 
-// Home
+ 
 jp_header(jp_t(['Profiles', 'प्रोफ़ाइल']));
 echo '<div class="card"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:center">';
 echo '<h2 style="margin:0">&#128193; ' . jp_h(jp_t(['Saved profiles', 'सहेजी प्रोफ़ाइलें'])) . '</h2>';

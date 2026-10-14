@@ -1,9 +1,6 @@
 <?php
-// Version: 14.1.3
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.3 (2026-10-12)
-   Single release version across all files. See CHANGELOG.md for changes.
-   ───────────────────────────────────────────────────────────────────── */
+ 
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
@@ -28,7 +25,7 @@ if (empty($_SESSION['_consent_nonce'])) {
     $_SESSION['_consent_nonce'] = bin2hex(random_bytes(16));
 }
 
-// DPDP storage limitation: expire analytics past its retention period.
+ 
 analyticsRetentionTick();
 
 $consentGiven    = analyticsConsentGiven();
@@ -144,7 +141,7 @@ if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
             }
         }
     } catch (Throwable $e) {
-        // keep defaults
+         
     }
 }
 if ($companyLogo === '') {
@@ -187,7 +184,7 @@ foreach (['assets/og.jpg', 'assets/og.png', 'assets/og.jpeg', 'assets/og.webp'] 
     }
 }
 if ($ogImage === '') {
-    // Fallback: first project logo via media URL, or brand colour card not available → site URL
+     
     $ogImage = rtrim(appBaseUrl(), '/') . '/status/assets/og.jpg';
 }
 $pageTitle        = "Construction Progress Update ({$currentMonthYear}) | {$company}";

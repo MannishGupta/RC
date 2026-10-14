@@ -1,6 +1,5 @@
 <?php
-/* feed.php — RSS 2.0 of construction updates, so buyers and aggregators can
-   subscribe instead of checking the page. */
+
 declare(strict_types=1);
 require_once __DIR__ . '/lib.php';
 AppLocale::boot();

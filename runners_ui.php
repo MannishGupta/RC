@@ -2,14 +2,14 @@
 if (!defined('BASE_PATH')) { define('BASE_PATH', __DIR__); }
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 
-// Version: 1.6 — Supervisor cockpit UI (required by runners.php)
+ 
 if (!defined('RT_ROOT')) {
     exit;
 }
-/** @var string $self */
-/** @var string $mapsKey */
+ 
+ 
 
-// Team Directory contacts for Logistics Admin picker
+ 
 $teamContacts = [];
 $teamFile = RT_ROOT . '/data/team.json';
 if (is_file($teamFile)) {

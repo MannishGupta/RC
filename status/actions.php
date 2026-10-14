@@ -1,8 +1,6 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0 (2026-10-11)
-   Single release version across all files. See CHANGELOG.md for changes.
-   ───────────────────────────────────────────────────────────────────── */?>
+
+?>
 <div class="d-flex gap-2 flex-nowrap action-btn-group" style="overflow-x: auto; padding-bottom: 2px;" role="toolbar" aria-label="Export and share actions">
     <button onclick="handleAction('shareWhatsApp')" class="btn btn-light border fw-bold text-dark d-flex align-items-center gap-2" type="button" aria-label="Share via WhatsApp">
         <i class="fab fa-whatsapp text-success fs-5" aria-hidden="true"></i>

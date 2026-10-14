@@ -1,16 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * tools/migrate_tenants.php — Idempotent seed of new schema keys for every tenant.
- *
- * Ensures:
- *  - company.dpdp (grievance officer / contact) structure
- *  - config/mediakit_connections.json skeleton
- * Does NOT overwrite existing non-empty values.
- *
- * CLI: php tools/migrate_tenants.php
- * Web: super-admin only
- */
+
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 $isCli = (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg');
@@ -40,7 +30,7 @@ $mapFile = $tenantsDir . '/map.json';
 if (is_file($mapFile)) {
     $map = json_decode((string)@file_get_contents($mapFile), true);
     if (is_array($map)) {
-        // map shapes: {exact:{host:id}} or {tenants:[]} or flat id list
+         
         if (isset($map['exact']) && is_array($map['exact'])) {
             foreach ($map['exact'] as $host => $id) {
                 $ids[] = (string)$id;
@@ -86,7 +76,7 @@ foreach ($ids as $tid) {
     $added = [];
     $present = [];
 
-    // company.dpdp
+     
     $coFile = $dataPath . '/company.json';
     $co = [];
     if (is_file($coFile)) {
@@ -95,7 +85,7 @@ foreach ($ids as $tid) {
             $co = [];
         }
     }
-    // singleton or list
+     
     $isList = isset($co[0]) && is_array($co[0]);
     $rec = $isList ? $co[0] : $co;
     if (!is_array($rec)) {
@@ -129,7 +119,7 @@ foreach ($ids as $tid) {
         @file_put_contents($coFile, json_encode($co, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX);
     }
 
-    // mediakit_connections
+     
     $mkDir = $dataPath . '/config';
     $mkFile = $mkDir . '/mediakit_connections.json';
     if (!is_file($mkFile)) {
@@ -156,7 +146,7 @@ if (class_exists('AuditLog')) {
     try {
         AuditLog::write('migrate_tenants', ['tenants' => count($ids)]);
     } catch (Throwable $e) {
-        // ignore
+         
     }
 }
 

@@ -1,10 +1,13 @@
-# Resource Centre (RC)
+# Resource Centre (RC) 3.0.3
 
-Multi-tenant PHP application. **Product developer:** Arthsathi Limited.
+Multi-tenant PHP 8.2–8.4. Developer: **Arthsathi Limited**.
 
-- Deploy safety: [docs/DEPLOY_SAFETY.md](docs/DEPLOY_SAFETY.md)
-- Tree: [docs/TREE.md](docs/TREE.md)
-- Commercial audit: [docs/COMMERCIAL_LAUNCH_AUDIT.md](docs/COMMERCIAL_LAUNCH_AUDIT.md)
-- Vendor libs: [docs/VENDOR_LIBS.md](docs/VENDOR_LIBS.md)
+| Doc | Topic |
+|-----|--------|
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Never overwrite `tenants/` |
+| [docs/LAUNCH_OPS.md](docs/LAUNCH_OPS.md) | Key rotation & go-live |
+| [docs/DATA_AND_TENANTS.md](docs/DATA_AND_TENANTS.md) | Data & optimizer |
+| [docs/THEME_COMPLIANCE.md](docs/THEME_COMPLIANCE.md) | Theme & DPDP |
+| [docs/WHATSNEW.md](docs/WHATSNEW.md) | Highlights |
 
 **Never upload a code package over `tenants/`.**

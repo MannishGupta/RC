@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Value Pack API — attendance, visits, assets, expiry, audit, backup meta, analytics.
- * POST/GET action via index-compatible session. Include from index or call standalone.
- * Version: 20260929.20
- */
+
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', str_replace('\\', '/', dirname(__FILE__)));
 }
@@ -16,7 +12,6 @@ require_once BASE_PATH . '/app/ValueStore.php';
 if (session_status() === PHP_SESSION_NONE) {
     @session_start();
 }
-
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -57,7 +52,7 @@ function vp_id(string $prefix): string
     return $prefix . '-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(2)), 0, 4);
 }
 
-// Public endpoints (no auth) — ONLY explicitly public locations (no "all" fallback)
+ 
 if ($action === 'public_locations') {
     $locs = [];
     $dataRoot = defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data');
@@ -65,7 +60,7 @@ if ($action === 'public_locations') {
     if (!is_file($path)) {
         $path = $dataRoot . '/location.json';
     }
-    // Prefer AppDB when available (tenant-correct path)
+     
     $raw = null;
     if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
         $try = AppDB::read('locations');
@@ -84,7 +79,7 @@ if ($action === 'public_locations') {
         if (!is_array($L)) {
             continue;
         }
-        // Strict: only rows explicitly flagged public
+         
         $isPublic = !empty($L['public']) || !empty($L['show_public']) || !empty($L['is_public']);
         if (!$isPublic) {
             continue;
@@ -94,7 +89,7 @@ if ($action === 'public_locations') {
             'address' => htmlspecialchars(strip_tags((string)($L['address'] ?? $L['full_address'] ?? '')), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
             'lat' => isset($L['lat']) ? (float)$L['lat'] : (isset($L['latitude']) ? (float)$L['latitude'] : null),
             'lng' => isset($L['lng']) ? (float)$L['lng'] : (isset($L['longitude']) ? (float)$L['longitude'] : null),
-            // Phone omitted from public payload by default (privacy)
+             
         ];
     }
     vp_json(['status' => 'ok', 'locations' => $locs]);
@@ -105,7 +100,7 @@ if ($action === 'card_hit') {
     if ($slug === '') {
         vp_json(['status' => 'error', 'message' => 'slug required'], 400);
     }
-    // Verify slug exists in team directory (prevent arbitrary analytics inflation)
+     
     $exists = false;
     if (class_exists('AppDB') && method_exists('AppDB', 'read')) {
         $team = AppDB::read('team');
@@ -143,7 +138,7 @@ if ($action === 'card_hit') {
     if (!$exists) {
         vp_json(['status' => 'error', 'message' => 'unknown slug'], 404);
     }
-    // Light rate limit: same slug from same session at most once per 10s
+     
     $rlKey = '_card_hit_' . $slug;
     $now = time();
     $last = (int)($_SESSION[$rlKey] ?? 0);
@@ -179,7 +174,7 @@ switch ($action) {
         vp_json(['status' => 'ok', 'data' => ValueStore::read($type, $type === 'card_analytics' || $type === 'roles' ? new stdClass() : [])]);
 
     case 'attendance_check':
-        $kind = (string)($input['kind'] ?? 'in'); // in|out
+        $kind = (string)($input['kind'] ?? 'in');  
         $emp = trim((string)($input['employee_id'] ?? ''));
         $name = trim((string)($input['name'] ?? ''));
         $lat = isset($input['lat']) ? (float)$input['lat'] : null;
@@ -228,7 +223,7 @@ switch ($action) {
             'at' => date('c'),
         ];
         ValueStore::append('visits', $row);
-        // Link: update matching dispatch status when id provided
+         
         if ($row['dispatch_id'] !== '') {
             $dpath = (defined('DISPATCH_DATA_PATH') ? DISPATCH_DATA_PATH : (BASE_PATH . '/data/dispatch')) . '/dispatches.json';
             if (is_file($dpath)) {
@@ -387,13 +382,13 @@ switch ($action) {
             vp_json(['status' => 'error', 'message' => 'Cannot create zip'], 500);
         }
 
-        // Durable *data* backup only — not application PHP (app/, cards/, index.php).
-        // Includes entity JSON, module stores, media, and data/config secrets.
-        // Excludes sessions, logs, nested backups, tmp, and cache stamps.
+         
+         
+         
         $dataRoot = defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data');
         $dataRootNorm = rtrim(str_replace('\\', '/', (string)(realpath($dataRoot) ?: $dataRoot)), '/');
 
-        /** @var array<string,string> $files archive path => absolute path */
+         
         $files = [];
 
         $shouldSkip = static function (string $rel, string $basename): bool {
@@ -444,7 +439,7 @@ switch ($action) {
 
         $collectDir($dataRoot, 'data');
 
-        $legacyPairs = []; // retired: no action on obsolete root folders
+        $legacyPairs = [];  
         foreach ($legacyPairs as [$src, $prefix]) {
             $srcReal = realpath($src);
             if ($srcReal === false) {
@@ -457,8 +452,8 @@ switch ($action) {
             $collectDir($srcReal, $prefix);
         }
 
-        // Legacy root docs/: upload binaries only (skip markdown/docs site files)
-        $legacyDocs = false; // retired BASE_PATH/docs
+         
+        $legacyDocs = false;  
         if ($legacyDocs !== false) {
             $legacyDocsNorm = str_replace('\\', '/', $legacyDocs);
             if (!str_starts_with($legacyDocsNorm, $dataRootNorm)) {
@@ -536,7 +531,7 @@ switch ($action) {
         ]);
 
     case 'expiry_scan':
-        // Scan docs collection for date-like fields
+         
         $docsPath = (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/documents.json';
         if (!is_file($docsPath)) {
             $docsPath = BASE_PATH . '/data/documents.json';
@@ -575,7 +570,7 @@ switch ($action) {
             $teamPath = BASE_PATH . '/data/members.json';
         }
         $team = is_file($teamPath) ? (json_decode((string)@file_get_contents($teamPath), true) ?: []) : [];
-        // Also try bootstrap data patterns
+         
         if (!$team && is_file(BASE_PATH . '/data/directory.json')) {
             $team = json_decode((string)@file_get_contents(BASE_PATH . '/data/directory.json'), true) ?: [];
         }
@@ -607,7 +602,7 @@ switch ($action) {
         ]]);
 
     case 'reminders_scan':
-        // Build reminder queue from document expiry + optional open dispatches past ETA
+         
         $today = new DateTimeImmutable('today');
         $reminders = [];
         $docsPath = (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/documents.json';
@@ -670,7 +665,7 @@ switch ($action) {
         if (!is_array($cfg)) {
             $cfg = [];
         }
-        // roles stored as roles.json via ValueStore name "roles"
+         
         $cfg['crm_pack'] = $pack ?: 'logistics';
         if (empty($cfg['packs'])) {
             $cfg = json_decode((string)@file_get_contents(BASE_PATH . '/data/value/roles.json'), true) ?: $cfg;

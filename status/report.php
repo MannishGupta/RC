@@ -1,12 +1,9 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0 (2026-10-11)
-   Single release version across all files. See CHANGELOG.md for changes.
-   ───────────────────────────────────────────────────────────────────── */
-// report.php — Print / PDF Report
-// Opens as a clean, print-ready A4 page.
-// Usage: Open in browser → Ctrl+P → Save as PDF (or Print)
-// Protected: requires active public session from index.php
+
+ 
+ 
+ 
+ 
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
@@ -19,7 +16,7 @@ ini_set('session.cookie_samesite', 'Strict');
 session_name(cfg('site.cookie_prefix', 'fusion') . '_public_session');
 session_start();
 
-// ─── Load data ────────────────────────────────────────────────────────────────
+ 
 $projects   = safeReadJson(PROJ_FILE);
 $components = safeReadJson(COMP_FILE);
 $updates    = safeReadJson(UPD_FILE);
@@ -27,14 +24,14 @@ $updates    = safeReadJson(UPD_FILE);
 [$projMap, $compMap] = buildMaps($projects, $components);
 sortUpdates($updates, $compMap, $projMap);
 
-// Build navigation tree (mirrors index.php sidebar order)
+ 
 $tree = [];
 foreach ($projects  as $p) $tree[$p['id']] = ['info' => $p, 'types' => []];
 foreach ($components as $c) {
     if (isset($tree[$c['project_id']])) $tree[$c['project_id']]['types'][$c['type']][] = $c;
 }
 
-// Feed groups — order mirrors tree hierarchy
+ 
 $feedGroups    = [];
 $updatesByComp = [];
 foreach ($updates as $u) {
@@ -53,7 +50,7 @@ foreach ($tree as $projId => $pData) {
     }
 }
 
-// Project logo lookup: name → sanitized logo path
+ 
 $projLogos = [];
 foreach ($tree as $projId => $pData) {
     $pName = $pData['info']['name'] ?? 'Unknown Project';
@@ -66,7 +63,7 @@ $generatedOn  = AppLocale::now();
 $companyLogo  = assetPath('assets/ag-image.png');
 $projectLogo  = assetPath('assets/BnR.png');
 
-// Security headers
+ 
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Cache-Control: no-store');
@@ -142,9 +139,9 @@ header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
                     $hasImages  = !empty($u['images']);
                     $ledger     = ($cardIndex % 2 === 0) ? '' : 'ledger-odd';
                     $noImgClass = $hasImages ? '' : 'no-images';
-                    // Sanitised HTML: <p> is preserved, so no nl2br round-trip is needed.
-                    // htmlspecialchars_decode() was removed here — running it AFTER stripping
-                    // turned escaped text (&lt;script&gt;) back into live markup.
+                     
+                     
+                     
                     $desc       = sanitizeRichText($u['description'] ?? '');
                 ?>
                 <div class="update-card <?php echo $ledger; ?> <?php echo $noImgClass; ?>">
@@ -191,7 +188,6 @@ header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
     <span><?php echo htmlspecialchars((string)cfg('brand.company', ''), ENT_QUOTES, 'UTF-8'); ?> &mdash; Official Construction Progress Report &mdash; <?php echo htmlspecialchars($generatedOn, ENT_QUOTES, 'UTF-8'); ?></span>
     <span>Confidential &mdash; For Authorised Recipients Only</span>
 </div>
-
 
 <script>
 // Auto-trigger print dialog when opened with ?print=1

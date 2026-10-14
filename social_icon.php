@@ -1,9 +1,5 @@
 <?php
-/**
- * social_icon.php — small brand PNG icons for email signatures.
- * iOS Mail / Gmail treat data:image/svg+xml as attachments; hosted PNG works.
- * Usage: /social_icon.php?n=linkedin&s=36
- */
+
 declare(strict_types=1);
 
 $n = strtolower(preg_replace('/[^a-z]/', '', (string)($_GET['n'] ?? '')) ?? '');
@@ -42,8 +38,7 @@ if ($n === '' || !isset($colors[$n])) {
     exit;
 }
 
-
-// Prefer pre-shipped PNG (no GD required)
+ 
 $static = dirname(__FILE__) . '/assets/icons/social/' . $n . '.png';
 if (is_file($static) && is_readable($static)) {
     header('Content-Type: image/png');
@@ -85,7 +80,7 @@ imagealphablending($im, true);
 $bg = imagecolorallocate($im, $r, $g, $b);
 $white = imagecolorallocate($im, 255, 255, 255);
 $rad = (int)max(3, $s * 0.18);
-// Rounded rect approximation
+ 
 imagefilledrectangle($im, $rad, 0, $s - $rad - 1, $s - 1, $bg);
 imagefilledrectangle($im, 0, $rad, $s - 1, $s - $rad - 1, $bg);
 imagefilledellipse($im, $rad, $rad, $rad * 2, $rad * 2, $bg);
@@ -94,7 +89,7 @@ imagefilledellipse($im, $rad, $s - $rad - 1, $rad * 2, $rad * 2, $bg);
 imagefilledellipse($im, $s - $rad - 1, $s - $rad - 1, $rad * 2, $rad * 2, $bg);
 
 $text = $letters[$n];
-$font = 5; // built-in
+$font = 5;  
 $tw = imagefontwidth($font) * strlen($text);
 $th = imagefontheight($font);
 $x = (int)(($s - $tw) / 2);

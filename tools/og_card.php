@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Dynamic Open Graph image (SVG) — share previews for cards, Janam Patri, blood reports.
- * GET: name, role, company, kind, group (blood), subtitle
- * Version: 20260929.37
- */
+
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
 }
@@ -33,7 +29,7 @@ $esc = static function (string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_XML1, 'UTF-8');
 };
 
-// Luxury wine gradient for Vedic / medical kinds
+ 
 $kLower = strtolower($kind);
 $isVedic = str_contains($kLower, 'janam') || str_contains($kLower, 'kundli') || str_contains($kLower, 'patri') || str_contains($kLower, 'milan');
 $isBlood = str_contains($kLower, 'blood') || $group !== '';

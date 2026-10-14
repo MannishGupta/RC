@@ -1,3 +1,7 @@
-20261011.35
+3.1.1
 
-## Physical cards: vCard QR on print/visiting/ID; WhatsApp share with Save contact link; high-ECC print QR
+## Next-iteration complete
+- core/ physical engine path (Compliance, I18n, WhatsNew) + app/ BC shims
+- Eighth Schedule language registry (22 + English) for DPDP notices
+- Composer dev tools: PHPStan level 5 + PHPCS PSR-12 on core/
+- CI quality workflow installs Composer tools when available

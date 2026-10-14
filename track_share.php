@@ -4,25 +4,12 @@ declare(strict_types=1);
 if (!defined('BASE_PATH')) { define('BASE_PATH', __DIR__); }
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 
-/**
- * Version: 1.2
- * Browser Geolocation share page for mandatory-tracked team members.
- *
- * - Server-side rendering of member / org details (crawler-safe)
- * - Full SEO + Open Graph + Twitter Card meta in the initial HTML head
- * - Posts GPS pings to runners.php?action=update_location
- *
- * Query: ?id={team_member_id|slug} optional deep-link for a specific person
- */
 $root = __DIR__;
 $dataRoot = defined('DATA_PATH') ? DATA_PATH : ($root . '/data');
 $teamFile = $dataRoot . '/team.json';
 $desigFile = $dataRoot . '/designations.json';
 $companyFile = $dataRoot . '/company.json';
 
-/**
- * @return array<int, array<string, mixed>>
- */
 function ts_read_json_list(string $path): array
 {
     if (!is_file($path) || !is_readable($path)) {

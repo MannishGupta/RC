@@ -1,17 +1,5 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0
-   privacy.php — DPDP Act 2023 notice, consent controls and data-principal
-   rights (access, correction, erasure, grievance redressal).
 
-   All names, addresses and contact details come from config.php → 'dpdp'.
-
-   NOT LEGAL ADVICE. This notice is drafted to describe accurately what this
-   application does, and to cover the disclosures the Act requires. Have your
-   counsel review it before launch — particularly the grievance officer
-   details, the retention period, and anything your wider organisation does
-   with this data beyond the portal itself.
-   ───────────────────────────────────────────────────────────────────────── */
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';

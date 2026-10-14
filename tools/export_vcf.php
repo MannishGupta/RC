@@ -1,30 +1,10 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-/**
- * tools/export_vcf.php — Export the whole directory as a single .vcf file.
- *
- * Sits beside the Print Directory button. One download imports every contact
- * into a phone's address book in one action.
- *
- * FORMAT: vCard 3.0, not 4.0. This is deliberate — 3.0 is what iOS Contacts,
- * Google Contacts, Outlook and Android all import reliably today. 4.0 is the
- * newer spec but its support is still uneven, especially for embedded photos,
- * which is the main thing that makes these cards useful on a phone.
- *
- * Photos are embedded as base64 inside each card (not linked), so contacts
- * keep their picture even offline and even if this server is unreachable
- * later. Photos are downscaled first — a 3 MB camera JPEG per person would
- * make a 200-person export unusable, and phones reject oversized cards.
- *
- * Line folding: RFC 6350 requires lines over 75 octets to be folded. Several
- * importers silently drop a contact whose photo line is one giant unfolded
- * string, so every base64 payload is folded explicitly.
- */
 
 $rootPath = file_exists(__DIR__ . '/app/bootstrap.php') ? __DIR__ : dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-// BUG FIX: this file defined DATA_PATH/IMG_PATH/DOC_PATH directly from
+ 
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('IMG_PATH'))  define('IMG_PATH',  BASE_PATH . '/images');
 if (!defined('DOC_PATH'))  define('DOC_PATH',  BASE_PATH . '/docs');
@@ -40,13 +20,13 @@ if (empty($_SESSION['user']) || ($_SESSION['user'] !== 'admin' && $_SESSION['use
     die("<div style='padding:20px;font-family:sans-serif;color:red;font-weight:bold;'>Access Denied. Please log in via the main dashboard.</div>");
 }
 
-/** Strip CR/LF and escape the characters vCard treats as structural. */
+ 
 function vcf_esc(string $v): string {
     $v = str_replace(["\r\n", "\r", "\n"], ' ', trim($v));
     return str_replace(['\\', ';', ','], ['\\\\', '\\;', '\\,'], $v);
 }
 
-/** Fold a long value to 75 octets per RFC 6350 (continuation lines start with a space). */
+ 
 function vcf_fold(string $line): string {
     if (strlen($line) <= 75) return $line . "\r\n";
     $out = substr($line, 0, 75) . "\r\n";
@@ -55,7 +35,7 @@ function vcf_fold(string $line): string {
     return $out;
 }
 
-/** Downscale a photo and return base64 JPEG, or '' if unavailable/too large. */
+ 
 function vcf_photo(string $file): string {
     $path = IMG_PATH . DIRECTORY_SEPARATOR . basename($file);
     if ($file === '' || !is_file($path)) return '';
@@ -75,7 +55,7 @@ function vcf_photo(string $file): string {
     if (!$src) return '';
 
     $w = imagesx($src); $h = imagesy($src);
-    $max = 400;                                   // plenty for a contact thumbnail
+    $max = 400;                                    
     $scale = min(1, $max / max($w, $h));
     $nw = max(1, (int)round($w * $scale));
     $nh = max(1, (int)round($h * $scale));
@@ -92,7 +72,7 @@ function vcf_photo(string $file): string {
     return $data !== '' ? base64_encode($data) : '';
 }
 
-// ── Load and resolve ──────────────────────────────────────────────────────
+ 
 $team    = AppDB::read('team') ?: [];
 $company = AppDB::read('company') ?: [];
 $desig   = AppLookup::map(AppDB::read('designations') ?: []);
@@ -114,8 +94,8 @@ foreach ($team as $t) {
     $name = trim((string)($t['name'] ?? ''));
     if ($name === '') continue;
 
-    // Split into N: components. Indian directory data is usually
-    // "First Middle Last"; last token treated as family name.
+     
+     
     $parts  = preg_split('/\s+/', $name) ?: [$name];
     $family = count($parts) > 1 ? array_pop($parts) : '';
     $given  = array_shift($parts) ?? '';
@@ -124,7 +104,7 @@ foreach ($team as $t) {
     $role = (string)($t['designation'] ?? $desig[(string)($t['designation_id'] ?? $t['designation_code'] ?? '')] ?? '');
     $dep  = (string)($t['department']  ?? $dept[(string)($t['department_id']  ?? $t['department_code']  ?? '')] ?? '');
 
-    // Enrich with location + role for generic contact fields
+     
     $p = is_array($t) ? $t : [];
     if ($role !== '' && $role !== '-') {
         $p['title'] = $role;
@@ -148,7 +128,7 @@ foreach ($team as $t) {
             'include_bday' => false,
             'uid' => !empty($t['id']) ? ('urn:uuid:rc-' . preg_replace('/[^A-Za-z0-9._-]/', '', (string)$t['id'])) : '',
         ]);
-        // Append digital-card URL as labelled note if slug present
+         
         if (!empty($t['slug']) && class_exists('AppUtils')) {
             $cardUrl = rtrim(AppUtils::getBaseUrl(), '/') . '/?card=business&slug=' . rawurlencode((string)$t['slug']);
             $card = str_replace("END:VCARD\r\n", 'URL;TYPE=DigitalCard:' . VcardBuilder::esc($cardUrl) . "\r\nEND:VCARD\r\n", $card);
@@ -173,9 +153,9 @@ if (class_exists('AppLog')) {
     AppLog::info('Directory exported to VCF', ['contacts' => $count, 'by' => $_SESSION['user']]);
 }
 
-// Filename: yymmdd + company + contact count, e.g. 260906_Arthsathi_42.vcf
-// Date first so a folder of exports sorts chronologically; the count makes it
-// obvious at a glance whether an export is complete or was taken mid-edit.
+ 
+ 
+ 
 $fileCompany = preg_replace('/[^A-Za-z0-9]+/', '', $orgName) ?: 'Directory';
 $file = date('ymd') . '_' . $fileCompany . '_' . $count . '.vcf';
 

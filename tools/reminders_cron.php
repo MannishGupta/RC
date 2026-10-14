@@ -1,11 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Scheduled reminders runner — call via Windows Task Scheduler or cron.
- * Example: php tools/reminders_cron.php
- * Or HTTP: /tools/reminders_cron.php?token=SECRET
- * Secret file: data/value/cron_token.txt (one line). Version: 260921.41
- */
+
 define('BASE_PATH', str_replace('\\', '/', dirname(__DIR__)));
 require_once BASE_PATH . '/app/ValueStore.php';
 
@@ -22,7 +17,7 @@ if (!$cli) {
     }
 }
 
-// Inline minimal scan (same logic as API)
+ 
 $today = new DateTimeImmutable('today');
 $reminders = [];
 $docsPath = is_file(BASE_PATH . '/data/docs.json') ? BASE_PATH . '/data/docs.json' : BASE_PATH . '/data/documents.json';
@@ -58,7 +53,7 @@ foreach ($docs as $d) {
 ValueStore::write('reminders_last', ['at' => date('c'), 'items' => $reminders, 'source' => 'cron']);
 ValueStore::audit('reminders_cron', 'system', ['count' => count($reminders)]);
 
-// Optional: append to a simple mail queue file for external SMTP pickup
+ 
 $queue = BASE_PATH . '/data/value/reminder_queue.json';
 @file_put_contents($queue, json_encode(['at' => date('c'), 'items' => $reminders], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 

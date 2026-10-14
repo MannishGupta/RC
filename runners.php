@@ -4,15 +4,8 @@ declare(strict_types=1);
 if (!defined('BASE_PATH')) { define('BASE_PATH', __DIR__); }
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
 
-// Version: 1.5
-/**
- * Live Location, Travel History & HR Policy Violation Audit
- * Native JSON only — atomic flock writes. No MySQL / PDO.
- *
- * Data: __DIR__/data/runners/
- *   policy_settings.json | location_violations_log.json
- *   runners_state.json | runner_history_YYYY-MM-DD.json
- */
+ 
+
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -30,7 +23,7 @@ function rtEnsureDir(): void
     }
 }
 
-/** @return array<mixed> */
+ 
 function readJsonFile(string $path): array
 {
     if (!is_file($path) || !is_readable($path)) {
@@ -56,7 +49,7 @@ function readJsonFile(string $path): array
     return is_array($data) ? $data : [];
 }
 
-/** @param array<mixed> $data */
+ 
 function writeJsonFile(string $path, array $data): bool
 {
     rtEnsureDir();
@@ -109,12 +102,12 @@ function pathHistory(string $date): string
     return RT_DATA . '/runner_history_' . $date . '.json';
 }
 
-/** @return array<string,mixed> */
+ 
 function defaultPolicy(): array
 {
     return [
         'master_tracking_email' => 'admin.logistics@company.com',
-        // Optional link to a Team Directory person acting as Logistics Admin
+         
         'logistics_admin_id' => '',
         'logistics_admin_name' => '',
         'working_hours' => ['start' => '09:00', 'end' => '19:00', 'timezone' => RT_TZ_DEFAULT],
@@ -124,7 +117,7 @@ function defaultPolicy(): array
     ];
 }
 
-/** @return array<string,mixed> */
+ 
 function loadPolicy(): array
 {
     $raw = readJsonFile(pathPolicy());
@@ -181,20 +174,20 @@ function rtNowStr(array $policy): string
     return rtNow($policy)->format('Y-m-d H:i:s');
 }
 
-/** @return list<array<string,mixed>> */
+ 
 function loadViolations(): array
 {
     $rows = readJsonFile(pathViolations());
     return array_values(array_filter(is_array($rows) ? $rows : [], 'is_array'));
 }
 
-/** @param list<array<string,mixed>> $rows */
+ 
 function saveViolations(array $rows): bool
 {
     return writeJsonFile(pathViolations(), array_values($rows));
 }
 
-/** @param array<string,mixed> $a @param array<string,mixed> $b */
+ 
 function rtSortByRank(array $a, array $b): int
 {
     $ra = isset($a['rank']) && (int)$a['rank'] > 0 ? (int)$a['rank'] : 9999;
@@ -210,17 +203,9 @@ function rtSortByRank(array $a, array $b): int
     return strcasecmp((string)($a['name'] ?? ''), (string)($b['name'] ?? ''));
 }
 
-/**
- * Mandatory tracking is driven primarily by designation.mandatory_live_tracking
- * (ticked in Resource Center → Designations). Policy name lists remain a fallback
- * for legacy setups.
- *
- * @param array<string,mixed> $emp
- * @param array<string,mixed> $policy
- */
 function isMandatoryEmployee(array $emp, array $policy): bool
 {
-    // 1) Per-designation flag from designations.json (preferred)
+     
     $desigKeys = [];
     foreach (['designation_id', 'designation_code', 'designation', 'designation_name', 'labels'] as $fld) {
         $v = strtolower(trim((string)($emp[$fld] ?? '')));
@@ -260,12 +245,12 @@ function isMandatoryEmployee(array $emp, array $policy): bool
                 if ($flag === true || $flag === 1 || $flag === '1' || $flag === 'true' || $flag === 'yes' || $flag === 'on') {
                     return true;
                 }
-                // Matched designation explicitly opted out — still allow policy name fallback below
+                 
             }
         }
     }
 
-    // 2) Legacy / optional: policy mandatory designation names
+     
     $desig = strtolower(trim((string)($emp['designation'] ?? $emp['designation_name'] ?? '')));
     $dept = strtolower(trim((string)($emp['department'] ?? $emp['department_name'] ?? '')));
     foreach ($policy['mandatory_designations'] as $d) {
@@ -273,7 +258,7 @@ function isMandatoryEmployee(array $emp, array $policy): bool
             return true;
         }
     }
-    // 3) Policy mandatory departments
+     
     foreach ($policy['mandatory_departments'] as $d) {
         if ($dept !== '' && $dept === strtolower(trim((string)$d))) {
             return true;
@@ -282,7 +267,7 @@ function isMandatoryEmployee(array $emp, array $policy): bool
     return false;
 }
 
-/** @param array<string,mixed> $policy */
+ 
 function isWorkingHours(array $policy, ?DateTimeImmutable $now = null): bool
 {
     $now = $now ?? rtNow($policy);
@@ -311,7 +296,7 @@ function initials(string $name): string
     return $s !== '' ? $s : '?';
 }
 
-/** @return list<array<string,mixed>> */
+ 
 function seedFromTeam(): array
 {
     $out = [];
@@ -357,7 +342,7 @@ function seedFromTeam(): array
     return $out;
 }
 
-/** @return list<array<string,mixed>> */
+ 
 function loadState(): array
 {
     $rows = readJsonFile(pathState());
@@ -373,7 +358,7 @@ function loadState(): array
     return $list;
 }
 
-/** @param list<array<string,mixed>> $rows */
+ 
 function saveState(array $rows): bool
 {
     usort($rows, 'rtSortByRank');
@@ -397,11 +382,6 @@ function nextIncidentId(array $violations, array $policy): string
     return $prefix . str_pad((string)($max + 1), 3, '0', STR_PAD_LEFT);
 }
 
-/**
- * @param array<string,mixed> $emp
- * @param array<string,mixed> $policy
- * @return array{created:bool,incident:?array<string,mixed>}
- */
 function openViolation(array $emp, string $type, array $policy, ?string $address = null): array
 {
     $violations = loadViolations();
@@ -431,10 +411,6 @@ function openViolation(array $emp, string $type, array $policy, ?string $address
     return ['created' => true, 'incident' => $incident];
 }
 
-/**
- * @param list<array<string,mixed>> $violations
- * @return list<array<string,mixed>>
- */
 function resolveOpenViolations(array &$violations, string $employeeId, array $policy): array
 {
     $resolved = [];
@@ -460,10 +436,6 @@ function resolveOpenViolations(array &$violations, string $employeeId, array $po
     return $resolved;
 }
 
-/**
- * @param list<array<string,mixed>> $state
- * @return list<array<string,mixed>>
- */
 function runHeartbeatCompliance(array $state, array $policy): array
 {
     $onDuty = isWorkingHours($policy);
@@ -524,7 +496,7 @@ function haversineKm(float $lat1, float $lon1, float $lat2, float $lon2): float
     return 2 * $R * asin(min(1.0, sqrt($a)));
 }
 
-/** @param list<array<string,mixed>> $points @return array<string,mixed> */
+ 
 function summarizeTrail(array $points): array
 {
     $n = count($points);
@@ -585,7 +557,7 @@ function requestBody(): array
     return is_array($body) ? $body : [];
 }
 
-// ─── API ───────────────────────────────────────────────────────────────────
+ 
 
 function actionGetPolicy(): void
 {
@@ -940,7 +912,7 @@ function actionExportViolationsPrint(array $query): void
     exit;
 }
 
-/** @return list<array<string,mixed>> */
+ 
 function buildTravelAudit(string $from, string $to, ?string $runnerId): array
 {
     $fromTs = strtotime($from);
@@ -1005,7 +977,7 @@ function actionExportCsv(array $query): void
     exit;
 }
 
-// Router
+ 
 rtEnsureDir();
 if (!is_file(pathPolicy())) {
     writeJsonFile(pathPolicy(), defaultPolicy());

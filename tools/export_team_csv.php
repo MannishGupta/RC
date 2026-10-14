@@ -1,8 +1,5 @@
 <?php
-/**
- * tools/export_team_csv.php — Human Capital Index CSV export
- * Version: 20261003.37
- */
+
 declare(strict_types=1);
 
 $base = dirname(__DIR__);

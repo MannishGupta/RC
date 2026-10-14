@@ -1,24 +1,24 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-// vehicle-tags/emergency.php — PUBLIC escalation page for accidents / urgent issues.
-//
-// FIXES vs the supplied v1:
-//  * HARDCODED ABSOLUTE REDIRECT: v1 did
-//      header('Location: /car-tags/emergency.php?t=...')
-//    which breaks if the module is ever installed anywhere but the exact
-//    document root path /car-tags/. Now uses a relative self-redirect.
-//  * NO RATE LIMIT: v1 accepted unlimited POSTs, so this form could be used
-//    to flood the scan log (and the duty manager) with junk. Now throttled
-//    per IP, sharing the same throttle store as index.php.
-//  * NO INPUT BOUNDS: free-text detail was written to the log at whatever
-//    length was posted. Now length-capped and tag-stripped.
-//  * Data moved to AppDB (data/cartag_logs.json) to match the rest of the app.
-//  * Added noindex; kept the 112 helpline prominent.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 $rootPath = dirname(__DIR__);
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
-// BUG FIX: this file defined DATA_PATH/IMG_PATH/DOC_PATH directly from
+ 
 if (!defined('DATA_PATH')) define('DATA_PATH', BASE_PATH . '/data');
 if (!defined('IMG_PATH'))  define('IMG_PATH',  BASE_PATH . '/images');
 if (!defined('DOC_PATH'))  define('DOC_PATH',  BASE_PATH . '/docs');
@@ -73,8 +73,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $tag) {
             'verified'      => true,
             'emergency'     => true,
         ]);
-        // Relative redirect — v1 hardcoded /car-tags/ which broke on any
-        // other install path.
+         
+         
         header('Location: ?t=' . urlencode($tagId) . '&sent=1');
         exit;
     }

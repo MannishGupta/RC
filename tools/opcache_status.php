@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Simple speed-check page for administrators.
- * Version: 20260929.23
- */
+
 $root = dirname(__DIR__);
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $root);
@@ -43,7 +40,7 @@ if (function_exists('opcache_get_status')) {
     }
 }
 
-// Practical verdict: if scripts are cached and hits exist, speed boost is ON
+ 
 $working = $ext && ($scripts > 0 || $hits > 0 || $enabledFlag);
 $ratio = ($hits + $misses) > 0 ? round(100 * $hits / ($hits + $misses), 1) : 0;
 

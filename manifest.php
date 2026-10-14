@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Web App Manifest — product identity (Arthsathi Limited) + version.
- * Tenant name stays in description (licensed-to); install icon is product favicon.
- */
+
 $rootPath = __DIR__;
 define('BASE_PATH', $rootPath);
 require_once BASE_PATH . '/app/tenant_bootstrap.php';
@@ -23,10 +20,10 @@ if (isset($company[0]) && is_array($company[0]) && empty($company['name'])) {
 }
 $tenantName = trim((string)($company['name'] ?? '')) ?: 'Organization';
 $ver = defined('APP_VERSION') ? (string)APP_VERSION : '1';
-// Windows Installed Apps expects a dotted numeric version (not 1.0.0.0 default)
+ 
 $winVer = '1.0.0.0';
 if (preg_match('/^(\d{4})(\d{2})(\d{2})\.(\d+)$/', $ver, $vm)) {
-    // 20261009.35 → 2026.10.9.35
+     
     $winVer = sprintf('%d.%d.%d.%d', (int)$vm[1], (int)$vm[2], (int)$vm[3], (int)$vm[4]);
 } elseif (preg_match('/^(\d+)\.(\d+)/', $ver, $vm)) {
     $winVer = $vm[1] . '.' . $vm[2] . '.0.0';
@@ -36,7 +33,7 @@ $publisher = 'Arthsathi Limited';
 $origin = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http')
         . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 
-// Product-facing install title (version visible in the native dialog)
+ 
 $name = 'Resource Centre · v' . $ver;
 $short = 'RC ' . $ver;
 if (mb_strlen($short) > 12) {
@@ -54,8 +51,8 @@ if ($website !== '') {
     $descParts[] = 'Tenant site: ' . $website;
 }
 
-// HARDCODED product identity — always Arthsathi brand (not tenant logo)
-// Local path (same codebase on every host) + absolute fallback on rc.arthsathi.com
+ 
+ 
 $brandLocal = [
     192 => '/assets/brand/arthsathi-icon-192.png',
     512 => '/assets/brand/arthsathi-icon-512.png',
@@ -68,7 +65,7 @@ $iconSrc = static function (int $sz) use ($brandLocal, $brandAbs, $ver): string 
     if (is_file($absPath)) {
         return $local . '?v=' . rawurlencode($ver);
     }
-    // Host missing file → load from product origin
+     
     $name = ($sz >= 256) ? 'arthsathi-icon-512.png' : 'arthsathi-icon-192.png';
     return $brandAbs . '/' . $name . '?v=' . rawurlencode($ver);
 };
@@ -88,7 +85,7 @@ $icons[] = [
     'type' => 'image/png',
     'purpose' => 'maskable',
 ];
-// SVG mark (supported install UAs)
+ 
 $svgLocal = BASE_PATH . '/assets/brand/arthsathi-icon.svg';
 $icons[] = [
     'src' => is_file($svgLocal)
@@ -114,9 +111,9 @@ $manifest = [
     'dir'              => 'ltr',
     'icons'            => $icons,
     'categories'       => ['business', 'productivity'],
-    // Non-standard but useful for tooling / future UA support
+     
     'publisher'        => $publisher,
-    'version'          => $winVer, // four-part for Windows Installed Apps
+    'version'          => $winVer,  
     'version_name'     => $ver,
     'related_applications' => [],
     'prefer_related_applications' => false,

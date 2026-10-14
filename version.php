@@ -1,3 +1,5 @@
 <?php
-if (!defined('APP_VERSION')) define('APP_VERSION', '20261011.35');
-if (!defined('APP_VERSION_DATE')) define('APP_VERSION_DATE', '13 Oct 2026');
+// Version: 3.1.1
+if (!defined('APP_VERSION')) define('APP_VERSION', '3.1.1');
+if (!defined('APP_VERSION_DATE')) define('APP_VERSION_DATE', '14 Oct 2026');
+if (!defined('APP_VERSION_CODENAME')) define('APP_VERSION_CODENAME', 'Core Engine');

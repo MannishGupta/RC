@@ -1,19 +1,5 @@
 <?php
-/* ─────────────────────────────────────────────────────────────────────────
-   Construction Progress Portal | Release v14.1.0
-   consent.php — records a visitor's DPDP consent decision.
 
-   Under the Digital Personal Data Protection Act 2023, consent must be a clear
-   affirmative action and must be as easy to withdraw as it was to give. This
-   endpoint handles both directions, plus an erasure request.
-
-   Actions
-     grant     → analytics processing permitted
-     withdraw  → analytics processing refused; existing rows for this visitor
-                 are erased as well, because withdrawal should not leave the
-                 previously collected data sitting there
-     erase     → Right to Erasure for a specific visitor id
-   ───────────────────────────────────────────────────────────────────────── */
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib.php';
@@ -34,14 +20,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     exit('Method not allowed.');
 }
 
-/* Consent must be the visitor's own act, so reject cross-site submissions:
-   forced consent is not valid consent under the Act. */
 $origin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
 $refer  = (string)($_SERVER['HTTP_REFERER'] ?? '');
 $host   = (string)($_SERVER['HTTP_HOST'] ?? '');
 $sameSite = static function (string $url) use ($host): bool {
     if ($url === '') {
-        return true;   // some browsers omit both on a same-origin form POST
+        return true;    
     }
     $h = parse_url($url, PHP_URL_HOST);
     $p = parse_url($url, PHP_URL_PORT);
@@ -78,7 +62,7 @@ switch ($action) {
 
     case 'withdraw':
         consentStore('essential');
-        // Withdrawal erases what was already collected for this visitor.
+         
         $vid = (string)($_POST['visitor_id'] ?? '');
         if ($vid !== '') {
             try {

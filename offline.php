@@ -1,14 +1,5 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-/**
- * offline.php — Shown by the service worker when a page is requested with no
- * connection and no cached copy.
- *
- * Precached at install, so it must not depend on anything that could be
- * unavailable offline: no CDN fonts, no Font Awesome, no external CSS. Styles
- * are inline and the icon is a plain glyph. A fallback page that itself fails
- * to render offline is worse than none.
- */
 
 $rootPath = __DIR__;
 define('BASE_PATH', $rootPath);

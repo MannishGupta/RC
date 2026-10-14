@@ -1,9 +1,5 @@
 <?php
-/**
- * Sunday weekly compressed backup (or force with ?force=1).
- * CLI: php tools/weekly_backup.php
- * Web: Super Admin only.
- */
+
 declare(strict_types=1);
 $base = dirname(__DIR__);
 if (!defined('BASE_PATH')) {
@@ -15,7 +11,7 @@ $force = false;
 if (PHP_SAPI === 'cli') {
     $force = in_array('--force', $argv ?? [], true);
 } else {
-    // Minimal gate: require RC session super admin when hit via HTTP
+     
     if (is_file($base . '/app/bootstrap.php')) {
         require_once $base . '/app/bootstrap.php';
     }
