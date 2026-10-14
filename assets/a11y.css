@@ -418,3 +418,14 @@ button:disabled,
 
 
 /* Contrast permanent rules live in contrast-lock.css (load after this file). */
+
+/* Version: 3.1.0 — safe area + touch + skip */
+.rc-skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+.rc-skip-link:focus{left:8px;top:8px;width:auto;height:auto;padding:12px 16px;z-index:100000;background:#fff;color:#000;border:2px solid #0078D4}
+.rc-app-shell{padding-left:env(safe-area-inset-left,0);padding-right:env(safe-area-inset-right,0)}
+@supports (height:100dvh){
+  body.rc-app-shell, .rc-app-shell{min-height:100dvh}
+}
+button,a.rc-chrome-btn,.tbtn{min-height:24px}
+.rc-consent-btn,[data-open-whatsnew]{min-height:44px}
+:focus-visible{outline:2px solid var(--rc-accent,#0078D4);outline-offset:2px}

@@ -1,3 +1,6 @@
-Brand logo folder. Banks → `banks/{slug}.svg`, Vehicle OEMs → `oems/{slug}.svg`.
+# Brand logos
 
-Full slug list and rules: `/docs/LOGOS.md`
+- Banks → `banks/{slug}.svg` (or `data/masters/logos/banks/`)
+- Vehicle OEMs → `oems/{slug}.svg` (or `data/masters/logos/oems/`)
+
+Slug = master list id. Files are cache-busted by mtime when served.
