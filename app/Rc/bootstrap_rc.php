@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Modular layer bootstrap (strangler). Version: 20261002.15
- */
+
 if (!defined('BASE_PATH')) {
     return;
 }

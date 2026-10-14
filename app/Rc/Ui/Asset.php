@@ -2,10 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Ui;
 
-/**
- * Versioned public asset URLs (cache-bust via APP_VERSION).
- * Version: 20261002.06
- */
 final class Asset
 {
     public static function url(string $relativePath): string

@@ -2,9 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Support;
 
-/**
- * Human-readable byte sizes. Version: 20261002.12
- */
 final class Bytes
 {
     public static function format(int $bytes): string

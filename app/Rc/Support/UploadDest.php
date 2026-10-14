@@ -2,10 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Support;
 
-/**
- * Resolve upload destination directory for save fields.
- * Version: 20261002.19
- */
 final class UploadDest
 {
     public static function forField(string $field): string

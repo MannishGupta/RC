@@ -2,10 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Domain\Astro;
 
-/**
- * Shared indicative disclaimer for Numerology / Janam / Milan.
- * Version: 20261002.11
- */
 final class Disclaimer
 {
     public static function en(): string

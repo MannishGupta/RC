@@ -7,16 +7,10 @@ use App\Rc\Domain\Team\RecordNormalize as TeamNormalize;
 use App\Rc\Support\FieldNormalize;
 use App\Rc\Support\SlugGuard;
 
-/**
- * Prepare payload before persist (ns-aware). Does not write files or DB.
- * Version: 20261002.18
- */
 final class SavePrep
 {
-    /**
-     * @param array<string,mixed> $newData
-     * @return array{data: array<string,mixed>, error: ?string}
-     */
+    
+
     public static function prepare(string $ns, array $newData, string $id, bool $isEdit): array
     {
         $newData = FieldNormalize::apply($newData);

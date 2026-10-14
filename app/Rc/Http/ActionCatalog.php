@@ -2,13 +2,9 @@
 declare(strict_types=1);
 namespace App\Rc\Http;
 
-/**
- * Documented index.php action names (catalog only — dispatch stays in index).
- * Version: 20261002.15
- */
 final class ActionCatalog
 {
-    /** @return list<string> */
+     
     public static function writeActions(): array
     {
         return [
@@ -17,7 +13,7 @@ final class ActionCatalog
         ];
     }
 
-    /** @return list<string> */
+     
     public static function readActions(): array
     {
         return [

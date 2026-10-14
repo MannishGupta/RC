@@ -2,16 +2,10 @@
 declare(strict_types=1);
 namespace App\Rc\Domain\Team;
 
-/**
- * Team record field normalization (birth geo, coords).
- * Version: 20261002.17 — Phase 7 extraction from index.php save
- */
 final class RecordNormalize
 {
-    /**
-     * @param array<string,mixed> $newData
-     * @return array<string,mixed>
-     */
+    
+
     public static function apply(array $newData): array
     {
         $normCoord = static function ($v, float $min, float $max): ?float {

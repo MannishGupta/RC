@@ -2,10 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Support;
 
-/**
- * Single public URL strategy for tenant media (images / documents).
- * Prefer media_serve.php so Linux/Windows path case and isolation stay consistent.
- */
 final class MediaUrl
 {
     public static function image(string $filename, string $fallback = ''): string
@@ -51,7 +47,7 @@ final class MediaUrl
 
     private static function appBase(): string
     {
-        // Relative-from-root works on all tenants when docroot is the RC root
+         
         return '';
     }
 

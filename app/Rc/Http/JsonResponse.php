@@ -2,10 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Http;
 
-/**
- * Shared JSON API responses (ETag optional).
- * Version: 20261002.11 — Phase 4 extraction from index.php sendJson
- */
 final class JsonResponse
 {
     public static function send(mixed $data, bool $cacheable = true): never

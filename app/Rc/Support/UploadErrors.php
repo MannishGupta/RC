@@ -2,10 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Support;
 
-/**
- * Human messages for PHP upload error codes.
- * Version: 20261002.15
- */
 final class UploadErrors
 {
     public static function message(int $code, ?string $iniMax = null): string

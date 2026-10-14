@@ -2,16 +2,10 @@
 declare(strict_types=1);
 namespace App\Rc\Support;
 
-/**
- * Universal field tidy for JSON entity saves.
- * Version: 20261002.18
- */
 final class FieldNormalize
 {
-    /**
-     * @param array<string,mixed> $data
-     * @return array<string,mixed>
-     */
+    
+
     public static function apply(array $data): array
     {
         if (!empty($data['name']) && is_string($data['name'])) {

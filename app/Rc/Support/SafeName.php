@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace App\Rc\Support;
 
-/** Filename / slug sanitization. Version: 20261002.13 */
+ 
 final class SafeName
 {
     public static function slug(string $s): string

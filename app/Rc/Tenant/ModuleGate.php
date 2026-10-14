@@ -2,10 +2,6 @@
 declare(strict_types=1);
 namespace App\Rc\Tenant;
 
-/**
- * Facade over ModuleRegistry — use this from new code.
- * Keeps module enable/disable checks in one place.
- */
 final class ModuleGate
 {
     public static function enabled(string $moduleId): bool
@@ -30,7 +26,7 @@ final class ModuleGate
         return \ModuleRegistry::featureEnabled($moduleId, $featureId);
     }
 
-    /** @param list<string> $tabs */
+     
     public static function filterTabs(array $tabs, bool $isSuperAdmin = false): array
     {
         if (!class_exists('ModuleRegistry', false)) {

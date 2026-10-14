@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Lightweight PSR-4-style loader for App\Rc\* only.
- * Does not replace existing procedural requires — strangler-compatible.
- * Version: 20261002.01
- */
+
 final class RcAutoload
 {
     private static bool $registered = false;
@@ -20,7 +16,7 @@ final class RcAutoload
                 return;
             }
             $rel = str_replace('\\', '/', substr($class, strlen('App\\Rc\\')));
-            $base = dirname(__DIR__); // app/Rc
+            $base = dirname(__DIR__);  
             $file = $base . '/' . $rel . '.php';
             if (is_readable($file)) {
                 require_once $file;

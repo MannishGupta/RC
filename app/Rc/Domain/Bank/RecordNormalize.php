@@ -2,16 +2,10 @@
 declare(strict_types=1);
 namespace App\Rc\Domain\Bank;
 
-/**
- * Bank / treasury field normalization.
- * Version: 20261002.17
- */
 final class RecordNormalize
 {
-    /**
-     * @param array<string,mixed> $newData
-     * @return array<string,mixed>
-     */
+    
+
     public static function apply(array $newData): array
     {
         if (!empty($newData['ifsc'])) {

@@ -2,16 +2,10 @@
 declare(strict_types=1);
 namespace App\Rc\Domain\Bank;
 
-/**
- * UPI QR into tenant media — offline pure-PHP first, GD PNG when available, API last resort.
- * Version: 20261002.13
- */
 final class UpiQr
 {
-    /**
-     * @param array<string,mixed> $bank
-     * @return string|null Filename under images/ (png or svg)
-     */
+    
+
     public static function generatePng(array $bank): ?string
     {
         $upi = trim((string) ($bank['upi_id'] ?? $bank['upi'] ?? ''));
@@ -35,13 +29,13 @@ final class UpiQr
             @mkdir($imgDir, 0775, true);
         }
 
-        // 1) Offline pure-PHP QR (no network)
+         
         $offline = self::encodeOffline($payload, $imgDir, $id);
         if ($offline !== null) {
             return $offline;
         }
 
-        // 2) Remote API fallback (shared hosts without GD / encoder issues)
+         
         $fname = 'bank-qr-' . $id . '.png';
         $path = $imgDir . DIRECTORY_SEPARATOR . $fname;
         $url = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&ecc=M&data=' . rawurlencode($payload);
@@ -96,7 +90,7 @@ final class UpiQr
             return null;
         }
 
-        // Prefer PNG when GD is available (email clients, bank cards)
+         
         if (function_exists('imagecreatetruecolor') && function_exists('imagepng') && method_exists($qr, 'createImage')) {
             $im = @$qr->createImage(6, 8);
             if (is_resource($im) || (is_object($im) && $im instanceof \GdImage)) {
@@ -113,7 +107,7 @@ final class UpiQr
             }
         }
 
-        // SVG always works without GD
+         
         if (method_exists($qr, 'printSVG')) {
             ob_start();
             try {
