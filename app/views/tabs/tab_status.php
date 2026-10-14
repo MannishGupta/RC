@@ -1,7 +1,5 @@
 <?php
-/**
- * Const. Status — embed working same-origin /status/ portal (avoids fragment CSS failures).
- */
+
 if (!defined('BASE_PATH')) {
     exit;
 }

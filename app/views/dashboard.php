@@ -1,24 +1,24 @@
 <?php 
-// Version: 260917.10
-// dashboard.php - V2027.309 India-first complete self-hosted app.css (no Tailwind Play CDN)
-//
-// CHANGELOG v2027.303:
-//  - Emoji removed entirely from ALL WhatsApp share text (team, bank, docs,
-//    events, locations, statutory, and the fallback case), in both
-//    conclusively (via a temporary debug marker) to WhatsApp's own wa.me →
-//    api.whatsapp.com redirect corrupting emoji-range characters
-//    server-side — NOT a bug in this codebase. Plain rule/separator
-//    characters (─, ·) carry the visual hierarchy instead and are
-//    unaffected. window.WA_EMOJIS has been removed as fully dead code.
-//  - dbd/tab_events.php's separate window.__shareEventWA() updated to match.
-//
-// CHANGELOG v2027.301 (superseded by the above, kept for history):
-//  - WhatsApp share text for 'team' briefly used an emoji-based
-//    "Professional Modern" template with a 🏷️ tag icon — since removed.
-//  - $customTabs now includes 'departments' and 'designations', which were
-//    generic table view and never loaded dbd/tab_departments.php /
-//    dbd/tab_designations.php, even though those files existed.
-//  - 'bank' uses inline dashboard markup (UPI QR via qr_image + rcPaintBankQr).
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 if (!defined('BASE_PATH')) exit; 
 if (!isset($viewData) || !is_array($viewData)) die('Critical Error: View Contract Missing.');
@@ -26,12 +26,12 @@ if (!isset($viewData) || !is_array($viewData)) die('Critical Error: View Contrac
 class DashboardEngine {
     public static function normalizeData(array $raw): array {
         $data = $raw;
-        // Preserve nav badge counts when full datasets are omitted for perf
+         
         if (isset($raw['_counts']) && is_array($raw['_counts'])) {
             $data['_counts'] = $raw['_counts'];
         }
 
-        // Force list namespaces to sequential arrays (associative JSON breaks Alpine x-for)
+         
         $asList = static function ($v): array {
             if (!is_array($v)) return [];
             return array_values(array_filter($v, static fn($x) => is_array($x)));
@@ -63,10 +63,10 @@ class DashboardEngine {
                 if (!empty($d['name'])) $data['departmentsById'][strtolower(trim((string)$d['name']))] = $d;
             }
         }
-        // ── Designations: merge code ↔ hierarchy rank ─────────────────────
-        // rank comes from designation.rank when set, else stable order after
-        // sorting by rank → code → name. Every team member inherits that rank
-        // when person.rank is empty (fixes permanent "999" sort).
+         
+         
+         
+         
         $desigRows = [];
         if (!empty($raw['designations']) && is_array($raw['designations'])) {
             $desigRows = array_values($raw['designations']);
@@ -81,12 +81,12 @@ class DashboardEngine {
             return strcasecmp((string)($a['name'] ?? ''), (string)($b['name'] ?? ''));
         });
 
-        $hierarchyByKey = []; // lowercase id|code|name → int rank
-        $canonicalByKey = []; // lowercase key → canonical designation id (or code)
+        $hierarchyByKey = [];  
+        $canonicalByKey = [];  
         foreach ($desigRows as $idx => $d) {
             if (!is_array($d)) continue;
             $hier = null;
-            // Treat 999/9999 as unset sentinel (legacy Schema default)
+             
             $rawRank = (isset($d['rank']) && is_numeric($d['rank'])) ? (int)$d['rank'] : 0;
             $rawHier = (isset($d['hierarchy_rank']) && is_numeric($d['hierarchy_rank'])) ? (int)$d['hierarchy_rank'] : 0;
             if ($rawRank > 0 && $rawRank < 900) {
@@ -96,9 +96,9 @@ class DashboardEngine {
             } elseif (isset($d['code']) && preg_match('/^\d+$/', trim((string)$d['code']))) {
                 $hier = (int)$d['code'];
             } else {
-                $hier = $idx + 1; // stable hierarchy position
+                $hier = $idx + 1;  
             }
-            // Persist computed rank back onto the designation row for the UI
+             
             $d['hierarchy_rank'] = $hier;
             if (!isset($d['rank']) || $d['rank'] === '' || $d['rank'] === null) {
                 $d['rank'] = $hier;
@@ -114,11 +114,11 @@ class DashboardEngine {
                 $data['designationsById'][$k] = $d;
             }
         }
-        // Replace designations list with ordered, rank-enriched rows
+         
         $data['designations'] = $desigRows;
         $data['_designationHierarchy'] = $hierarchyByKey;
 
-        // Master-key codes must never appear as human labels (desig_2, dept_1, loc_hq, …)
+         
         $rcIsMasterCode = static function (string $s): bool {
             $s = trim($s);
             if ($s === '' || $s === '-') {
@@ -141,7 +141,7 @@ class DashboardEngine {
                 $desigRaw = trim((string)($member['designation_id'] ?? $member['designation_code'] ?? $member['designation'] ?? $member['labels'] ?? $member['designation_name'] ?? ''));
                 $desigKey = strtolower($desigRaw);
                 $desigRow = $data['designationsById'][$desigKey] ?? null;
-                // Fuzzy: match designation by name when id/code not linked
+                 
                 if (!$desigRow && $desigKey !== '') {
                     foreach ($data['designationsById'] as $dk => $dv) {
                         if ($dk === $desigKey) { $desigRow = $dv; break; }
@@ -150,22 +150,22 @@ class DashboardEngine {
                     }
                 }
 
-                // Normalize FK to canonical designation id so <select> matches
+                 
                 if ($desigRow) {
                     $member['designation_id'] = (string)($desigRow['id'] ?? $desigRow['code'] ?? $desigRaw);
                     $member['designation_code'] = (string)($desigRow['code'] ?? $member['designation_code'] ?? '');
                     $resolved = trim((string)($desigRow['name'] ?? $desigRow['title'] ?? ''));
                     $member['designation_name'] = $rcHumanOrPending($resolved !== '' ? $resolved : $desigRaw, 'Designation Pending');
                 } else {
-                    // Never show unresolved codes (desig_2 etc.)
+                     
                     $member['designation_name'] = $rcHumanOrPending($desigRaw, 'Designation Pending');
                 }
 
-                // Display rank: person.rank if real, else designation hierarchy.
-                // Sentinel values 999 / 9999 / 0 mean "unset" (legacy Schema default).
+                 
+                 
                 $personRank = $member['rank'] ?? $member['sort_order'] ?? $member['order'] ?? null;
                 $pr = ($personRank !== null && $personRank !== '' && is_numeric($personRank)) ? (int)$personRank : 0;
-                $personRankIsReal = ($pr > 0 && $pr < 900); // 999/9999 are placeholders
+                $personRankIsReal = ($pr > 0 && $pr < 900);  
                 $effective = null;
                 if ($personRankIsReal) {
                     $effective = $pr;
@@ -177,7 +177,7 @@ class DashboardEngine {
                     $effective = (int)$desigRow['rank'];
                 }
                 $member['hierarchy_rank'] = $effective ?? 9999;
-                // Always surface the resolved rank on the member for edit form + cards
+                 
                 if ($effective !== null) {
                     $member['rank'] = $effective;
                 } elseif ($personRankIsReal === false) {
@@ -227,7 +227,7 @@ class DashboardEngine {
                 }
                 $member['location_name'] = $rcHumanOrPending($locName, 'Location Unassigned');
 
-                // House / premise number for search (optional field)
+                 
                 if (empty($member['house_no']) && !empty($member['house_number'])) {
                     $member['house_no'] = $member['house_number'];
                 }
@@ -235,7 +235,7 @@ class DashboardEngine {
             unset($member);
         }
 
-        // Final list shape guarantee
+         
         foreach (['team', 'locations', 'departments', 'designations', 'bank', 'docs', 'events'] as $ns) {
             if (isset($data[$ns]) && is_array($data[$ns])) {
                 $data[$ns] = array_values(array_filter($data[$ns], static fn($x) => is_array($x)));
@@ -283,7 +283,7 @@ class DashboardEngine {
 $isAdmin = !empty($viewData['isAdmin']);
 $isSuperAdmin = !empty($viewData['isSuperAdmin']);
 $isPublic = !empty($viewData['isPublic']);
-// Super admin always has write + global ops
+ 
 if ($isSuperAdmin) {
     $isAdmin = true;
 }
@@ -304,19 +304,19 @@ $currentTab = $viewData['currentTab'] ?? 'team';
 $normalizedData = DashboardEngine::normalizeData($viewData['jsData'] ?? []);
 DashboardEngine::injectBirthdays($normalizedData['events'], $normalizedData['team'], $normalizedData['locationsById']);
 
-// $customTabs, plus navGroups below. 'cartags'/'cctv' were added everywhere
-// the tab file was never included — the tabs rendered blank.
-// Three-tier tab gates
-// Super Admin  → control plane only (tenants, monitor/opt, access)
-// Co. Admin    → full tenant modules + setup
-// Visitor      → read-only operational modules (no company/setup)
-// Super Admin: control plane + full active-tenant modules (so ?tab=team works on current host)
-// Co. Admin: full tenant CRUD. Visitor: read-only operational modules.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 $tenantOpsTabs = [
-    'team', 'bank', 'docs', 'mediakit', 'events', 'locations', 'statutory', 'numero', 'terms',
+    'team', 'bank', 'docs', 'mediakit', 'events', 'locations', 'statutory', 'numero', 'terms', 'data_rights',
     'cartags', 'status', 'tracking', 'dispatch', 'ops', 'assets', 'expiry', 'org',
     'audit', 'health', 'leads', 'settings', 'company', 'designations', 'departments',
-    'opt', 'cctv', 'access', 'statistics', 'janam',
+    'opt', 'cctv', 'access', 'statistics', 'janam', 'data_rights',
 ];
 if ($isSuperAdmin) {
     $validTabs = array_values(array_unique(array_merge(
@@ -326,7 +326,7 @@ if ($isSuperAdmin) {
 } elseif ($isAdmin) {
     $validTabs = $tenantOpsTabs;
 } else {
-    // General HR / Visitor — view + share (no company/setup/control-plane)
+     
     $validTabs = [
         'team', 'locations', 'bank', 'docs', 'mediakit', 'events', 'statutory', 'numero', 'cctv', 'terms',
         'access', 'statistics', 'cartags', 'assets', 'expiry', 'org', 'status', 'janam',
@@ -338,14 +338,24 @@ if (class_exists('RolePack') && !$isSuperAdmin) {
         $validTabs[] = 'terms';
     }
 }
-// Per-tenant module matrix (Super Admin disables modules for this tenant).
-// Company Admin / Visitor must never see or open disabled modules.
+// Company Admin must always retain Organisation Setup
+if (!empty($isAdmin) && !in_array('company', $validTabs, true)) {
+    $validTabs[] = 'company';
+}
+if (!empty($isAdmin) && !in_array('designations', $validTabs, true)) {
+    $validTabs[] = 'designations';
+}
+if (!empty($isAdmin) && !in_array('departments', $validTabs, true)) {
+    $validTabs[] = 'departments';
+}
+ 
+ 
 if (!class_exists('ModuleRegistry') && is_file(BASE_PATH . '/app/ModuleRegistry.php')) {
     require_once BASE_PATH . '/app/ModuleRegistry.php';
 }
 if (class_exists('ModuleRegistry') && !$isSuperAdmin) {
     $validTabs = ModuleRegistry::filterTabs($validTabs, false);
-    // Never expose control-plane to Co. Admin / Visitor
+     
     $validTabs = array_values(array_filter($validTabs, static function ($t) {
         return !in_array($t, ['tenants', 'monitor', 'opt'], true);
     }));
@@ -358,7 +368,6 @@ if (!in_array($currentTab, $validTabs, true)) {
         $currentTab = $validTabs[0] ?? 'team';
     }
 }
-
 
 $titles = [
     'team' => 'Human Capital Index',
@@ -395,8 +404,7 @@ $titles = [
     'statistics' => 'Statistics Panel',
 ];
 
-
-// Project count for Status tab badge (reads standalone /status data if present)
+ 
 $statusProjectCount = 0;
 $_stProjects = BASE_PATH . '/status/data/projects.json';
 if (!is_file($_stProjects)) {
@@ -489,7 +497,7 @@ $DASHBOARD_STATE = [
 
     <meta charset="UTF-8">
 <?php
-    /* Browser icon: tenant favicon → tenant logo → (no hardcoded triangle product mark) */
+     
     $__co = is_array($viewData['company'] ?? null) ? $viewData['company'] : [];
     $__iconFile = trim((string)($__co['favicon'] ?? ''));
     if ($__iconFile === '') {
@@ -810,7 +818,6 @@ $DASHBOARD_STATE = [
                 }, 100);
             }
         };
-
 
         // window.runOptimise — proxy to dashboardApp.runOptimise() callable from
         // any Alpine scope (e.g. tab_monitor.php x-data blocks that have their
@@ -1320,7 +1327,6 @@ button.bg-white,a.bg-white{color:#0f172a!important}
         <div class="md:hidden fixed inset-0 z-[70] bg-slate-900/50" x-show="sidebarMobileOpen" x-cloak
              @click="sidebarMobileOpen = false" aria-hidden="true"></div>
 
-
         <input type="file" x-ref="importInput" class="hidden" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" @change="importExcel">
 
         <!-- One-Step Import preview: Select All / Unselect All / Import
@@ -1384,9 +1390,9 @@ button.bg-white,a.bg-white{color:#0f172a!important}
         <!-- Tab Content -->
         <div id="rc-content" data-rc-list class="flex-1 min-h-0 overflow-auto p-4 md:p-6 pb-24 md:pb-6">
                     <?php
-                    // Statistics: use ?tab=statistics only
+                     
 
-                    // Live widgets — Team + Calendar only (never Super Admin / other tabs)
+                     
                     if (empty($isSuperAdmin) && empty($viewData['isSuperAdmin'])
                         && in_array($currentTab, ['team', 'events'], true)) {
                         echo '<div class="rc-top-widgets mb-3 grid grid-cols-4 gap-2 items-stretch" style="grid-template-columns:repeat(4,minmax(0,1fr))">';
@@ -1404,8 +1410,8 @@ button.bg-white,a.bg-white{color:#0f172a!important}
 
             <div class="w-full max-w-full block">
                 <?php 
-                    // fell through to the generic table view further down and never
-                    // loaded dbd/tab_departments.php / dbd/tab_designations.php at all.
+                     
+                     
                     $customTabs = ['team', 'events', 'company', 'numero', 'statistics', 'opt', 'docs', 'mediakit', 'statutory', 'monitor', 'tenants', 'access', 'brandlogos', 'locations', 'terms', 'departments', 'designations', 'cartags', 'cctv', 'status', 'leads', 'settings', 'tracking', 'dispatch', 'ops', 'assets', 'expiry', 'org', 'audit', 'health'];
                     if (in_array($currentTab, ['monitor', 'opt', 'tenants', 'access'], true) && empty($isSuperAdmin)) {
                         echo '<div class="p-8 text-center text-red-700 font-bold bg-red-50 rounded-xl border border-red-200 m-4">Access Denied — Super Admin only.</div>';
@@ -1581,6 +1587,7 @@ button.bg-white,a.bg-white{color:#0f172a!important}
             <span class="opacity-40" aria-hidden="true">·</span>
             <span class="inline-flex items-center gap-x-3">
               <a href="?tab=terms" class="no-underline hover:text-[color:var(--rc-accent)]">Governance</a>
+              <button type="button" data-open-whatsnew class="no-underline hover:text-[color:var(--rc-accent)] bg-transparent border-0 cursor-pointer p-0 text-inherit font-inherit">What's New</button>
               <a href="?tab=terms&amp;policy=privacy" class="no-underline hover:text-[color:var(--rc-accent)]">Privacy</a>
               <a href="?tab=terms&amp;policy=privacy" class="no-underline hover:text-[color:var(--rc-accent)]">DPDP</a>
             </span>
@@ -1754,5 +1761,9 @@ button.bg-white,a.bg-white{color:#0f172a!important}
 </script>
 
 <?php $cp = __DIR__ . '/partials/command_palette.php'; if (is_file($cp)) require $cp; ?>
+<?php
+if (is_file(__DIR__ . '/partials/consent_banner.php')) require __DIR__ . '/partials/consent_banner.php';
+if (is_file(__DIR__ . '/partials/whatsnew_drawer.php')) require __DIR__ . '/partials/whatsnew_drawer.php';
+?>
 </body>
 </html>

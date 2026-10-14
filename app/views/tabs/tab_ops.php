@@ -1,5 +1,5 @@
 <?php
-/** Field Operations — attendance, visits, geofences, WhatsApp templates. Version: 260921.40 */
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 <div class="space-y-4" x-data="valueOps()" x-init="init()">

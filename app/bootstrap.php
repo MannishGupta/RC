@@ -1,52 +1,52 @@
 <?php
-// app/bootstrap.php (was lib.php prior to 260906.3)
-// Version: 260916.12
-//
-// This file REPLACES both the old lib.php and lib_vip.php. Those two files
-// declared identical class names (AppUtils, AppSlug, AppLog, AppView, AppAuth,
-// AppDB, AppMedia, CardContext) with NO class_exists() guards — if both were
-// ever require()'d in the same request, PHP would fatal with
-// "Cannot redeclare class". This single file is now the only source of truth.
-// DELETE lib_vip.php from the server after deploying this file.
-//
-// CHANGELOG v2027.300 (PHP 8.4.2 / WinNT+Plesk hardening pass):
-//  - SECURITY: Hardcoded admin/crm passwords removed from index.php's login
-//    flow. AppAuth::verifyCredentials() now checks bcrypt hashes stored in
-//    data/auth_config.php (auto-bootstrapped with your existing passwords —
-//    see that file's header comment; rotate them).
-//  - SECURITY: AppMedia::isDangerousUpload() is now the single allow/deny
-//    check used by BOTH image imports here AND the raw document upload path
-//    in index.php (previously index.php used a much weaker filter that only
-//    blocked filenames containing ".php" — .aspx/.asp/.phtml/etc. were not
-//    blocked, which matters a great deal on an IIS/Plesk host where .aspx
-//    is natively executable).
-//  - WINDOWS FIX: AppDB::save() now retries the atomic rename() up to 3
-//    times with a short backoff before giving up. On Windows, rename() can
-//    transiently fail with "Access is denied" if another process/request
-//    has the destination file open (e.g. a concurrent AppDB::read() mid-
-//    fread under LOCK_SH) — this does not happen on POSIX, so it was
-//    invisible in any Linux testing. On final failure it now falls back to
-//  - PERFORMANCE/RELIABILITY: AppMedia::generateOgImage()'s font loader no
-//    longer attempts a live outbound HTTPS download to GitHub during a
-//    normal page request. On a shared host, an outbound connection can be
-//    slow, blocked, or firewalled — that call sat directly in the render
-//    path of every person-card page view via AppSEO::generateTags(). It now
-//    only uses fonts already present on disk (system DejaVu or a
-//    pre-placed TTF) and falls back to GD's built-in fonts immediately.
-//  - AppSEO merged from the old lib_vip.php (branded OG image generation),
-//    kept behind the same network-safety fix above.
-//  - Defensive casts added throughout (e.g. $_SERVER access) to avoid PHP 8+
-//    "undefined array key" warnings surfacing now that display_errors is
-//    correctly off in production (see index.php changelog).
-//  - No public method signatures changed. Safe drop-in replacement.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 if (!defined('BASE_PATH')) exit('No direct script access');
 
-// Project version — single source of truth (see version.php).
-// Loaded here because every entry point (index.php, the card pages, the
-// public vehicle-tags pages, print.php, the diagnostic scripts) already
-// requires lib.php, so APP_VERSION is available everywhere without each
-// file having to know where version.php lives.
+ 
+ 
+ 
+ 
+ 
 if (!defined('APP_VERSION')) {
     $_verFile = dirname(__DIR__) . '/version.php';
     if (is_readable($_verFile)) { require_once $_verFile; }
@@ -54,7 +54,6 @@ if (!defined('APP_VERSION')) {
     if (!defined('APP_VERSION_DATE')) define('APP_VERSION_DATE', 'Unknown');
     unset($_verFile);
 }
-
 
 if (!defined('APP_SKIP_OPCACHE_CHECK')) {
     $_ocDir  = defined('DATA_PATH') ? DATA_PATH : (__DIR__ . '/data');
@@ -71,19 +70,17 @@ if (!defined('APP_SKIP_OPCACHE_CHECK')) {
     unset($_ocDir, $_ocFile, $_ocSeen);
 }
 
-// Canonical field dictionaries (optional — safe if missing)
+ 
 $_schemaFile = __DIR__ . '/Schema.php';
 if (is_readable($_schemaFile)) { require_once $_schemaFile; }
 unset($_schemaFile);
-// India-first defaults (IST, en_IN)
+ 
 if (class_exists('AppLocale')) { AppLocale::boot(); }
 
-// Phase-1 modular layer (App\Rc\*) — strangler-compatible
+ 
 $_rcBoot = __DIR__ . '/Rc/bootstrap_rc.php';
 if (is_readable($_rcBoot)) { require_once $_rcBoot; }
 unset($_rcBoot);
-
-
 
 if (!class_exists('TenantPaths') && is_file(__DIR__ . '/TenantPaths.php')) { require_once __DIR__ . '/TenantPaths.php'; }
 class AppUtils {
@@ -143,11 +140,8 @@ class AppUtils {
         return null;
     }
 
-    /**
-     * Canonical digital business / profile card URL for a team slug.
-     * Used by QR payloads, OG tags, share links — must land on ?card=business&slug=
-     * (never a bare /{slug} path, which 404s on this app).
-     */
+    
+
     public static function getCardUrl($slug, string $card = 'business'): string
     {
         $slug = self::sanitizeSlug((string)$slug);
@@ -164,14 +158,14 @@ class AppUtils {
         if (strpos($path, 'http') === 0) {
             return $path;
         }
-        // Query-style paths: ?card=business&slug=x
+         
         if (isset($path[0]) && $path[0] === '?') {
             return rtrim(self::getBaseUrl(), '/') . '/' . $path;
         }
         if (strpos($path, 'card=') !== false) {
             return rtrim(self::getBaseUrl(), '/') . '/?' . ltrim($path, '?');
         }
-        // Bare team slug → business card (QR / share target). Do NOT emit /{slug}.
+         
         $trim = ltrim($path, '/');
         if ($trim !== '' && strpos($trim, '/') === false && preg_match('/^[a-z0-9][a-z0-9\-_]*$/i', $trim)) {
             return self::getCardUrl($trim, 'business');
@@ -202,10 +196,8 @@ class AppUtils {
 
 class AppSlug {
 
-    /**
-     * Slugs that must NEVER be renamed during bulk migration.
-     * Must stay in sync with SystemDataOptimizer::PROTECTED_SLUGS in optimizer.php.
-     */
+    
+
     public const PROTECTED_SLUGS = ['mg', 'ag', 'ap', 'rj', 'akg', 'mk'];
 
     public static function fromName(string $name): string {
@@ -263,11 +255,8 @@ class AppLog {
     public static function warning($msg, $context = []) { self::write('WARN', $msg, $context); }
     public static function error($msg, $context = []) { self::write('ERROR', $msg, $context); }
 
-    /**
-     * NEW: single place for PHP's own error/exception handlers (registered in
-     * index.php) to funnel into, so uncaught issues are logged instead of
-     * ever being echoed to the client in production.
-     */
+    
+
     public static function critical($msg, $context = []) { self::write('CRITICAL', $msg, $context); }
 
     private static function write($lvl, $msg, $ctx) {
@@ -287,18 +276,9 @@ class AppLog {
     }
 }
 
-
-/**
- * Runtime cache flush — OPcache + version stamp.
- * Called from SystemDataOptimizer::run() and available to flush_cache.php.
- * Without this, FTP uploads of PHP files can leave stale bytecode until
- * APP_VERSION changes or a manual flush runs.
- */
 class AppCacheFlush {
-    /**
-     * @param string $reason  Logged context: optimise | manual | version | deploy
-     * @return array{opcache:bool,stamp:bool,version:string}
-     */
+    
+
     public static function all(string $reason = 'manual'): array {
         $ok = false;
         if (function_exists('opcache_reset')) {
@@ -312,7 +292,7 @@ class AppCacheFlush {
         if (!is_dir($dataDir)) {
             @mkdir($dataDir, 0755, true);
         }
-        // Align the auto-flush stamp so the next request does not double-reset.
+         
         $stamped = (@file_put_contents($stampFile, $ver, LOCK_EX) !== false);
 
         if (class_exists('AppLog')) {
@@ -328,27 +308,22 @@ class AppCacheFlush {
     }
 }
 
-
-/**
- * India-first locale helpers: IST clock, en-IN formats, INR, phone display.
- * All dashboard/card code should prefer these over ad-hoc date()/number_format.
- */
 class AppLocale {
     public const TZ = 'Asia/Kolkata';
     public const LANG = 'en-IN';
     public const CURRENCY = 'INR';
 
-    /** Ensure process timezone is IST (safe to call once per request). */
+     
     public static function boot(): void {
         try {
             date_default_timezone_set(self::TZ);
-        } catch (\Throwable $e) { /* ignore */ }
+        } catch (\Throwable $e) {   }
         if (function_exists('locale_set_default')) {
             @locale_set_default('en_IN');
         }
     }
 
-    /** ISO-8601 with IST offset, e.g. 2026-09-17T16:18:00+05:30 */
+     
     public static function nowIso(): string {
         return (new \DateTimeImmutable('now', self::tz()))->format('c');
     }
@@ -359,10 +334,8 @@ class AppLocale {
         return $tz;
     }
 
-    /**
-     * Format a date/time for UI (Indian English conventions).
-     * $style: date | datetime | time | long
-     */
+    
+
     public static function format($value, string $style = 'date'): string {
         if ($value === null || $value === '') return '';
         try {
@@ -383,14 +356,12 @@ class AppLocale {
             'long'     => $dt->format('l, d-m-Y'),
             'iso'      => $dt->format('c'),
             'dmy'      => $dt->format('d-m-Y'),
-            default    => $dt->format('d-m-Y'),             // strict Indian DD-MM-YYYY
+            default    => $dt->format('d-m-Y'),              
         };
     }
 
-    /**
-     * INR (en_IN) via intl NumberFormatter — instance cached per request (PHP 8.4).
-     * Host confirms intl is available for correct lakh/crore grouping and ₹ symbol.
-     */
+    
+
     public static function money(float|int|string $amount, bool $symbol = true): string {
         $n = is_numeric($amount) ? (float) $amount : 0.0;
         if (extension_loaded('intl') && class_exists(\NumberFormatter::class)) {
@@ -416,7 +387,7 @@ class AppLocale {
                 }
             }
         }
-        // Fallback without intl
+         
         $neg = $n < 0;
         $n = abs($n);
         $int = (int) floor($n);
@@ -425,7 +396,7 @@ class AppLocale {
         return ($neg ? '-' : '') . ($symbol ? '₹' : '') . $s;
     }
 
-    /** Indian digit grouping: 12,34,567 */
+     
     public static function groupIndian(int $n): string {
         $n = abs($n);
         $s = (string)$n;
@@ -441,7 +412,7 @@ class AppLocale {
         return implode(',', array_reverse($parts)) . ',' . $last3;
     }
 
-    /** Display phone in +91 XXXXX XXXXX when possible. */
+     
     public static function phone(string $raw): string {
         if (class_exists('AppSlug')) {
             return AppSlug::normalizePhone($raw);
@@ -454,16 +425,14 @@ class AppLocale {
         return trim($raw);
     }
 
-    /** PIN code display (6-digit India). */
+     
     public static function pincode(string $raw): string {
         $d = preg_replace('/\D/', '', $raw) ?? '';
         return strlen($d) === 6 ? $d : trim($raw);
     }
 
-    /**
-     * JSON blob for the browser (Intl + labels). Embed once in dashboard/login.
-     * @return array<string,mixed>
-     */
+    
+
     public static function jsConfig(): array {
         return [
             'tz'       => self::TZ,
@@ -504,7 +473,7 @@ class AppAuth {
     private static $maxAttempts = 10;
     private static $lockoutTime = 300;
 
-    /** @var array<string,string>|null cache of role => bcrypt hash */
+     
     private static ?array $credentials = null;
 
     public static function initSession() {
@@ -514,8 +483,8 @@ class AppAuth {
             if (!is_dir($sessDir)) {
                 @mkdir($sessDir, 0775, true);
             }
-            // Writable check — unwritable tenant sessions/ is the #1 cause of
-            // "password accepted, bounced back to login" after multi-tenant.
+             
+             
             $probe = $sessDir . '/.rc_write_test';
             $writable = is_dir($sessDir) && @file_put_contents($probe, '1') !== false;
             if ($writable) {
@@ -536,7 +505,7 @@ class AppAuth {
             ini_set('session.use_only_cookies', '1');
             ini_set('session.cookie_httponly', '1');
 
-            // Plesk / reverse proxy: HTTPS may only appear as X-Forwarded-Proto
+             
             $https = false;
             if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') {
                 $https = true;
@@ -552,8 +521,8 @@ class AppAuth {
                 $https = true;
             }
 
-            // Unique session name per tenant so shared browsers across hosts
-            // never confuse file cookies (belt-and-suspenders; domains already isolate).
+             
+             
             $sessName = 'RCSESSID';
             if (defined('TENANT_ID') && TENANT_ID !== '' && TENANT_ID !== 'default') {
                 $sessName = 'RCSESS_' . preg_replace('/[^A-Za-z0-9]/', '', TENANT_ID);
@@ -565,11 +534,11 @@ class AppAuth {
                 'path'     => '/',
                 'secure'   => $https,
                 'httponly' => true,
-                'samesite' => 'Lax', // Lax: survives top-level redirects after fetch login
+                'samesite' => 'Lax',  
             ]);
 
             @session_start();
-            // Weekly mandatory sign-out: sessions started before last Sunday 00:00 IST are void
+             
             if (!empty($_SESSION['user']) && class_exists('AppAuth') && method_exists('AppAuth', 'enforceSundayMidnightIST')) {
                 AppAuth::enforceSundayMidnightIST();
             }
@@ -583,16 +552,16 @@ class AppAuth {
     public static function setSecureHeaders() {
         if (headers_sent()) return;
 
-        // Transport / clickjacking / MIME
+         
         header('X-Frame-Options: DENY');
         header('X-Content-Type-Options: nosniff');
         header('Referrer-Policy: strict-origin-when-cross-origin');
-        // geolocation=(self) required for track_share / runners; camera/mic still denied
+         
         header('Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=(), interest-cohort=()');
         header('Cross-Origin-Opener-Policy: same-origin');
-        // Do not send X-XSS-Protection — deprecated and can enable XSS auditor bugs.
+         
 
-        // HSTS only on HTTPS (shared host may terminate TLS at edge)
+         
         $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
               || ((string)($_SERVER['SERVER_PORT'] ?? '') === '443')
               || (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
@@ -600,9 +569,9 @@ class AppAuth {
             header('Strict-Transport-Security: max-age=15552000; includeSubDomains');
         }
 
-        // Commercial CSP: Alpine + FA self-hosted under /assets/vendor/
-        // SheetJS remains optional CDN (import/export only). Maps frames allowed.
-        // 'unsafe-inline' retained for Alpine/x-data and critical inline boot scripts.
+         
+         
+         
         $csp = [
             "default-src 'self'",
             "base-uri 'self'",
@@ -622,13 +591,13 @@ class AppAuth {
             "media-src 'self' blob:",
         ];
         if (!$https) {
-            // Drop upgrade-insecure-requests on plain HTTP (local / mixed edge)
+             
             $csp = array_values(array_filter($csp, static fn($d) => $d !== 'upgrade-insecure-requests'));
         }
         header('Content-Security-Policy: ' . implode('; ', $csp));
     }
 
-    /** Stable request id for log correlation (debug without exposing internals to clients). */
+     
     public static function requestId(): string {
         static $id = null;
         if ($id === null) {
@@ -646,10 +615,8 @@ class AppAuth {
     }
 
     
-        /**
-         * Force logout if session began before the most recent Sunday 00:00 Asia/Kolkata.
-         * Sets rc_session_started on first authenticated hit after login.
-         */
+        
+
         public static function enforceSundayMidnightIST(): void
         {
             try {
@@ -661,7 +628,7 @@ class AppAuth {
                 }
                 $tz = new \DateTimeZone('Asia/Kolkata');
                 $now = new \DateTimeImmutable('now', $tz);
-                $dow = (int) $now->format('w'); // 0 = Sunday
+                $dow = (int) $now->format('w');  
                 $boundary = $now->setTime(0, 0, 0);
                 if ($dow !== 0) {
                     $boundary = $boundary->modify('-' . $dow . ' days');
@@ -681,14 +648,14 @@ class AppAuth {
                     @session_destroy();
                 }
             } catch (\Throwable $e) {
-                // never break the request
+                 
             }
         }
 
         public static function verify_csrf() {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') return;
 
-        // JSON body often carries csrf_token without populating $_POST
+         
         $ct = (string)($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '');
         if (stripos($ct, 'application/json') !== false && empty($_POST['csrf_token']) && empty($_POST['_csrf'])) {
             $raw = file_get_contents('php://input');
@@ -704,25 +671,25 @@ class AppAuth {
             }
         }
 
-        // Prefer header (AJAX); fall back to common form field names so
-        // classic HTML forms (e.g. Monitor Orphan:Delete) do not 403.
+         
+         
         $token = $_SERVER['HTTP_X_CSRF_TOKEN']
               ?? $_POST['csrf_token']
               ?? $_POST['_csrf']
               ?? '';
         if (!hash_equals(self::csrf_token(), (string)$token)) {
 
-            // Classify the failure. The old log recorded only an IP, which
-            // cannot distinguish two very different events:
-            //   'no_token'      no header at all -> almost always an automated
-            //                   scanner sweeping the internet. Harmless noise.
-            //   'stale_session' a token was sent but no session exists -> a
-            //                   real user whose session was garbage-collected
-            //                   with the tab still open. They just lost their
-            //                   work and deserve a clear message, not a
-            //                   generic failure.
-            //   'mismatch'      token sent, session exists, values differ ->
-            //                   the only genuinely suspicious case.
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
+             
             $kind = ($token === '')            ? 'no_token'
                   : (empty($_SESSION['csrf_token']) ? 'stale_session' : 'mismatch');
 
@@ -739,9 +706,9 @@ class AppAuth {
             $accept = (string)($_SERVER['HTTP_ACCEPT'] ?? '');
             $ctype  = (string)($_SERVER['CONTENT_TYPE'] ?? '');
             if (strpos($accept, 'application/json') !== false || strpos($ctype, 'json') !== false) {
-                // A stale session is a user problem, not a security incident.
-                // Telling them to sign in again is actionable; "CSRF token
-                // validation failed" is not.
+                 
+                 
+                 
                 echo json_encode([
                     'status'  => 'error',
                     'code'    => $kind,
@@ -806,15 +773,11 @@ class AppAuth {
     }
 
     
-    /**
-     * Three-tier access via bcrypt hashes in auth_config.php (missing roles auto-filled).
-     * super_admin → global / tenants / telemetry
-     * admin       → tenant data write
-     * public      → read-only directory
-     */
+    
+
     public static function verifyCredentials(string $password): ?string {
         $password = (string)$password;
-        // Bcrypt hashes only (data/auth_config.php). No plaintext master passwords in code.
+         
         $creds = self::loadCredentials();
         foreach ($creds as $role => $hash) {
             if (!is_string($hash) || $hash === '') {
@@ -836,10 +799,8 @@ class AppAuth {
         return null;
     }
 
-    /**
-     * True when no usable auth_config exists (fresh install).
-     * Existing installs with auth_config.php are unchanged.
-     */
+    
+
     public static function needsSetup(): bool {
         $creds = self::loadCredentials();
         foreach (['admin', 'super_admin'] as $role) {
@@ -850,12 +811,8 @@ class AppAuth {
         return true;
     }
 
-    /**
-     * First-run: write bcrypt hashes for roles. Requires setup token from data/.setup_token.
-     * Never logs passwords. Does not invent default passwords.
-     *
-     * @param array<string,string> $passwords role => plaintext (hashed before write)
-     */
+    
+
     public static function completeSetup(array $passwords, string $token): bool {
         $dataDir = defined('DATA_PATH') ? DATA_PATH : (defined('BASE_PATH') ? BASE_PATH . '/data' : (__DIR__ . '/../data'));
         $tokenFile = $dataDir . '/.setup_token';
@@ -898,7 +855,7 @@ class AppAuth {
         return true;
     }
 
-    /** Ensure a one-time setup token exists when auth is not configured. */
+     
     public static function ensureSetupToken(): string {
         $dataDir = defined('DATA_PATH') ? DATA_PATH : (defined('BASE_PATH') ? BASE_PATH . '/data' : (__DIR__ . '/../data'));
         if (!is_dir($dataDir)) {
@@ -937,12 +894,11 @@ class AppAuth {
             }
         }
 
-        // No factory hashes. Missing roles stay missing (disabled).
-        // Existing auth_config.php is used as-is — owner must rotate factory passwords themselves.
+         
+         
         self::$credentials = is_array($creds) ? $creds : [];
         return self::$credentials;
     }
-
 
 }
 
@@ -954,7 +910,7 @@ class AppDB {
     private static $cache = [];
     private static $schemaType = ['company' => 'object'];
 
-    /** Active data root — respects multi-tenant optimizer override. */
+     
     private static function dataPathRoot(): string {
         if (!empty($GLOBALS['RC_OPT_DATA_PATH']) && is_string($GLOBALS['RC_OPT_DATA_PATH'])) {
             return rtrim(str_replace('\\', '/', $GLOBALS['RC_OPT_DATA_PATH']), '/');
@@ -965,16 +921,13 @@ class AppDB {
         return rtrim(str_replace('\\', '/', BASE_PATH . '/data'), '/');
     }
 
-    /** Flush in-memory cache (required when switching tenants mid-request). */
+     
     public static function clearCache(): void {
         self::$cache = [];
     }
 
-    /**
-     * Stable field order + list shape the UI/optimizer always expect.
-     * @param list<array<string,mixed>>|array<string,mixed> $data
-     * @return list<array<string,mixed>>|array<string,mixed>
-     */
+    
+
     public static function canonicalize(string $ns, $data) {
         $ns = strtolower($ns);
         $schemas = self::canonicalSchemas();
@@ -984,7 +937,7 @@ class AppDB {
             if (!is_array($data)) {
                 $data = [];
             }
-            // unwrap accidental list
+             
             if (isset($data[0]) && is_array($data[0])) {
                 $data = $data[0];
             }
@@ -1006,7 +959,7 @@ class AppDB {
         if (!is_array($data)) {
             return [];
         }
-        // force sequential list
+         
         if ($data !== [] && array_keys($data) !== range(0, count($data) - 1)) {
             $data = array_values($data);
         }
@@ -1035,7 +988,7 @@ class AppDB {
         return self::sortNamespace($ns, $out);
     }
 
-    /** @return array<string, array<string,mixed>> */
+     
     private static function canonicalSchemas(): array {
         return [
             'company' => [
@@ -1094,11 +1047,8 @@ class AppDB {
         ];
     }
 
-    /**
-     * Chronological / rank order for fastest UI defaults (no client re-sort on first paint).
-     * @param list<array<string,mixed>> $rows
-     * @return list<array<string,mixed>>
-     */
+    
+
     public static function sortNamespace(string $ns, array $rows): array {
         $ns = strtolower($ns);
         $cmpStr = static function ($a, $b) {
@@ -1130,7 +1080,7 @@ class AppDB {
                 $da = strtotime((string)($a['updated_at'] ?? $a['created_at'] ?? $a['date'] ?? '')) ?: 0;
                 $db = strtotime((string)($b['updated_at'] ?? $b['created_at'] ?? $b['date'] ?? '')) ?: 0;
                 if ($da !== $db) {
-                    return $db <=> $da; // newest first
+                    return $db <=> $da;  
                 }
                 return strcasecmp((string)($a['title'] ?? $a['name'] ?? ''), (string)($b['title'] ?? $b['name'] ?? ''));
             });
@@ -1147,7 +1097,7 @@ class AppDB {
             });
             return array_values($rows);
         }
-        // Default: name / title alphabetical for stable binary search friendly lists
+         
         usort($rows, static function ($a, $b) {
             $la = (string)($a['name'] ?? $a['title'] ?? $a['bank_name'] ?? $a['plate'] ?? $a['id'] ?? '');
             $lb = (string)($b['name'] ?? $b['title'] ?? $b['bank_name'] ?? $b['plate'] ?? $b['id'] ?? '');
@@ -1156,11 +1106,8 @@ class AppDB {
         return array_values($rows);
     }
 
+    
 
-    /**
-     * Resolve JSON filename for a namespace, including legacy aliases
-     * Canonical: banking.json, documents.json. Optional read of legacy names if present.
-     */
     private static function getFile($k, bool $forWrite = false) {
         $k = strtolower((string)$k);
         $primary = [
@@ -1194,7 +1141,7 @@ class AppDB {
         if (is_file($file)) {
             return $file;
         }
-        // Prefer existing alias on disk so per-tenant counts are accurate
+         
         if (isset($aliases[$k])) {
             foreach ($aliases[$k] as $alt) {
                 $cand = $root . $sep . $alt;
@@ -1206,7 +1153,7 @@ class AppDB {
         return $file;
     }
 
-    /** Find first list row matching filters (slug/id). */
+     
     public static function readOne(string $ns, array $filters = []): ?array {
         $rows = self::read($ns);
         if (!is_array($rows)) return null;
@@ -1225,7 +1172,7 @@ class AppDB {
         if (defined('MODAL_CONTEXT')) self::$cache = [];
 
         $k = strtolower((string)$k);
-        // Cache key must include data root so optimizer multi-tenant runs do not bleed
+         
         $cacheKey = self::dataPathRoot() . '::' . $k;
         if (isset(self::$cache[$cacheKey])) return self::$cache[$cacheKey];
         $file = self::getFile($k, false);
@@ -1269,8 +1216,8 @@ class AppDB {
                 return false;
             }
         }
-        $tmpFile = $file . '.' . uniqid('', true) . '.tmp'; // unique tmp name avoids collisions between concurrent saves
-        // Invalidate all cache entries for this namespace across roots
+        $tmpFile = $file . '.' . uniqid('', true) . '.tmp';  
+         
         foreach (array_keys(self::$cache) as $ck) {
             if (str_ends_with((string)$ck, '::' . $k)) {
                 unset(self::$cache[$ck]);
@@ -1280,8 +1227,8 @@ class AppDB {
         try {
             $isObject = (isset(self::$schemaType[$k]) && self::$schemaType[$k] === 'object');
             if ($isObject && empty($data)) $data = (object)[];
-            // Compact JSON (no pretty-print) = smaller files + faster parse on every page load.
-            // Set RC_JSON_PRETTY=1 in the environment only when debugging raw files by hand.
+             
+             
             $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
             if (!empty($_ENV['RC_JSON_PRETTY']) || getenv('RC_JSON_PRETTY')) {
                 $flags |= JSON_PRETTY_PRINT;
@@ -1300,11 +1247,11 @@ class AppDB {
                 $renamed = false;
                 for ($attempt = 1; $attempt <= 3; $attempt++) {
                     if (@rename($tmpFile, $file)) { $renamed = true; break; }
-                    usleep(30000 * $attempt); // 30ms, 60ms, 90ms backoff
+                    usleep(30000 * $attempt);  
                 }
 
                 if (!$renamed) {
-                    // Last resort: direct overwrite. Not perfectly atomic, but
+                     
                     if (@file_put_contents($file, $json, LOCK_EX) === false) {
                         throw new Exception("Atomic rename failed and direct write fallback also failed.");
                     }
@@ -1350,17 +1297,10 @@ class AppDB {
 
 class AppMedia {
 
-    /**
-     * NEW: single, shared deny-list used everywhere a file gets written to
-     * disk from a user upload — images here AND the raw document upload
-     * path in index.php. Previously index.php had its own, much weaker
-     * check (only blocked filenames literally containing ".php"), leaving
-     * .aspx/.asp/.phtml/.phar/etc. completely unfiltered for document
-     * uploads. On an IIS/Plesk host, .aspx is natively server-executable —
-     * that gap was a real remote-code-execution path.
-     */
+    
+
     public static function isDangerousUpload(string $filename, string $mime = '', bool $allowSvg = false): bool {
-        // SVG allowed only when caller will sanitise (logo/favicon/brand fields).
+         
         $extDeny = $allowSvg
             ? '/\.(php\d?|phtml|phar|pht|exe|sh|bat|cmd|cgi|pl|py|rb|js|jsp|jspx|asp|aspx|ascx|asmx|cer|config|htaccess|html?|xhtml|shtml|htm)(\.|$)/i'
             : '/\.(php\d?|phtml|phar|pht|exe|sh|bat|cmd|cgi|pl|py|rb|js|jsp|jspx|asp|aspx|ascx|asmx|cer|config|htaccess|svg|svgz|html?|xhtml|xml|shtml|htm)(\.|$)/i';
@@ -1383,27 +1323,10 @@ class AppMedia {
         return false;
     }
 
-    /**
-     * Sanitize untrusted SVG: strip script/handlers/external refs.
-     * Returns cleaned SVG string, or '' if not a usable SVG.
-     */
-    /**
-     * Sanitize untrusted SVG: strip script/handlers/external refs.
-     * Returns cleaned SVG string, or '' if not a usable SVG.
-     *
-     *  - <style> blocks are KEPT. CorelDRAW, Inkscape and Illustrator export
-     *    fills as CSS classes (".fil0{fill:#B72928}") and gradients as
-     *    "fill:url(#id0)". An earlier version deleted the whole block whenever
-     *    it contained any url(...), which turned real logos into black
-     *    silhouettes. Same-document references (url(#id)) are safe and kept.
-     *  - The DOCTYPE is removed, but its internal subset is read first so
-     *    simple literal entities (Illustrator's <!ENTITY ns_svg "http://...">)
-     *    are expanded instead of leaving dangling &refs; that make the file
-     *    unparseable. Entities that are external, recursive or contain markup
-     *    are never expanded, and a file that still has an unresolved entity
-     *    afterwards is rejected rather than stored broken.
-     *  - The result must parse as well-formed XML (when DOM is available).
-     */
+    
+
+    
+
     public static function sanitizeSvg(string $raw): string
     {
         if ($raw === '' || stripos($raw, '<svg') === false) {
@@ -1411,21 +1334,21 @@ class AppMedia {
         }
         $clean = (string) preg_replace('/^\xEF\xBB\xBF/', '', $raw);
 
-        // 1) DOCTYPE: harvest simple internal entities, then drop it entirely.
+         
         $doctype = '/<!DOCTYPE\b(?:[^>\[]|\[[^\]]*\])*>/is';
         $entities = [];
         if (preg_match($doctype, $clean, $dm)
             && preg_match_all('/<!ENTITY\s+([A-Za-z_][\w.\-]*)\s+(?:"([^"]*)"|\'([^\']*)\')\s*>/i', $dm[0], $em, PREG_SET_ORDER)) {
             foreach ($em as $e) {
                 $val = ($e[2] ?? '') !== '' ? $e[2] : ($e[3] ?? '');
-                if (strpbrk($val, '<&') === false) { // literal text only
+                if (strpbrk($val, '<&') === false) {  
                     $entities[$e[1]] = $val;
                 }
             }
         }
         $clean = (string) preg_replace($doctype, '', $clean);
         $clean = (string) preg_replace('/<!ENTITY[^>]*>/is', '', $clean);
-        // Processing instructions other than the XML declaration (xml-stylesheet etc.)
+         
         $clean = (string) preg_replace('/<\?(?!xml\s)[^?]*\?>/i', '', $clean);
         if ($entities !== []) {
             $clean = (string) preg_replace_callback('/&([A-Za-z_][\w.\-]*);/', static function (array $m) use ($entities): string {
@@ -1434,41 +1357,41 @@ class AppMedia {
                     : $m[0];
             }, $clean);
         }
-        // Anything other than the five predefined entities is now unresolved.
+         
         if (preg_match('/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)[A-Za-z_][\w.\-]*;/', $clean)) {
             return '';
         }
 
-        // 2) Dangerous elements. Repeat until stable so a nested construct such as
-        //    <scr<script></script>ipt> cannot reassemble into a live tag.
+         
+         
         do {
             $before = $clean;
             $clean = (string) preg_replace('#<(script|foreignObject|iframe|object|embed)\b[^>]*>.*?</\1\s*>#is', '', $clean);
             $clean = (string) preg_replace('#<(script|foreignObject|iframe|object|embed)\b[^>]*/?>#is', '', $clean);
         } while ($clean !== $before);
 
-        // 3) Off-document <use>, event handlers, script URLs, off-document hrefs.
+         
         $clean = (string) preg_replace('#<use\b[^>]*(?:xlink:)?href\s*=\s*["\']\s*(?:https?:)?//[^"\']*["\'][^>]*/?>#is', '', $clean);
         $clean = (string) preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean);
-        // javascript:/vbscript: anywhere (href, xlink:href and SMIL values/from/to/by)
+         
         $clean = (string) preg_replace('/\b(?:javascript|vbscript)\s*:/i', 'blocked:', $clean);
         $clean = (string) preg_replace('/\s(?:xlink:)?href\s*=\s*(["\'])\s*(?:data:text\/|https?:|\/\/)[^"\']*\1/i', ' data-removed="1"', $clean);
 
-        // 4) <style>: keep it, but remove @import and any off-document url().
+         
         $clean = (string) preg_replace_callback('#(<style\b[^>]*>)(.*?)(</style\s*>)#is', static function (array $m): string {
             $css = preg_replace('/@import\s+(?:url\([^)]*\)|"[^"]*"|\'[^\']*\')(?:[^;{}\r\n]*;)?/i', '', $m[2]);
             return $m[1] . ($css ?? $m[2]) . $m[3];
         }, $clean);
-        // url() to anything but the same document, wherever it appears
-        // (style blocks, style="" attributes and fill/filter/mask attributes).
+         
+         
         $clean = (string) preg_replace('/url\s*\(\s*[\'"]?\s*(?:https?:|\/\/|data:text)/i', 'url(about:blank#', $clean);
 
         if (stripos($clean, '<svg') === false) {
             return '';
         }
-        // 5) Prefer well-formed XML, but many design-tool SVGs fail strict loadXML
-        // (namespaces, leftover entities). If scripts/handlers are already stripped
-        // and an <svg> root exists, accept the cleaned markup.
+         
+         
+         
         if (class_exists('DOMDocument')) {
             $prev = libxml_use_internal_errors(true);
             $doc = new DOMDocument();
@@ -1479,7 +1402,7 @@ class AppMedia {
                 $out = $doc->saveXML($doc->documentElement);
                 return is_string($out) && $out !== '' ? $out : $clean;
             }
-            // Fallback: still require a real <svg …> open tag, no residual script
+             
             if (stripos($clean, '<script') !== false) {
                 return '';
             }
@@ -1487,16 +1410,14 @@ class AppMedia {
         return $clean;
     }
 
-    /**
-     * Per-field image upload guidance (hints + client accept list).
-     * Keep in sync with index.php optimise edge/quality/max_bytes.
-     */
+    
+
     public static function imageSpec(string $field): array
     {
         $field = strtolower(trim($field));
         $hasSanitiser = method_exists(__CLASS__, 'sanitizeSvg');
         $specs = [
-            // Standard product names (field keys unchanged: logo | favicon | cover | …)
+             
             'logo' => [
                 'label' => 'Primary logo',
                 'recommended' => '512×512 (or wider wordmark)',
@@ -1592,7 +1513,7 @@ class AppMedia {
         if (!empty($s['allowSvg']) && in_array($field, ['logo', 'favicon', 'brandlogo'], true)) {
             $hint .= ' · transparent background preferred';
         }
-        // used_for is shown as its own line in image_upload.php
+         
         $s['hint'] = $hint;
         return $s;
     }
@@ -1647,7 +1568,7 @@ class AppMedia {
 
         $width = imagesx($src); $height = imagesy($src);
 
-        // a no-op. The dimension guard below is what actually protects us.
+         
         @ini_set('memory_limit', '256M');
         if (($width * $height * 4) > 134217728) {
             imagedestroy($src);
@@ -1711,22 +1632,22 @@ class AppMedia {
 
         $W = 1200; $H = 630;
 
-        // ── LAYOUT ────────────────────────────────────────────────────────
-        // Chat apps crop link previews to a SQUARE taken from the centre
-        // (x 285-915 of a 1200x630). So the centre square is the only region
-        // guaranteed to survive, and the photo should OWN it.
-        //
-        //  full 1200x630                       cropped square
-        //  ┌───────┬─────────────┬───────┐     ┌─────────────┐
-        //  │ NAME  │             │  org  │     │             │
-        //  │ role  │   PHOTO     │ logo  │ ->  │    PHOTO    │
-        //  │       │ (fills sq)  │       │     │             │
-        //  └───────┴─────────────┴───────┘     └─────────────┘
-        //
-        // The photo is bled to full height at the centre; text sits in the
-        // discards. Previous revision centred a 250px avatar with the name
-        // BELOW it — the crop kept both, but the face used barely a sixth of
-        // the visible area.
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
         $canvas = imagecreatetruecolor($W, $H);
         if (!$canvas) return '';
 
@@ -1750,9 +1671,9 @@ class AppMedia {
                 (int)round($bB + ($dB - $bB) * $t)));
         }
 
-        // Centre square: the photo's territory.
-        $sqW  = $H;                       // 630 — full height, square
-        $sqX  = (int)(($W - $sqW) / 2);   // 285
+         
+        $sqW  = $H;                        
+        $sqX  = (int)(($W - $sqW) / 2);    
 
         $photoFile = !empty($person['photo'])
             ? IMG_PATH . DIRECTORY_SEPARATOR . basename((string)$person['photo'])
@@ -1774,9 +1695,9 @@ class AppMedia {
 
         if ($pSrc) {
             $pw = imagesx($pSrc); $ph = imagesy($pSrc);
-            // Cover-fill the square. Bias the crop upward on portraits: they
-            // are framed with the head in the upper half, so a dead-centre
-            // crop of a tall photo takes the forehead off.
+             
+             
+             
             $scale = max($sqW / $pw, $sqW / $ph);
             $dw = (int)ceil($pw * $scale);
             $dh = (int)ceil($ph * $scale);
@@ -1785,17 +1706,17 @@ class AppMedia {
             imagecopyresampled($canvas, $pSrc, $dx, $dy, 0, 0, $dw, $dh, $pw, $ph);
             imagedestroy($pSrc);
 
-            // Feather both vertical seams into the background so the photo
-            // reads as part of the card rather than a pasted rectangle.
+             
+             
             $fade = 70;
             for ($k = 0; $k < $fade; $k++) {
-                $a = (int)round(127 * ($k / $fade));           // opaque at the edge
+                $a = (int)round(127 * ($k / $fade));            
                 $col = imagecolorallocatealpha($canvas, $bR, $bG, $bB, $a);
                 imageline($canvas, $sqX + $k, 0, $sqX + $k, $H - 1, $col);
                 imageline($canvas, $sqX + $sqW - 1 - $k, 0, $sqX + $sqW - 1 - $k, $H - 1, $col);
             }
         } else {
-            // No photo: initials, still filling the square.
+             
             $ini = '';
             foreach (array_slice(preg_split('/\s+/', trim((string)($person['name'] ?? ''))) ?: [], 0, 2) as $w) {
                 $fl = preg_replace('/[^A-Za-z]/', '', $w);
@@ -1815,7 +1736,7 @@ class AppMedia {
         $fBold = self::getFont('bold');
         $fReg  = self::getFont('regular');
 
-        // Wrap text to the narrow side margins.
+         
         $wrap = function (string $text, string $font, int $pt, int $maxPx): array {
             $words = preg_split('/\s+/', trim($text)) ?: [];
             $out = []; $cur = '';
@@ -1831,10 +1752,10 @@ class AppMedia {
         };
 
         $pad     = 42;
-        $leftMax = $sqX - $pad - 24;          // ~219px of usable left margin
+        $leftMax = $sqX - $pad - 24;           
 
         if ($fBold) {
-            // ── LEFT: name + role ─────────────────────────────────────────
+             
             $name  = trim((string)($person['name'] ?? 'Professional'));
             $npt   = mb_strlen($name) > 22 ? 34 : (mb_strlen($name) > 14 ? 40 : 46);
             $nLines = $wrap($name, $fBold, $npt, $leftMax);
@@ -1859,9 +1780,9 @@ class AppMedia {
                 }
             }
 
-            // ── RIGHT: company, rotated to read bottom-up ─────────────────
-            // Vertical text keeps the right margin narrow, so the photo can
-            // stay square and centred rather than being squeezed.
+             
+             
+             
             $org = trim((string)($company['name'] ?? ''));
             if ($org !== '') {
                 $org = mb_strtoupper(mb_substr($org, 0, 34));
@@ -1871,13 +1792,13 @@ class AppMedia {
             }
         }
 
-        // Logo top-right, outside the square — a crop should lose the logo,
-        // never the face.
+         
+         
         $logoFile = !empty($company['logo']) ? IMG_PATH . DIRECTORY_SEPARATOR . basename((string)$company['logo']) : null;
         if ($logoFile && is_file($logoFile)) {
             $lSrc = null;
             $logoExt = strtolower(pathinfo($logoFile, PATHINFO_EXTENSION));
-            // Never use SVG as og:image — rasterise via Imagick if available, else skip (brand card remains)
+             
             if (in_array($logoExt, ['svg', 'svgz'], true)) {
                 if (class_exists('Imagick')) {
                     try {
@@ -1928,11 +1849,11 @@ class AppMedia {
     private static function getFont(string $weight): ?string {
         if (!function_exists('imagettftext')) return null;
 
-        // Prefer fonts already inside the project (always allowed by
-        // open_basedir on this host). Inter first, then DejaVu as a local
-        // fallback. System font paths are only tried when they fall inside
-        // open_basedir — probing outside it used to flood app.log with
-        // "open_basedir restriction in effect" on every OG-image render.
+         
+         
+         
+         
+         
         $fontDir = rtrim(BASE_PATH, '/\\') . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'fonts';
 
         $candidates = [
@@ -1955,7 +1876,7 @@ class AppMedia {
         ];
 
         if (!isset($candidates[$weight])) {
-            return null; // GD built-in fallback
+            return null;  
         }
 
         $allowed = ini_get('open_basedir');
@@ -1968,11 +1889,11 @@ class AppMedia {
         }
 
         $pathAllowed = static function (string $path) use ($roots): bool {
-            if ($roots === []) return true; // open_basedir not set
+            if ($roots === []) return true;  
             $pathNorm = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
             foreach ($roots as $root) {
                 $rootNorm = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $root);
-                // Prefix match (case-insensitive on Windows)
+                 
                 if (DIRECTORY_SEPARATOR === '\\') {
                     if (strncasecmp($pathNorm, $rootNorm . DIRECTORY_SEPARATOR, strlen($rootNorm) + 1) === 0
                         || strcasecmp($pathNorm, $rootNorm) === 0) {
@@ -1990,14 +1911,14 @@ class AppMedia {
 
         foreach ($candidates[$weight] as $path) {
             if (!$pathAllowed($path)) {
-                continue; // skip without calling file_exists — avoids log noise
+                continue;  
             }
             if (@is_file($path)) {
                 return $path;
             }
         }
 
-        return null; // GD built-in fallback
+        return null;  
     }
 
     private static function wrapTtf(string $text, string $font, int $size, int $maxPx): array {
@@ -2014,9 +1935,8 @@ class AppMedia {
         return $lines ?: [''];
     }
 
-    /**
-     * Branded 1200x630 OG image for dashboard tabs (images/og-tab-{tab}.jpg).
-     */
+    
+
     public static function generateTabOgImage(string $tab, string $tabTitle, array $company): string {
         if (!function_exists('imagecreatetruecolor')) return '';
         $safeTab = preg_replace('/[^a-z0-9\-]/', '', strtolower($tab));
@@ -2130,28 +2050,28 @@ class CardContext {
 
         if (!empty($m['location_id']) && isset($fullLocs[$m['location_id']])) {
             $l = $fullLocs[$m['location_id']];
-            // Full postal address only — no site/location name prefix.
-            // This previously produced "Regd Office, 12 Nehru Place…", which
-            // reads as a label glued onto an address rather than an address.
-            // The site name is a internal grouping term; on a business card the
-            // reader wants something they can copy onto a courier label.
-            // City, state and PIN are appended because a street line alone is
-            // not a deliverable address.
+             
+             
+             
+             
+             
+             
+             
             $_street = trim((string)($l['address'] ?? ''));
             $_site   = trim((string)($l['name'] ?? ''));
 
-            // DEFENSIVE: the site name is also commonly typed INTO the address
-            // field itself ("Regd Office, 12 Nehru Place..."). Removing the
-            // prefix in code above does nothing about that, because the name is
-            // part of the stored string. Strip a leading copy of the location
-            // name, with any trailing comma or dash, when it is there.
-            // Anchored to the START only — a genuine address containing the
-            // words elsewhere is left untouched.
+             
+             
+             
+             
+             
+             
+             
             if ($_site !== '' && $_street !== '') {
                 $_q = preg_quote($_site, '/');
                 $_street = preg_replace('/^\s*' . $_q . '\s*[,\-–—:]\s*/iu', '', $_street) ?? $_street;
-                // Exact match and nothing else means the field holds only the
-                // site name, which is not an address at all.
+                 
+                 
                 if (strcasecmp(trim($_street), $_site) === 0) $_street = '';
             }
 
@@ -2161,18 +2081,18 @@ class CardContext {
                 trim(trim((string)($l['state'] ?? '')) . ' ' . trim((string)($l['pincode'] ?? ''))),
             ], fn($v) => $v !== ''));
 
-            // Structured components alongside the flattened string above —
-            // 'address' is for display (a courier label, the card's address
-            // row), these are for anything that wants the parts separately
-            // (the vCard's structured ADR field, e.g.), without a second
-            // location lookup duplicating this same resolution and stripping
-            // logic a second time somewhere else.
+             
+             
+             
+             
+             
+             
             $m['address_street'] = $_street;
             $m['address_city']   = trim((string)($l['city']     ?? ''));
             $m['address_state']  = trim((string)($l['state']    ?? ''));
             $m['address_pin']    = trim((string)($l['pincode']  ?? ''));
 
-            // Kept separate in case a caller wants to label the address.
+             
             $m['location_name'] = trim((string)($l['name'] ?? ''));
             $m['map_link']      = $l['map_url'] ?? $l['map_link'] ?? '';
         }
@@ -2209,7 +2129,7 @@ if (!class_exists('AppLookup')) {
                     }
                     $val = $item[$valField] ?? $item['title'] ?? $item['name'] ?? '-';
                     $val = is_string($val) ? $val : (string)$val;
-                    // Index by preferred key AND id/slug/code so print and UI share one map
+                     
                     $keys = [];
                     foreach ([$keyField, 'id', 'slug', 'code'] as $kf) {
                         $k = $item[$kf] ?? null;
@@ -2229,7 +2149,7 @@ if (!class_exists('AppLookup')) {
 
 if (!class_exists('AppSEO')) {
     class AppSEO {
-        /** Plain-text meta description fallback for any public surface. */
+         
         public static function defaultDescription(?string $extra = null): string
         {
             $comp = class_exists('AppDB') ? AppDB::read('company') : [];
@@ -2266,7 +2186,7 @@ if (!class_exists('AppSEO')) {
             $desc = $compDesc; $img = $coverUrl ?: $logoUrl; $url = $baseUrl; $type = 'website';
             $keywords = 'corporate directory, team contacts, ' . strip_tags($compName) . ', India';
 
-            // ── Dashboard tab SEO (every ?tab= page) ─────────────────────────
+             
             $tab = null;
             if ($isDashboard) {
                 $tab = is_array($ctx) ? ($ctx['tab'] ?? null) : null;
@@ -2385,7 +2305,7 @@ if (!class_exists('AppSEO')) {
                 $url = $baseUrl . '/?tab=' . rawurlencode($tab);
                 $type = 'website';
 
-                // Prefer per-tab OG file, then company cover/logo, then generate
+                 
                 $tabOg = 'og-tab-' . preg_replace('/[^a-z0-9\-]/', '', $tab) . '.jpg';
                 if (defined('IMG_PATH') && is_file(IMG_PATH . DIRECTORY_SEPARATOR . $tabOg)) {
                     $img = $baseUrl . '/images/' . $encodePath($tabOg);
@@ -2423,7 +2343,7 @@ if (!class_exists('AppSEO')) {
                 if (mb_strlen($rawDesc) < 110) $rawDesc .= ' • View full profile and official contact information.';
                 $desc = htmlspecialchars($rawDesc, ENT_QUOTES);
 
-                // Branded OG image (safe — no network calls, see AppMedia::getFont()).
+                 
                 $ogSlug = AppUtils::sanitizeSlug($ctx['meta']['slug'] ?? $p['slug'] ?? 'profile');
                 $ogFile = 'og-' . $ogSlug . '.jpg';
                 if (class_exists('AppMedia')) {
@@ -2492,8 +2412,7 @@ if (!class_exists('AppSEO')) {
             }
             $html .= "\n";
 
-
-// JSON-LD: Organization + LocalBusiness + WebSite + WebPage + optional RealEstateProject
+ 
             $ldOrg = [
                 '@context' => 'https://schema.org',
                 '@type'    => 'Organization',
@@ -2526,7 +2445,7 @@ if (!class_exists('AppSEO')) {
             }
             if ($sameAs) $ldOrg['sameAs'] = array_values(array_unique($sameAs));
 
-            // LocalBusiness (rich local pack / maps eligibility)
+             
             $ldLocal = [
                 '@context' => 'https://schema.org',
                 '@type'    => 'LocalBusiness',
@@ -2582,7 +2501,7 @@ if (!class_exists('AppSEO')) {
             $html .= '<script type="application/ld+json">' . json_encode($ldWebsite, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
             $html .= '<script type="application/ld+json">' . json_encode($ldPage, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 
-            // RealEstateProject nodes from status/projects data when available
+             
             if (class_exists('AppDB')) {
                 $projects = AppDB::read('projects') ?: AppDB::read('status') ?: [];
                 if (is_array($projects)) {
@@ -2609,13 +2528,12 @@ if (!class_exists('AppSEO')) {
                             $ldRE['image'] = (str_starts_with($pic, 'http') ? $pic : $baseUrl . '/images/' . ltrim($pic, '/'));
                         }
                         $html .= '<script type="application/ld+json">' . json_encode($ldRE, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
-                        if (++$n >= 12) break; // keep payload lean
+                        if (++$n >= 12) break;  
                     }
                 }
             }
 
             return $html;
-
 
         }
     }

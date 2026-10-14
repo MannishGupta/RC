@@ -1,8 +1,8 @@
 <?php
-// app/views/tabs/tab_stat.php — Version: 260917.07
-// Statutory / company compliance cards.
-// Grouped by identity → tax → labour → capital markets → addresses → RERA.
-// Format hints match Indian statutory identifier standards.
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 <div class="w-full flex flex-col space-y-4">
@@ -295,7 +295,6 @@ if (!defined('BASE_PATH')) exit;
         </div>
     </template>
 </div>
-
 
 <script>
 /** Indian identifier format checks — green tick / red cross on statutory fields */

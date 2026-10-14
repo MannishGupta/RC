@@ -1,28 +1,5 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-
-/**
- * app/GoogleWallet.php — "Add to Google Wallet" link generator.
- *
- * NOT the same problem as Apple Wallet. Apple's .pkpass is a signed ZIP that
- * needs a Pass Type ID certificate only Apple issues, no way around it, ever
- * (Apple Developer Program, $99/year). Google Wallet instead accepts a signed
- * JWT: the wallet object's fields are embedded in the token itself, Google's
- * client-side "Add to Wallet" JS reads that token, and Google's own servers
- * do the verification. A free Google Cloud service account is enough.
- *
- * So this class is genuinely usable the moment credentials exist — unlike an
- * Apple pass, there is no packaging format to get subtly wrong.
- *
- * SETUP (see data/google_wallet_config.php):
- *   1. console.cloud.google.com -> enable the "Google Wallet API"
- *   2. Register as an Issuer at pay.google.com/business/console (free)
- *   3. Create a service account, download its JSON key
- *   4. Create ONE Generic Class for this app (one-time, via the API or
- *      console) — every person's pass is an Object under that shared Class
- *
- * Ships DISABLED. Nothing else in the app depends on it.
- */
 
 if (!defined('BASE_PATH')) exit('No direct script access');
 
@@ -41,11 +18,8 @@ final class GoogleWallet {
             && !empty($c['class_id']) && !empty($c['service_account_json']);
     }
 
-    /**
-     * Build the "Add to Google Wallet" URL for one person's card.
-     * Returns '' when unconfigured or on any signing failure — callers
-     * should treat an empty string as "don't show the button", not an error.
-     */
+    
+
     public static function passUrl(array $person, array $company, string $slug, string $baseUrl): string {
         if (!self::isConfigured()) return '';
 
@@ -58,9 +32,9 @@ final class GoogleWallet {
 
         $objectId = $c['issuer_id'] . '.' . preg_replace('/[^A-Za-z0-9_-]/', '_', $slug);
 
-        // Generic Wallet object — a flexible card type suitable for a
-        // business card (not a boarding pass, loyalty card, etc., which have
-        // their own more rigid object types).
+         
+         
+         
         $object = [
             'id'      => $objectId,
             'classId' => $c['issuer_id'] . '.' . $c['class_id'],
@@ -109,7 +83,7 @@ final class GoogleWallet {
         return preg_match('/^[0-9a-fA-F]{6}$/', $hex) ? $hex : '1e3a5f';
     }
 
-    /** RS256-sign a Google Wallet JWT using the service account's private key. */
+     
     private static function signJwt(array $payload, string $privateKeyPem): string {
         if (!function_exists('openssl_sign')) return '';
 

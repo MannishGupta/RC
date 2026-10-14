@@ -1,7 +1,5 @@
 <?php
-/**
- * Birthday & work-anniversary strip — next 7 days (IST).
- */
+
 declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;
@@ -28,7 +26,7 @@ foreach ($team as $m) {
     $phone = (string)($m['phone'] ?? $m['mobile'] ?? '');
     $photo = (string)($m['photo'] ?? $m['image'] ?? '');
 
-    // Birthday
+     
     $dob = trim((string)($m['dob'] ?? $m['birthday'] ?? $m['birth_date'] ?? ''));
     if ($dob !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $dob, $dm)) {
         try {
@@ -60,7 +58,7 @@ foreach ($team as $m) {
         }
     }
 
-    // Work anniversary
+     
     $doj = trim((string)($m['doj'] ?? $m['joining_date'] ?? $m['date_of_joining'] ?? $m['join_date'] ?? ''));
     if ($doj !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $doj, $jm)) {
         try {
@@ -75,7 +73,7 @@ foreach ($team as $m) {
             if ($next <= $horizon) {
                 $years = (int)$today->format('Y') - (int)$jm[1];
                 if ($next->format('Y') > $today->format('Y') || ($next == $today && (int)$jm[2] === (int)$today->format('m') && (int)$jm[3] === (int)$today->format('d'))) {
-                    // years of service at this anniversary
+                     
                     $years = (int)$next->format('Y') - (int)$jm[1];
                 }
                 $days = (int)$today->diff($next)->days;

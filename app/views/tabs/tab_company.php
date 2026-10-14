@@ -1,10 +1,10 @@
 <?php
-// Version: 260916.14 — HQ_LOCATION_FIX
-// FIX: company.location_id was read from a single key; it may be stored under
-//      location_id / location / hq_location / hq depending on which modal field name
-//      was active at save time. All four variants are now checked with the first
-//      truthy value winning — fixes the "HQ keeps showing Not Set / being asked again" bug.
-// FIX: openModalEditor now receives a normalised copy with location_id always populated.
+ 
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit; ?>
 <div class="max-w-5xl mx-auto w-full space-y-8 pb-12">
 
@@ -103,8 +103,6 @@ window.rcRasterLogoToPng = window.rcRasterLogoToPng || function (file, maxW, max
 </script>
 
       
-
-
 
 <script>
 window.__rcBrandFiles = window.__rcBrandFiles || { logo: null, favicon: null, cover: null };
@@ -460,7 +458,6 @@ window.rcSaveCompanyImages = window.rcSaveCompanyImages || async function (ev) {
         
     </div>
 </div>
-
 
 <?php if (!empty($isAdmin)): ?>
 <!-- Enterprise Integrations (moved from dedicated left-pane item) -->

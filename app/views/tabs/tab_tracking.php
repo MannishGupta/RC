@@ -1,5 +1,5 @@
 <?php
-// Version: 1.5 — Workforce Geolocation & Compliance & HR violation logs (dashboard tab)
+ 
 if (!defined('BASE_PATH')) {
     exit;
 }
@@ -10,7 +10,7 @@ if ($runnersUrl === '' || $runnersUrl === '.') {
     $runnersUrl = $runnersUrl . '/runners.php';
 }
 $runnersUrl = str_replace('\\', '/', $runnersUrl);
-// Prefer site-root runners.php
+ 
 $runnersUrl = '/runners.php';
 
 $policyPath = BASE_PATH . '/data/runners/policy_settings.json';

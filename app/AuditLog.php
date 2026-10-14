@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Append-only monthly audit log per tenant.
- * Version: 260926.33
- */
+
 if (!defined('BASE_PATH')) { exit; }
 
 class AuditLog
@@ -19,9 +16,8 @@ class AuditLog
         return rtrim(str_replace('\\', '/', BASE_PATH . '/data'), '/');
     }
 
-    /**
-     * @param array<string,mixed> $extra
-     */
+    
+
     public static function write(string $action, array $extra = []): void
     {
         $root = self::dataRoot();

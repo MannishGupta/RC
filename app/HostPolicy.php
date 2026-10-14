@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Optional strict host allowlist + synthetic host check helpers.
- * Version: 260926.33
- */
+
 if (!defined('BASE_PATH')) { exit; }
 
 class HostPolicy
@@ -33,7 +30,7 @@ class HostPolicy
         return isset($exact[$host]);
     }
 
-    /** @return list<array{host:string,tenant:string,ok:bool,note:string}> */
+     
     public static function syntheticChecks(): array
     {
         $mapFile = BASE_PATH . '/tenants/map.json';

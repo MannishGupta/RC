@@ -1,8 +1,5 @@
 <?php
-/**
- * Tenant capability control — module matrix (Super Admin only).
- * Loads/saves via api_modules.php → tenants/{id}/data/config/modules.json
- */
+
 declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;

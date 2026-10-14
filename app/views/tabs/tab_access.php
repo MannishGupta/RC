@@ -1,5 +1,5 @@
 <?php
-/** Access Mode panel — all three roles */
+ 
 declare(strict_types=1);
 $role = $_SESSION['user'] ?? 'public';
 if ($role === 'crm') $role = 'public';

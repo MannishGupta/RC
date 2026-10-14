@@ -1,8 +1,5 @@
 <?php
-/**
- * Command palette — Ctrl/Cmd+K
- * Jump tabs, people, actions. Version: 20261002.24
- */
+
 if (!defined('BASE_PATH')) {
     return;
 }

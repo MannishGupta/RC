@@ -1,23 +1,12 @@
 <?php
-/**
- * app/Schema.php — canonical field dictionaries for every namespace.
- * Version: 260917.05
- *
- * Single source of truth for:
- *   - default keys when creating records
- *   - Optimizer normalisation
- *   - export column order
- *   - identifier format rules (statutory)
- *
- * Keep AppDB / Optimizer / UI in sync with this file only.
- */
+
 if (!defined('BASE_PATH')) {
     exit('No direct script access');
 }
 
 final class AppSchema
 {
-    /** @return array<string, mixed> */
+     
     public static function defaults(string $ns): array
     {
         $map = [
@@ -74,10 +63,8 @@ final class AppSchema
         return $map[$ns] ?? [];
     }
 
-    /**
-     * Preferred export / table column order per namespace.
-     * @return list<string>
-     */
+    
+
     public static function exportColumns(string $ns): array
     {
         $map = [
@@ -92,10 +79,8 @@ final class AppSchema
         return $map[$ns] ?? [];
     }
 
-    /**
-     * Human rules for Indian statutory identifiers (UI tooltips / validation docs).
-     * @return array<string, string>
-     */
+    
+
     public static function identifierRules(): array
     {
         return [
@@ -109,5 +94,32 @@ final class AppSchema
             'IFSC'  => '11 chars: 4 letters + 0 + 6 alnum',
             'UPI'   => 'user@handle (VPA)',
         ];
+    }
+
+    /**
+     * Standard field order for entity records (commercial schema).
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
+    public static function standardEnvelope(array $row, string $tenantId = ''): array
+    {
+        $id = (string)($row['id'] ?? $row['uuid'] ?? '');
+        $out = [
+            'id' => $id,
+            'tenant_id' => $tenantId !== '' ? $tenantId : (string)($row['tenant_id'] ?? (defined('TENANT_ID') ? TENANT_ID : '')),
+            'meta' => is_array($row['meta'] ?? null) ? $row['meta'] : [],
+            'flags' => is_array($row['flags'] ?? null) ? $row['flags'] : [],
+        ];
+        foreach ($row as $k => $v) {
+            if (in_array($k, ['id', 'uuid', 'tenant_id', 'meta', 'flags', 'created_at', 'updated_at', 'deleted_at', 'audit'], true)) {
+                continue;
+            }
+            $out[$k] = $v;
+        }
+        $out['created_at'] = (string)($row['created_at'] ?? $row['ts'] ?? '');
+        $out['updated_at'] = (string)($row['updated_at'] ?? '');
+        $out['deleted_at'] = (string)($row['deleted_at'] ?? '');
+        $out['audit'] = is_array($row['audit'] ?? null) ? $row['audit'] : [];
+        return $out;
     }
 }

@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * RolePack — tab allow-list for admin vs CRM packs (data/value/roles.json).
- * Version: 260921.41
- */
+
 final class RolePack
 {
     public static function config(): array
@@ -21,7 +18,7 @@ final class RolePack
         if ($user === 'admin' || $user === 'super_admin') {
             return 'admin';
         }
-        // General HR / visitor — dedicated pack (view + share operational modules)
+         
         if ($user === 'public' || $user === null || $user === '' || $user === 'general_hr') {
             return 'general_hr';
         }
@@ -30,10 +27,14 @@ final class RolePack
         return $id !== '' ? $id : 'general_hr';
     }
 
-    /** @return list<string>|null null = all tabs (*) */
+     
     public static function allowedTabs(?string $user): ?array
     {
         $packId = self::packIdForUser($user);
+        // Company Admin + Super Admin: all tabs (Organisation Setup included)
+        if ($packId === 'admin' || $user === 'admin' || $user === 'super_admin') {
+            return null;
+        }
         $cfg = self::config();
         foreach ($cfg['packs'] ?? [] as $p) {
             if (!is_array($p) || ($p['id'] ?? '') !== $packId) {
@@ -43,9 +44,19 @@ final class RolePack
             if (in_array('*', $tabs, true)) {
                 return null;
             }
-            return array_values(array_map('strval', $tabs));
+            $list = array_values(array_map('strval', $tabs));
+            // Ensure company admins never lose Organisation Setup if pack is mis-named
+            if (($user === 'admin' || $user === 'crm') && !in_array('company', $list, true)) {
+                $list[] = 'company';
+            }
+            return $list;
         }
-        return ['team', 'locations', 'bank', 'docs', 'mediakit', 'events', 'statutory', 'numero', 'cctv', 'terms', 'access', 'statistics', 'cartags', 'assets', 'expiry', 'org', 'status', 'janam'];
+        // Default operational pack — includes Organisation Setup for co. admin workflows
+        return [
+            'team', 'company', 'designations', 'departments', 'locations', 'bank', 'docs',
+            'mediakit', 'events', 'statutory', 'numero', 'cctv', 'terms', 'data_rights', 'access',
+            'statistics', 'cartags', 'assets', 'expiry', 'org', 'status', 'janam', 'settings',
+        ];
     }
 
     public static function canAccess(?string $user, string $tab): bool

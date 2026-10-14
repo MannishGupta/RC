@@ -1,6 +1,6 @@
 <?php
-// Version: 1.1
-// Human Capital Index — rank-first sort, header chips (no duplicate Sort toolbar), selection-driven Edit/Delete
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 $isAdminTeam = !empty($isAdmin);
 ?>

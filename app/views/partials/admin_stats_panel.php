@@ -1,8 +1,5 @@
 <?php
-/**
- * Company / Tenant Admin — Statistics panel
- * Counts live JSON namespaces for the active tenant.
- */
+
 declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;
@@ -25,7 +22,7 @@ foreach ($nsList as $ns => $meta) {
     if (class_exists('AppDB')) {
         $rows = AppDB::read($ns);
         if (is_array($rows)) {
-            // company may be object
+             
             if ($ns === 'company' && isset($rows['name'])) {
                 $n = 1;
             } else {

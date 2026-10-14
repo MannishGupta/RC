@@ -2,9 +2,6 @@
 declare(strict_types=1);
 if (!defined('BASE_PATH')) { exit; }
 
-/**
- * Compressed tenant data backups + weekly (Sunday IST) rotation.
- */
 class TenantBackup
 {
     public static function rotateLogs(string $dataPath, int $maxBytes = 2000000): int
@@ -28,7 +25,7 @@ class TenantBackup
         return 1;
     }
 
-    /** Prefer BASE_PATH/data/backups, fall back to default tenant backups. */
+     
     public static function backupRoot(): string
     {
         $outDir = rtrim(str_replace('\\', '/', BASE_PATH), '/') . '/data/backups';
@@ -53,12 +50,8 @@ class TenantBackup
         return $d;
     }
 
-    /**
-     * Full zip of all tenants' data (excludes sessions/cache/tmp/backups).
-     *
-     * @param array{out_dir?:string,name?:string,keep?:int} $opts
-     * @return array{ok:bool,path?:string,bytes?:int,message:string}
-     */
+    
+
     public static function backupAllTenants(array $opts = []): array
     {
         if (!class_exists('ZipArchive')) {
@@ -153,19 +146,15 @@ class TenantBackup
         ];
     }
 
-    /**
-     * Sunday (Asia/Kolkata): one compressed archive under data/backups/weekly/.
-     * Safe to call on every optimise — no-ops if not Sunday or already done this ISO week.
-     *
-     * @return array{ok:bool,skipped?:bool,path?:string,bytes?:int,message:string}
-     */
+    
+
     public static function weeklySundayBackup(bool $force = false): array
     {
         $prevTz = date_default_timezone_get();
         date_default_timezone_set('Asia/Kolkata');
         try {
             $isSunday = ((int) date('w') === 0);
-            $weekKey = date('o-\WW'); // e.g. 2026-W42
+            $weekKey = date('o-\WW');  
             $dir = self::weeklyDir();
             $marker = $dir . '/.last-week';
 

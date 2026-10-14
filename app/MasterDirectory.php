@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * MasterDirectory — banks & vehicle OEMs (JSON).
- * Logo chain: local SVG → Brandfetch CDN → proxy → Google favicon.
- * Version: 20260929.39
- */
+
 final class MasterDirectory
 {
     private static function mastersDir(): string
@@ -13,7 +9,7 @@ final class MasterDirectory
         return $base . '/data/masters';
     }
 
-    /** @return list<array<string,mixed>> */
+     
     public static function read(string $kind): array
     {
         $file = self::mastersDir() . '/' . ($kind === 'oems' || $kind === 'vehicle_oems' ? 'vehicle_oems.json' : 'banks.json');
@@ -47,7 +43,7 @@ final class MasterDirectory
         return self::findIn(self::read('vehicle_oems'), $nameOrSlug);
     }
 
-    /** @param list<array<string,mixed>> $rows */
+     
     private static function findIn(array $rows, ?string $q): ?array
     {
         $q = strtolower(trim((string)$q));
@@ -81,10 +77,8 @@ final class MasterDirectory
         return $bestScore >= 50 ? $best : null;
     }
 
-    /**
-     * Preferred logo URL for UI <img src>.
-     * Local monogram always available offline; CDNs enhance when reachable.
-     */
+    
+
     public static function logoUrl(?string $domain, string $kind = 'banks', string $slug = ''): string
     {
         $base = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
@@ -92,7 +86,7 @@ final class MasterDirectory
         $folder = ($kind === 'oems') ? 'oems' : 'banks';
 
         if ($slug !== '') {
-            // Deploy-safe master logos (super-admin uploads) — check first
+             
             foreach (['svg', 'png', 'webp'] as $ext) {
                 $p = $base . '/data/masters/logos/' . $folder . '/' . $slug . '.' . $ext;
                 if (defined('DATA_PATH')) {
@@ -122,11 +116,11 @@ final class MasterDirectory
             return '';
         }
 
-        // Brandfetch public CDN (no API key for basic icon)
+         
         return '/logo_proxy.php?d=' . rawurlencode($domain) . '&sz=256';
     }
 
-/** All candidate URLs for client-side onerror cascade — real brand marks first */
+ 
     public static function logoCandidates(string $domain, string $kind = 'banks', string $slug = ''): array
     {
         $out = [];
@@ -143,14 +137,14 @@ final class MasterDirectory
             }
         }
 
-        // 1) Same-origin proxy (fetches Google/DDG/proxy server-side + cache)
+         
         if ($domain !== '') {
             $out[] = '/logo_proxy.php?d=' . rawurlencode($domain) . '&sz=256';
             $out[] = 'https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url=https://' . rawurlencode($domain);
             $out[] = 'https://icons.duckduckgo.com/ip3/' . rawurlencode($domain) . '.ico';
         }
 
-        // 2) VehicleCatalog domain logos when OEM slug/make known
+         
         if (($kind === 'oems' || $kind === 'vehicle_oems') && class_exists('VehicleCatalog')) {
             $make = $slug !== '' ? str_replace('-', ' ', $slug) : $domain;
             if ($make !== '') {
@@ -161,7 +155,7 @@ final class MasterDirectory
             }
         }
 
-        // 3) Deploy-safe master logos in data/ (super-admin uploads)
+         
         $folder = ($kind === 'oems' || $kind === 'vehicle_oems') ? 'oems' : 'banks';
         if ($slug !== '') {
             foreach (['svg', 'png', 'webp'] as $ext) {
@@ -177,7 +171,7 @@ final class MasterDirectory
                         . '&v=' . (string) @filemtime($p));
                 }
             }
-            // 4) Shipped assets/logos pack
+             
             foreach (['png', 'webp', 'svg'] as $ext) {
                 $rel = 'assets/logos/' . $folder . '/' . $slug . '.' . $ext;
                 if (is_file($base . '/' . $rel)) {
@@ -193,7 +187,7 @@ final class MasterDirectory
         return array_values(array_unique(array_filter($out)));
     }
 
-    /** Resolve best single logo URL for a bank display name */
+     
     public static function bankLogoFor(string $bankName): string
     {
         $found = self::findBank($bankName);
@@ -213,7 +207,7 @@ final class MasterDirectory
         return $cands[0] ?? '';
     }
 
-    /** Common Indian bank domains when masters miss a row */
+     
     public static function guessBankDomain(string $name): string
     {
         $bl = strtolower($name);
@@ -252,7 +246,7 @@ final class MasterDirectory
         return '';
     }
 
-    /** OEM logo for manufacturer name */
+     
     public static function oemLogoFor(string $makeName): string
     {
         $found = self::findOem($makeName);
@@ -294,7 +288,7 @@ final class MasterDirectory
         return $out;
     }
 
-    /** Ensure logo folder tree exists (TenantStorage baseline). */
+     
     public static function ensureFiles(): void {
         $base = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
         foreach (['/assets/logos/banks', '/assets/logos/oems'] as $rel) {

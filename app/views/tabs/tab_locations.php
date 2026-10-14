@@ -1,5 +1,5 @@
 <?php
-// tab_locations.php — Version: 20260928.09
+ 
 if (!defined('BASE_PATH')) {
     exit;
 }

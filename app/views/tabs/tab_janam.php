@@ -1,8 +1,8 @@
 <?php
 if (!defined('BASE_PATH')) { exit; }
 $jpTheme = 'light';
-// Prefer active RC theme so Janam does not force dark
-if (!empty($_COOKIE['rc_lang'])) { /* keep */ }
+ 
+if (!empty($_COOKIE['rc_lang'])) {   }
 $src = 'janam_patri.php?embed=1';
 if (!empty($_GET['slug'])) {
     $src .= '&slug=' . rawurlencode((string)$_GET['slug']);

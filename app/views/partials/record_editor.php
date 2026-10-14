@@ -4,7 +4,7 @@
   $__locPhotoSpec = class_exists('AppMedia') ? AppMedia::imageSpec('location_photo') : $__photoSpec;
 ?>
 <?php
-// Version: 1.5 — Executive record editor + locations image restore: photo preview/upload, social links, polished layout
+ 
 if (!defined('BASE_PATH')) {
     exit;
 }
@@ -841,7 +841,6 @@ if (!defined('BASE_PATH')) {
         </div>
       </template>
 
-
       <!-- CAR TAGS (fallback if global modal used) -->
       <template x-if="type === 'cartags'">
         <div class="rc-ed-section">
@@ -1047,7 +1046,6 @@ if (!defined('BASE_PATH')) {
         if (this.photoFile) return;
         this.photoPreview = photoUrl(this.form.photo);
       },
-
 
       initA11y() {
         var self = this;

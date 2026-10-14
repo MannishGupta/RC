@@ -1,32 +1,18 @@
 <?php
-/**
- * VehicleCatalog.php — Indian Automotive Vehicle Tagging Catalog
- * Version: 260919.01
- *
- * Production module for Indian market vehicle make/model resolution,
- * logo CDN fallback chain, and search for vehicle tags / asset labels.
- *
- * Usage:
- *   require_once BASE_PATH . '/app/VehicleCatalog.php';
- *   $logo  = VehicleCatalog::getVehicleLogo('Maruti Suzuki');
- *   $photo = VehicleCatalog::getCarModelPhoto('Tata', 'Nexon', 2024);
- *   $hits  = VehicleCatalog::searchVehicleTags('swift cng');
- */
+
 declare(strict_types=1);
 
 if (!class_exists('VehicleCatalog')) {
 
 final class VehicleCatalog
 {
-    /** Local override directory relative to BASE_PATH (optional). */
+     
     public const LOCAL_ASSETS = 'assets/cars';
 
-    /**
-     * Hardcoded Indian market catalog.
-     * Structure: make => [ 'slug', 'segment', 'models' => [ model => [body, fuels[], years?] ] ]
-     */
+    
+
     private static array $catalog = [
-        // ── Mass market ──────────────────────────────────────────
+         
         'Maruti Suzuki' => [
             'slug' => 'maruti-suzuki',
             'segment' => 'mass',
@@ -188,7 +174,7 @@ final class VehicleCatalog
                 'C5 Aircross' => ['body' => 'SUV',    'fuels' => ['Diesel']],
             ],
         ],
-        // ── Luxury ───────────────────────────────────────────────
+         
         'Mercedes-Benz' => [
             'slug' => 'mercedes-benz',
             'segment' => 'luxury',
@@ -276,8 +262,8 @@ final class VehicleCatalog
                 'LM'  => ['body' => 'MPV',   'fuels' => ['Hybrid']],
             ],
         ],
-        // ── EV specialists ───────────────────────────────────────
-        'Tata EV' => [ // alias helper — maps to Tata EV models
+         
+        'Tata EV' => [  
             'slug' => 'tata',
             'segment' => 'ev',
             'models' => [
@@ -306,7 +292,7 @@ final class VehicleCatalog
         ],
     ];
 
-    /** Simple SVG silhouette data-URI used as last-resort fallback. */
+     
     private static function genericSilhouette(): string
     {
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 64" fill="none">'
@@ -325,7 +311,7 @@ final class VehicleCatalog
         return trim($s, '-');
     }
 
-    /** Resolve catalog key by fuzzy make name. */
+     
     public static function resolveMake(string $make): ?string
     {
         $make = trim($make);
@@ -335,7 +321,7 @@ final class VehicleCatalog
         foreach (self::$catalog as $name => $meta) {
             if (strtolower($name) === $needle) return $name;
             if (($meta['slug'] ?? '') === self::slugify($make)) return $name;
-            // partial: "Maruti" → "Maruti Suzuki"
+             
             if (str_contains(strtolower($name), $needle) || str_contains($needle, strtolower(explode(' ', $name)[0]))) {
                 return $name;
             }
@@ -374,18 +360,14 @@ final class VehicleCatalog
         return $models;
     }
 
-    /**
-     * Logo URL resolver with fallback chain:
-     *   1) Local: assets/cars/{slug}/logo.png|svg
-     *   2) jsDelivr simple-icons / public logo endpoints via logo_proxy
-     *   3) Generic silhouette
-     */
+    
+
     public static function getVehicleLogo(string $make): string
     {
         $key = self::resolveMake($make);
         $slug = $key ? (self::$catalog[$key]['slug'] ?? self::slugify($make)) : self::slugify($make);
 
-        // 1) Canonical OEM logos (MasterDirectory path: assets/logos/oems/{slug}.{ext})
+         
         $base = defined('BASE_PATH') ? rtrim(BASE_PATH, '/\\') : '';
         if ($base !== '') {
             foreach (['svg', 'png', 'webp'] as $ext) {
@@ -395,7 +377,7 @@ final class VehicleCatalog
                     return $rel . '?v=' . (string)@filemtime($abs);
                 }
             }
-            // 1b) Legacy fallback: assets/cars/{slug}/logo.{ext}
+             
             foreach (['png', 'svg', 'webp', 'jpg'] as $ext) {
                 $rel = self::LOCAL_ASSETS . '/' . $slug . '/logo.' . $ext;
                 $abs = $base . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
@@ -404,8 +386,8 @@ final class VehicleCatalog
                 }
             }
         }
-        // 2) Domain → real brand mark (logo_proxy (Debounce/Google)). Avoid simple-icons
-        // (monochrome glyphs often look "unlinked" / wrong brand on dark UI).
+         
+         
         $domains = [
             'maruti-suzuki' => 'marutisuzuki.com',
             'hyundai' => 'hyundai.com',
@@ -438,22 +420,16 @@ final class VehicleCatalog
         ];
         if (!empty($domains[$slug])) {
             $d = $domains[$slug];
-            // Prefer high-res mark via logo_proxy
+             
             return '/logo_proxy.php?d=' . rawurlencode($d) . '&sz=256';
         }
 
-        // 3) Generic
+         
         return self::genericSilhouette();
     }
 
-    /**
-     * Model photo resolver:
-     *   1) Local assets/cars/{makeSlug}/{modelSlug}.png|.webp|.jpg
-     *   2) Local with year suffix modelSlug-2024.webp
-     *   3) Generic silhouette
-     *
-     * Note: No paid stock CDN is assumed. Place files under assets/cars/ for production art.
-     */
+    
+
     public static function getCarModelPhoto(string $make, string $model, int|string|null $year = null): string
     {
         $key = self::resolveMake($make);
@@ -484,12 +460,8 @@ final class VehicleCatalog
         return self::genericSilhouette();
     }
 
-    /**
-     * Free-text search across makes, models, body styles, fuels.
-     * Returns list of tag-friendly rows for autocomplete / vehicle tag UI.
-     *
-     * @return list<array{make:string,model:string,body:string,fuels:array,label:string,logo:string}>
-     */
+    
+
     public static function searchVehicleTags(string $query, int $limit = 25): array
     {
         $q = strtolower(trim($query));
@@ -528,4 +500,4 @@ final class VehicleCatalog
     }
 }
 
-} // class_exists
+}  

@@ -1,8 +1,5 @@
 <?php
-/**
- * Governance hub: Terms, Privacy (DPDP-oriented), Location notice, Accessibility.
- * Version: 260921.36
- */
+
 if (!defined('BASE_PATH')) exit;
 
 $developerName    = 'Arthsathi Limited';
@@ -15,7 +12,7 @@ $h = static function ($s) {
     return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 };
 
-/* Tenant organisation (Data Fiduciary) from company record */
+ 
 $co = [];
 if (!empty($viewData['company']) && is_array($viewData['company'])) {
     $co = $viewData['company'];
@@ -272,7 +269,7 @@ if ($retentionNote === '') {
 
             <h2>Technical references</h2>
             <ul>
-                <li>Internal: <code>docs/W3C_VALIDATION_READY.md</code>, <code>docs/WCAG_22_AA_AUDIT_REPORT.md</code></li>
+                <li>Internal: <code>docs/THEME_COMPLIANCE.md</code>, <code>docs/THEME_COMPLIANCE.md</code></li>
                 <li>External: <a href="https://www.w3.org/TR/WCAG22/" rel="noopener noreferrer">WCAG 2.2</a>, <a href="https://www.w3.org/WAI/ARIA/apg/" rel="noopener noreferrer">ARIA Authoring Practices</a></li>
             </ul>
         </div>

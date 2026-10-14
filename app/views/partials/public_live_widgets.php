@@ -1,8 +1,5 @@
 <?php
-/**
- * Public interface — wall clock (IST), weather, AQI (Open-Meteo, no API key).
- * Default coordinates: Delhi NCR (can override via company lat/lng if present).
- */
+
 declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;

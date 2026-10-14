@@ -1,53 +1,14 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-
-/**
- * app/VehicleRegistry.php — RC compliance lookup (PUC, insurance, fitness).
- *
- * COMPLEMENTS, DOES NOT REPLACE, app/VehicleDecoder.php:
- *   VehicleDecoder  free, offline, always available — state, RTO, series
- *   VehicleRegistry paid, networked, cached — PUC, insurance, RC status
- * If this class is unconfigured or the network is down, the decoder still
- * works and the tag remains fully usable. Compliance data is additive.
- *
- * ── PROVIDER MODEL ────────────────────────────────────────────────────────
- * Deliberately provider-agnostic. Direct scraping of parivahan.gov.in is not
- * viable: NIC enforces session tokens, OTP logins and CAPTCHAs, and blocks
- * high-frequency subnets. Two supported routes:
- *
- *   'commercial' — Surepass / Attestr / Signzy / Cashfree / Sandbox etc.
- *                  Bearer-token REST. ₹0.50–₹2.00 per call. Works today.
- *   'apisetu'    — apisetu.gov.in, MoRTH Registration of Vehicles.
- *                  OAuth2 client credentials. Free, but access must be
- *                  granted to a registered entity.
- *
- * Response shapes differ per provider, so normalise() maps a wide set of
- * known key spellings onto one internal schema. Adding a provider usually
- * means adding key names to those lists, not writing new code.
- *
- * ── WHAT IS STORED ────────────────────────────────────────────────────────
- * Only the whitelisted compliance fields below. The raw provider response is
- * never persisted: it can contain owner name, father's name and address,
- * which this system has no purpose for and which would make an unmanaged
- * liability out of cartags data under the DPDP Act 2023. Chassis and engine
- * numbers are masked to their last four characters — enough to match against
- * a physical plate during an audit, useless for anything else.
- *
- * ── COST CONTROL ──────────────────────────────────────────────────────────
- * Fetches happen on explicit admin action or a scheduled refresh, and are
- * cached for CACHE_DAYS. Nothing on the PUBLIC scan path may ever trigger a
- * lookup — a paid API call reachable by an anonymous QR scan is a trivially
- * abusable cost-amplification vector.
- */
 
 if (!defined('BASE_PATH')) exit('No direct script access');
 
 final class VehicleRegistry {
 
-    /** Re-fetch after this many days. Insurance/PUC change slowly. */
+     
     private const CACHE_DAYS = 30;
 
-    /** Only these fields are ever written to disk. */
+     
     private const KEEP = [
         'registration_number', 'maker_model', 'vehicle_class', 'fuel_type', 'colour',
         'registration_date', 'rc_status', 'registering_authority',
@@ -58,7 +19,7 @@ final class VehicleRegistry {
 
     private static function store(): string { return DATA_PATH . '/vehicle_registry.json'; }
 
-    /** Provider config lives with the other secrets, never in source. */
+     
     private static function config(): array {
         $f = DATA_PATH . '/registry_config.php';
         if (!is_readable($f)) return [];
@@ -71,7 +32,7 @@ final class VehicleRegistry {
         return !empty($c['enabled']) && !empty($c['endpoint']) && !empty($c['api_key']);
     }
 
-    // ─── Cache ────────────────────────────────────────────────────────────
+     
 
     public static function all(): array {
         $f = self::store();
@@ -80,7 +41,7 @@ final class VehicleRegistry {
         return is_array($d) ? $d : [];
     }
 
-    /** Cached record for a registration number, or null. */
+     
     public static function get(string $regNo): ?array {
         $k = self::key($regNo);
         $all = self::all();
@@ -102,19 +63,17 @@ final class VehicleRegistry {
         @file_put_contents(self::store(), json_encode($all, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
     }
 
-    /** Drop a cached record — call when a tag is deleted. */
+     
     public static function forget(string $regNo): void {
         $all = self::all();
         unset($all[self::key($regNo)]);
         @file_put_contents(self::store(), json_encode($all, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
     }
 
-    // ─── Fetch ────────────────────────────────────────────────────────────
+     
 
-    /**
-     * @param bool $force ignore the cache TTL
-     * @return array{ok:bool, cached:bool, data:?array, error:?string}
-     */
+    
+
     public static function fetch(string $regNo, bool $force = false): array {
         $regNo = self::key($regNo);
         if ($regNo === '') return ['ok' => false, 'cached' => false, 'data' => null, 'error' => 'Empty registration number'];
@@ -136,8 +95,8 @@ final class VehicleRegistry {
                  : self::callCommercial($regNo, $c);
         } catch (Throwable $e) {
             if (class_exists('AppLog')) AppLog::error('Registry fetch failed: ' . $e->getMessage(), ['reg' => $regNo]);
-            // Serve stale data rather than nothing — an old PUC date is more
-            // useful than a blank panel, as long as the age is shown.
+             
+             
             return ['ok' => false, 'cached' => (bool)$cached, 'data' => $cached, 'error' => $e->getMessage()];
         }
 
@@ -183,7 +142,7 @@ final class VehicleRegistry {
     }
 
     private static function callApiSetu(string $regNo, array $c): array {
-        // OAuth2 client-credentials, then the MoRTH resource.
+         
         $tok = curl_init((string)($c['token_url'] ?? ''));
         curl_setopt_array($tok, [
             CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true,
@@ -213,9 +172,9 @@ final class VehicleRegistry {
         return is_array($d) ? ($d['data'] ?? $d) : [];
     }
 
-    // ─── Normalisation ────────────────────────────────────────────────────
+     
 
-    /** First non-empty value among several possible key spellings. */
+     
     private static function pick(array $d, array $keys): string {
         foreach ($keys as $k) {
             if (isset($d[$k]) && trim((string)$d[$k]) !== '') return trim((string)$d[$k]);
@@ -229,7 +188,7 @@ final class VehicleRegistry {
         return strlen($v) <= 4 ? $v : str_repeat('•', 6) . substr($v, -4);
     }
 
-    /** Map a provider payload onto the internal schema, keeping only KEEP. */
+     
     private static function normalise(array $d): array {
         $out = [
             'maker_model'      => trim(self::pick($d, ['maker_description','maker_desc','maker']) . ' '
@@ -251,16 +210,14 @@ final class VehicleRegistry {
             'engine_last4'     => self::mask4(self::pick($d, ['engine_number','engine','rc_eng_no'])),
             'owner_serial'     => self::pick($d, ['owner_serial_number','owner_count','rc_owner_sr']),
         ];
-        // Whitelist enforcement: anything not in KEEP never reaches disk.
+         
         return array_intersect_key($out, array_flip(self::KEEP));
     }
 
-    // ─── Presentation helpers ─────────────────────────────────────────────
+     
 
-    /**
-     * Traffic-light state for a validity date.
-     * @return array{state:string, label:string, days:?int}
-     */
+    
+
     public static function validity(string $date): array {
         $date = trim($date);
         if ($date === '') return ['state' => 'unknown', 'label' => 'Not available', 'days' => null];
@@ -273,7 +230,7 @@ final class VehicleRegistry {
         return ['state' => 'ok', 'label' => 'Valid to ' . date('d M Y', $ts), 'days' => $days];
     }
 
-    /** Compliance items needing attention, for the fleet alert view. */
+     
     public static function alerts(array $rec): array {
         $out = [];
         foreach ([

@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * ValueStore — atomic JSON flat-file storage for Value Pack modules.
- * Version: 260921.40
- */
+
 final class ValueStore
 {
     public static function dir(): string

@@ -1,5 +1,5 @@
 <?php
-/** Early theme boot for standalone reports (numero / janam / blood). */
+ 
 $__rcv = rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1');
 ?>
 <script>

@@ -1,5 +1,5 @@
 <?php
-/** Org chart from team rank / manager_id. Version: 260921.40 */
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 <div class="space-y-4" x-data="valueOrg()" x-init="load()">

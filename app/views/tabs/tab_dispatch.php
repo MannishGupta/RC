@@ -1,8 +1,5 @@
 <?php
-/**
- * Version: 1.0
- * Resource Center tab: Delivery Routing & Dispatch
- */
+
 if (!defined('BASE_PATH')) {
     exit;
 }

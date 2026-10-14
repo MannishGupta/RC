@@ -1,7 +1,5 @@
 <?php
-/**
- * Co. Admin home extras — expiry radar top-5 + recent activity.
- */
+
 declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;
@@ -10,7 +8,7 @@ $h = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 
 $tz = new DateTimeZone('Asia/Kolkata');
 $today = new DateTime('today', $tz);
 
-// Expiry scan from docs + cartags
+ 
 $expiryItems = [];
 $scanNs = ['docs' => 'Document', 'cartags' => 'Vehicle', 'statutory' => 'Statutory'];
 foreach ($scanNs as $ns => $kind) {
@@ -55,7 +53,7 @@ foreach ($scanNs as $ns => $kind) {
 usort($expiryItems, static fn($a, $b) => $a['days'] <=> $b['days']);
 $expiryItems = array_slice($expiryItems, 0, 5);
 
-// Recent activity from analytics + simple file mtimes
+ 
 $activity = [];
 $anPath = (defined('DATA_PATH') ? DATA_PATH : BASE_PATH . '/data') . '/analytics.json';
 if (is_file($anPath)) {

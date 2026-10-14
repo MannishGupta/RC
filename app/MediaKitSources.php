@@ -1,28 +1,11 @@
 <?php
 declare(strict_types=1);
-/**
- * MediaKitSources — ToS-compliant media import for Media Kit.
- *
- * Allowed paths ONLY:
- *  1) Official platform APIs (Meta Graph, YouTube Data, LinkedIn, X) with tenant tokens
- *  2) oEmbed for a single public post URL
- *  3) RSS/Atom feed URL supplied by the tenant
- *  4) Manual entry (caller stores the row)
- *
- * NO profile-page HTML scraping, NO proxy rotation, NO anti-bot evasion.
- *
- * Required scopes (document for tenant admins):
- *  - Meta Graph: pages_read_engagement, instagram_basic, instagram_content_publish (read)
- *    or Instagram Graph: instagram_business_basic / pages_show_list
- *  - YouTube Data API v3: API key (public channel read) or OAuth for private
- *  - LinkedIn: r_organization_social for org posts (admin token)
- *  - X API v2: bearer token with tweet.read + users.read
- */
+
 final class MediaKitSources
 {
-    public const CACHE_TTL = 900; // 15 minutes
+    public const CACHE_TTL = 900;  
 
-    /** @return array<string,mixed> */
+     
     public static function loadConnections(): array
     {
         $path = self::connectionsPath();
@@ -36,7 +19,7 @@ final class MediaKitSources
         return array_merge(self::emptyConnections(), $j);
     }
 
-    /** @param array<string,mixed> $data */
+     
     public static function saveConnections(array $data): bool
     {
         $path = self::connectionsPath();
@@ -53,12 +36,12 @@ final class MediaKitSources
                 $clean[$k] = array_merge($clean[$k], $data[$k]);
             }
         }
-        // Never write raw secrets into client-visible AppDB; file is under DATA_PATH
+         
         $json = json_encode($clean, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         return $json !== false && @file_put_contents($path, $json . "\n", LOCK_EX) !== false;
     }
 
-    /** @return array<string,mixed> */
+     
     public static function emptyConnections(): array
     {
         return [
@@ -98,7 +81,7 @@ final class MediaKitSources
         return rtrim(str_replace('\\', '/', DATA_PATH), '/') . '/config/mediakit_connections.json';
     }
 
-    /** Public status only — never includes tokens. */
+     
     public static function connectionStatus(): array
     {
         $c = self::loadConnections();
@@ -131,10 +114,8 @@ final class MediaKitSources
         return $out;
     }
 
-    /**
-     * Fetch recent items from all connected official sources + RSS.
-     * @return list<array{platform:string,id:string,caption:string,media_url:string,permalink:string,timestamp:string,title:string}>
-     */
+    
+
     public static function fetchAllConnected(int $limitPerSource = 25): array
     {
         $c = self::loadConnections();
@@ -157,7 +138,7 @@ final class MediaKitSources
         return $items;
     }
 
-    /** @param array<string,mixed> $cfg */
+     
     public static function fetchMeta(array $cfg, int $limit = 25): array
     {
         $token = (string)($cfg['access_token'] ?? '');
@@ -167,7 +148,7 @@ final class MediaKitSources
         if ($token === '') {
             return $out;
         }
-        // Instagram Business media
+         
         if ($ig !== '') {
             $url = 'https://graph.facebook.com/v21.0/' . rawurlencode($ig)
                 . '/media?fields=id,caption,media_type,media_url,permalink,timestamp,thumbnail_url'
@@ -188,7 +169,7 @@ final class MediaKitSources
                 );
             }
         }
-        // Facebook Page feed (official)
+         
         if ($page !== '') {
             $url = 'https://graph.facebook.com/v21.0/' . rawurlencode($page)
                 . '/posts?fields=id,message,full_picture,permalink_url,created_time'
@@ -212,7 +193,7 @@ final class MediaKitSources
         return $out;
     }
 
-    /** @param array<string,mixed> $cfg */
+     
     public static function fetchYouTube(array $cfg, int $limit = 25): array
     {
         $key = (string)($cfg['api_key'] ?? '');
@@ -220,7 +201,7 @@ final class MediaKitSources
         if ($key === '' || $ch === '') {
             return [];
         }
-        // Search recent uploads
+         
         $url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=' . rawurlencode($ch)
             . '&order=date&type=video&maxResults=' . max(1, min(50, $limit))
             . '&key=' . rawurlencode($key);
@@ -249,7 +230,7 @@ final class MediaKitSources
         return $out;
     }
 
-    /** @param array<string,mixed> $cfg */
+     
     public static function fetchLinkedIn(array $cfg, int $limit = 25): array
     {
         $token = (string)($cfg['access_token'] ?? '');
@@ -257,7 +238,7 @@ final class MediaKitSources
         if ($token === '' || $org === '') {
             return [];
         }
-        // LinkedIn API v2 organization ugc posts (requires r_organization_social)
+         
         $author = str_starts_with($org, 'urn:') ? $org : ('urn:li:organization:' . $org);
         $url = 'https://api.linkedin.com/v2/posts?q=author&author=' . rawurlencode($author)
             . '&count=' . max(1, min(50, $limit)) . '&sortBy=LAST_MODIFIED';
@@ -283,7 +264,7 @@ final class MediaKitSources
         return $out;
     }
 
-    /** @param array<string,mixed> $cfg */
+     
     public static function fetchX(array $cfg, int $limit = 25): array
     {
         $bearer = (string)($cfg['bearer_token'] ?? '');
@@ -341,7 +322,7 @@ final class MediaKitSources
         if ($xml === false) {
             return [];
         }
-        // RSS 2.0
+         
         if (isset($xml->channel->item)) {
             $i = 0;
             foreach ($xml->channel->item as $item) {
@@ -361,7 +342,7 @@ final class MediaKitSources
             }
             return $out;
         }
-        // Atom
+         
         if (isset($xml->entry)) {
             $i = 0;
             foreach ($xml->entry as $entry) {
@@ -384,11 +365,8 @@ final class MediaKitSources
         return $out;
     }
 
-    /**
-     * oEmbed for a single public post URL (YouTube, official oEmbed endpoints where available).
-     * Instagram/Facebook oEmbed require a Meta access token on newer APIs — use connections when present.
-     * @return array{ok:bool,title:string,html:string,thumbnail_url:string,provider:string,url:string,message:string}
-     */
+    
+
     public static function oEmbed(string $postUrl): array
     {
         $postUrl = trim($postUrl);
@@ -407,7 +385,7 @@ final class MediaKitSources
             $endpoint = 'https://publish.twitter.com/oembed?url=' . rawurlencode($postUrl);
             $provider = 'x';
         } elseif (str_contains($low, 'instagram.com')) {
-            // Meta oEmbed requires access token
+             
             $c = self::loadConnections();
             $token = (string)($c['meta']['access_token'] ?? '');
             if ($token === '') {
@@ -454,9 +432,8 @@ final class MediaKitSources
         ];
     }
 
-    /**
-     * @return array{platform:string,id:string,caption:string,media_url:string,permalink:string,timestamp:string,title:string}
-     */
+    
+
     private static function norm(
         string $platform,
         string $id,
@@ -488,7 +465,7 @@ final class MediaKitSources
         return $len === null ? substr($s, $start) : substr($s, $start, $len);
     }
 
-    /** @param list<string> $headers */
+     
     private static function httpJson(string $url, array $headers = []): array
     {
         $raw = self::httpRaw($url, $headers);
@@ -499,7 +476,7 @@ final class MediaKitSources
         return is_array($j) ? $j : [];
     }
 
-    /** @param list<string> $headers */
+     
     private static function httpRaw(string $url, array $headers = []): string
     {
         if (!preg_match('~^https?://~i', $url)) {

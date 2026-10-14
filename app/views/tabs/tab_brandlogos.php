@@ -1,5 +1,5 @@
 <?php
-/** Super Admin — master brand logo upload. Version: 20261003.39 */
+ 
 if (!defined('BASE_PATH')) exit;
 if (empty($isSuperAdmin)) {
     echo '<p class="text-sm text-rose-600 p-4">Super Admin only.</p>';

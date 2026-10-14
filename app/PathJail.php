@@ -1,14 +1,11 @@
 <?php
 declare(strict_types=1);
-/**
- * Path jail — every file path must resolve under an allowed root.
- * Version: 260926.33
- */
+
 if (!defined('BASE_PATH')) { exit; }
 
 class PathJail
 {
-    /** @return list<string> */
+     
     public static function allowedRoots(): array
     {
         $roots = [rtrim(str_replace('\\', '/', BASE_PATH), '/')];
@@ -33,7 +30,7 @@ class PathJail
         $path = str_replace(["\0", '\\'], ['', '/'], $path);
         $real = realpath($path);
         if ($real === false) {
-            // Allow non-existent path if parent is jailed (for writes)
+             
             $parent = dirname($path);
             $preal = realpath($parent);
             if ($preal === false) {

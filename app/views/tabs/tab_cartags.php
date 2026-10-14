@@ -1,27 +1,27 @@
 <?php
-// dbd/tab_cartags.php — Version: 260916.14
-//
-// Dashboard tab for the vehicle-tag module (was car-tags/admin.php).
-//
-// WHAT CHANGED vs THE SUPPLIED admin.php:
-//  * AUTH: admin.php shipped with no login check at all — its own README said
-//    "wrap it with whatever auth guard the rest of rc.arthsathi.com uses
-//    before deploying". As a dashboard tab it now inherits the existing
-//    session auth automatically, and write actions are additionally gated to
-//    isAdmin server-side by index.php.
-//  * CSRF: admin.php's fetch() calls posted with no CSRF token. Writes now go
-//    through index.php's save/delete actions, which enforce AppAuth::verify_csrf().
-//  * DATA LAYER: dropped the module's private store.php (its own DATA_DIR,
-//    read_json/write_json, and a non-atomic write). Tags now live in
-//    data/cartags.json via AppDB, which already has the atomic-write +
-//    Windows rename-retry logic this codebase needs. Scan logs stay in
-//    data/cartag_logs.json, also via AppDB.
-//  * QR: uses EasyQRCodeJS (maintained fork of qrcodejs), which this
-//    codebase already loads in card_qr.php / card_visiting.php — one fewer
-//    third-party library on the page.
-//  * The public scan pages (vehicle-tags/index.php, vehicle-tags/emergency.php) stay
-//    public by design — that's what a QR scan hits — but were hardened
-//    separately.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 if (is_file(BASE_PATH . '/app/VehicleCatalog.php')) {
     require_once BASE_PATH . '/app/VehicleCatalog.php';
@@ -30,7 +30,7 @@ if (is_file(BASE_PATH . '/app/MasterDirectory.php')) {
     require_once BASE_PATH . '/app/MasterDirectory.php';
 }
 
-/** Resolve OEM logo URL for a make/model string. */
+ 
 function rc_cartag_logo(string $makeModel): string {
     $try = trim($makeModel);
     if ($try === '') return '';
@@ -78,10 +78,9 @@ function rc_cartag_logo(string $makeModel): string {
 </style>
 <?php
 
-
-// Team list for the owner dropdown. Only id/name/phone are passed to the
-// browser — the tab has no need for photos, DOB or addresses, and sending
-// the whole record would leak more than the feature requires.
+ 
+ 
+ 
 $carTagTeam = [];
 foreach ((class_exists('AppDB') ? (AppDB::read('team') ?: []) : []) as $_m) {
     if (empty($_m['id']) || empty($_m['name'])) continue;
@@ -96,19 +95,19 @@ usort($carTagTeam, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 require_once BASE_PATH . '/app/VehicleDecoder.php';
 require_once BASE_PATH . '/app/VehicleRegistry.php';
 
-// Needed for the sticker footer.
+ 
 $company = class_exists('AppDB') ? (AppDB::read('company') ?: []) : [];
 $registryOn = VehicleRegistry::isConfigured();
 
 $carTags    = class_exists('AppDB') ? (AppDB::read('cartags') ?: []) : [];
 
-// ── Legacy fallback ───────────────────────────────────────────────────────
-// The pre-integration module kept its own store at car-tags/data/tags.json.
-// The optimizer imports it (Phase 0), but that only runs on login or on
-// demand — so read the old file directly here too. Without this, a tab opened
-// before the first optimizer run shows "no tags" while the records plainly
-// exist on disk, which reads as data loss.
-// Read-only: nothing is written back from here.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 $_legacyFile = BASE_PATH . '/car-tags/data/tags.json';
 $carTagsLegacyPending = 0;
 if (is_file($_legacyFile)) {
@@ -133,7 +132,7 @@ if (is_file($_legacyFile)) {
                 'member_id'           => '',
                 'owner_name'          => trim((string)($_t['owner_name'] ?? '')),
                 'status'              => trim((string)($_t['status'] ?? 'active')),
-                '_legacy'             => true,   // flagged in the UI
+                '_legacy'             => true,    
             ];
             $_have[$_tid] = true;
             $carTagsLegacyPending++;
@@ -142,11 +141,11 @@ if (is_file($_legacyFile)) {
 }
 $carTagLogs = class_exists('AppDB') ? (AppDB::read('cartag_logs') ?: []) : [];
 
-// Newest scans first, capped for page weight.
+ 
 $carTagLogs = array_slice(array_reverse($carTagLogs), 0, 200);
 
-// Free, offline enrichment. Derived entirely from the plate string and from
-// scan logs we already hold — no API call, no cost, no personal data.
+ 
+ 
 foreach ($carTags as &$_t) {
     $_e = VehicleDecoder::enrich($_t, $carTagLogs);
     $_t['_rto']    = $_e['decode']['rto_code'] ?? '';
@@ -161,8 +160,8 @@ foreach ($carTags as &$_t) {
     $_t['_last']   = $_e['last_scan'];
     $_t['_emerg']  = $_e['emergencies'];
 
-    // Cached compliance, if a registry lookup has ever been run for this
-    // vehicle. Never fetched here — rendering a page must not bill an API.
+     
+     
     $_reg = VehicleRegistry::get((string)($_t['registration_number'] ?? $_t['plate'] ?? ''));
     $_t['_reg']       = $_reg ? array_intersect_key($_reg, array_flip([
         'insurance_upto','insurance_company','pucc_upto','fitness_upto',
@@ -175,7 +174,7 @@ foreach ($carTags as &$_t) {
         'PUC'       => VehicleRegistry::validity((string)($_reg['pucc_upto'] ?? '')),
         'Fitness'   => VehicleRegistry::validity((string)($_reg['fitness_upto'] ?? '')),
     ] : [];
-    // OEM logo — VehicleCatalog was built but never called from this tab
+     
     $_make = trim((string)($_t['make_model'] ?? $_t['manufacturer'] ?? $_t['make'] ?? ''));
     if ($_make === '' && !empty($_reg['maker_model'])) {
         $_make = trim((string)$_reg['maker_model']);
@@ -199,7 +198,6 @@ $scanBase = $_scheme . '://' . $_host . '/vehicle-tags/index.php?t=';
   <p class="text-sm font-bold text-slate-700">No fleet assets yet</p>
   <p class="text-xs text-slate-500 mt-1">Register a vehicle tag to get started.</p>
 </div>
-
 
     <?php if ($carTagsLegacyPending > 0): ?>
     <!-- Shown only while old-format records exist that have not yet been

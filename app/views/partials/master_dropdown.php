@@ -1,9 +1,5 @@
 <?php
-/**
- * Locked searchable master dropdown (banks | oems).
- * Usage: $masterKind = 'banks'|'oems'; $masterModel = 'form.bank_name';
- * Version: 20260929.35
- */
+
 $masterKind = $masterKind ?? 'banks';
 $masterModel = $masterModel ?? 'form.bank_name';
 $masterId = $masterId ?? ('md-' . preg_replace('/\\W+/', '-', $masterKind . '-' . $masterModel));

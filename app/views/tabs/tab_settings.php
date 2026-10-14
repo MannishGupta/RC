@@ -1,14 +1,14 @@
 <?php
-// app/views/tabs/tab_settings.php — Version: 260916.14
-//
-// Single place to configure every optional integration: Google Wallet,
-// Vehicle Registry lookup, WhatsApp Business API, SMTP, Apple Wallet
-// (reference only). Each section maps 1:1 to one config file in data/ —
-// this page edits those files through index.php's settings_save action; it
-// does not introduce a second, parallel config store.
-//
-// Admin-only. Every field here is either a low-value setting (host, port) or
-// a genuine secret (API key, password) — nothing a non-admin should see.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH') || empty($isAdmin)) { return; }
 ?>
 

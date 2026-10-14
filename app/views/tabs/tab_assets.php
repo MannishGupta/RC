@@ -1,5 +1,5 @@
 <?php
-/** Asset checkout registry. Version: 260921.40 */
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 <div class="space-y-4" x-data="valueAssets()" x-init="load()">

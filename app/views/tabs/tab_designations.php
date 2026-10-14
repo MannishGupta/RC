@@ -1,5 +1,5 @@
 <?php
-// Version: 260918.16 — identical card UI to departments
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 <div class="w-full flex flex-col space-y-4" x-data="{ openId: null }">

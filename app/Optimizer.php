@@ -6,13 +6,13 @@ if (!defined('BASE_PATH')) {
 
 class SystemDataOptimizer
 {
-    /** Must stay in sync with AppSlug::PROTECTED_SLUGS */
+     
     public const PROTECTED_SLUGS = ['mg', 'ag', 'ap', 'rj', 'akg', 'mk'];
 
-    private const THROTTLE_SECONDS = 21600; // 6 hours
+    private const THROTTLE_SECONDS = 21600;  
     private const THROTTLE_FILE = 'optimizer_last_run.json';
 
-    /** @var list<string> */
+     
     private static array $logs = [];
 
     private static function dataRoot(): string
@@ -36,10 +36,8 @@ class SystemDataOptimizer
         return self::dataRoot() . '/media/documents';
     }
 
+    
 
-    /**
-     * @return array{status:string,logs:list<string>,skipped?:bool,message?:string}
-     */
     public static function run(bool $force = false, bool $lightweight = false): array
     {
         self::$logs = [];
@@ -58,13 +56,13 @@ class SystemDataOptimizer
             self::log('Optimizer started' . ($force ? ' (forced)' : '') . ($lightweight ? ' [lightweight]' : '') . '.');
 
             self::phaseEnsureDirs();
-            self::phaseGenerateTemplates(); // create missing namespace JSON files, never touch existing ones
-            // Legacy root migration retired (images/, docs/, storage/janam, dispatch/data no longer used)
+            self::phaseGenerateTemplates();  
+             
             self::phaseNormalizeCompany();
-            // Dynamic: every *.json entity under data/ (plus known schemas), not a hardcoded list
+             
             foreach (self::discoverNormalizeTargets() as $ns => $schema) {
                 if ($ns === 'company') {
-                    continue; // handled above
+                    continue;  
                 }
                 self::phaseNormalizeList($ns, $schema);
             }
@@ -75,7 +73,7 @@ class SystemDataOptimizer
             self::phaseTrimSessions();
             self::phaseTrimLogs();
             self::phaseOrphanMedia();
-            // BUG FIX: the likely actual cause of the HTTP 500 this was
+             
             if (!$lightweight) {
                 self::phaseConvertImagesWebp();
             } else {
@@ -87,7 +85,7 @@ class SystemDataOptimizer
 
             self::markRan();
 
-            // Permanent: clear OPcache so FTP-uploaded PHP is live immediately.
+             
             if (class_exists('AppCacheFlush')) {
                 $flush = AppCacheFlush::all('optimise');
                 self::log(
@@ -117,14 +115,12 @@ class SystemDataOptimizer
         }
     }
 
-    /**
-     * Report-only cleanup scan (no deletes).
-     * @return array{status:string,candidates:list<array>,bytes:int}
-     */
+    
+
     public static function scanCleanup(): array
     {
-        // Shape expected by app/views/partials/optimizer_panel.php:
-        // { status, groups:[{key,label,safety,warning,items:[{path,name,note,bytes}]}], total_files, total_bytes, total_human }
+         
+         
         $groups = [
             'images' => [
                 'key' => 'images', 'label' => 'Unreferenced images',
@@ -162,23 +158,23 @@ class SystemDataOptimizer
         $imgDir = self::mediaImagesDir();
         $docDir = self::mediaDocsDir();
         $dataDir = self::dataRoot();
-        // Also watch legacy roots so pre-migration files are visible in cleanup
-        // Legacy BASE_PATH/images and BASE_PATH/docs are no longer scanned
+         
+         
 
-        // label ("images/" . filename, "docs/" . filename) with no record
-        // of which ROOT directory the file was actually scanned from.
-        // applyCleanup() then had to reconstruct a "full" path later by
-        // guessing BASE_PATH . '/' . that label -- which always resolves to
-        // one (tenants/{id}/data/media/images), even when the scan
-        // correctly found the file under the tenant path. On a
-        // single-tenant install these two happen to be the same path, so
-        // the bug was invisible; on any multi-tenant install, deleting a
-        // nonexistent path returns false -> refused, not deleted) and the
-        // file would correctly reappear on every subsequent scan, because
-        // "deleted file records reappear on rescan" symptom.
-        // Fixed by capturing the real, already-known full path ($full, at
-        // every call site below) at scan time and carrying it straight
-        // through to applyCleanup() instead of re-deriving it unreliably.
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
         $add = static function (string $gkey, string $rel, string $name, int $bytes, string $note, string $fullPath) use (&$groups): void {
             if (!isset($groups[$gkey])) return;
             $groups[$gkey]['items'][] = [
@@ -235,17 +231,17 @@ class SystemDataOptimizer
             }
         }
 
-        // Rubbish across current + all tenant data roots
+         
         foreach (self::allTenantDataRoots() as $tid => $root) {
             self::scanRubbishUnder($root, $tid, $add);
         }
-        // Legacy status/uploads mistakes under web tree (not tenant)
+         
         $legacyStatus = BASE_PATH . '/status/uploads';
         if (is_dir($legacyStatus)) {
             self::scanRubbishUnder($legacyStatus, 'status-legacy', $add);
         }
 
-        // Drop empty groups; reindex as list
+         
         $outGroups = [];
         $totalFiles = 0;
         $totalBytes = 0;
@@ -266,14 +262,14 @@ class SystemDataOptimizer
             return (string) (round($x * 10) / 10) . ' ' . $u[$i];
         };
 
-        // Flat candidates still used by applyCleanup.
-        // ($it['full'], set by $add() above) instead of reconstructing it
-        // from BASE_PATH + the generic relative label -- see the long
-        // comment on the $add closure for why that reconstruction was
-        // wrong on any multi-tenant install. A defensive fallback to the
-        // old reconstruction is kept only for any legacy-shaped item that
-        // somehow lacks 'full' (there should be none, since every call
-        // site now supplies it), so this never regresses to a hard error.
+         
+         
+         
+         
+         
+         
+         
+         
         $candidates = [];
         foreach ($outGroups as $g) {
             foreach ($g['items'] as $it) {
@@ -297,11 +293,8 @@ class SystemDataOptimizer
         ];
     }
 
-    /**
-     * Delete only paths the admin confirmed; re-validate against a fresh scan.
-     * @param list<string> $paths  Relative paths like "images/foo.jpg"
-     * @return array{status:string,deleted:int,freed:int,refused:int,failed:int}
-     */
+    
+
     public static function applyCleanup(array $paths): array
     {
         $scan = self::scanCleanup();
@@ -324,7 +317,7 @@ class SystemDataOptimizer
             }
             $full = $allowed[$rel]['full'];
             $size = (int) ($allowed[$rel]['size'] ?? $allowed[$rel]['bytes'] ?? 0);
-            // Safety: only under images, docs, or data/{sessions,logs,tmp}
+             
             $roots = [];
             foreach ([
                 defined('IMG_PATH') ? IMG_PATH : (self::dataRoot() . '/media/images'),
@@ -332,29 +325,29 @@ class SystemDataOptimizer
                 self::dataRoot() . '/sessions',
                 self::dataRoot() . '/logs',
                 self::dataRoot() . '/tmp',
-                // pre-migration files are visible in cleanup"), but this
-                // list never included them -- any file correctly flagged
-                // from a legacy location would always fail this safety
-                // check and be refused, the second half of why a flagged
-                // file could never actually be deleted and would reappear
-                // on every rescan.
-                // retired root media folders omitted
+                 
+                 
+                 
+                 
+                 
+                 
+                 
             ] as $r) {
                 $rp = realpath($r);
                 if ($rp !== false) $roots[] = $rp;
             }
             $real = realpath($full);
             if ($real === false) {
-                // file may already be gone
+                 
                 $refused++;
                 continue;
             }
-            // e.g. "images-archive" sitting next to the real "images" root
-            // would false-positive match strpos($real, $root) === 0 --
-            // same class of prefix-collision risk already tested for and
-            // avoided in AppMedia::getFont()'s open_basedir check.
-            // Delete is a destructive action, so this boundary is worth
-            // the same care.
+             
+             
+             
+             
+             
+             
             $okRoot = false;
             foreach ($roots as $root) {
                 if ($real === $root || strpos($real, $root . DIRECTORY_SEPARATOR) === 0) {
@@ -394,12 +387,12 @@ class SystemDataOptimizer
         ];
     }
 
-    // ── Phases ────────────────────────────────────────────────────────────
+     
 
     private static function phaseEnsureDirs(): void
     {
         $data = self::dataRoot();
-        // BUG FIX: IMG_PATH/DOC_PATH/SESSION_PATH/etc. are constants fixed once
+         
         $dirs = [
             $data,
             $data . '/media/images',
@@ -432,17 +425,17 @@ class SystemDataOptimizer
         $created = 0;
         foreach ($inv['namespaces'] as $ns) {
             $path = $data . '/' . $ns['file'];
-            if (is_file($path)) continue; // never touch an existing file, empty or not
+            if (is_file($path)) continue;  
             $key = (string) ($ns['key'] ?? '');
-            // $schemaType is a PRIVATE static property on AppDB (a
-            // different class, in app/bootstrap.php), not on this class
-            // (SystemDataOptimizer). That would have been a fatal
-            // "undeclared static property" error the instant this ran,
-            // caught by re-checking rather than trusting the first draft --
-            // other code) several times already this session. AppDB has no
-            // public accessor for this, so the one known object-type
-            // namespace is named directly here instead of reaching into a
-            // private property that was never reachable in the first place.
+             
+             
+             
+             
+             
+             
+             
+             
+             
             $isObject = ($key === 'company');
             $template = $isObject ? '{}' : '[]';
             if (@file_put_contents($path, $template, LOCK_EX) !== false) {
@@ -455,12 +448,8 @@ class SystemDataOptimizer
         }
     }
 
-    /**
-     * Inventory of JSON namespaces + writable folders the platform watches.
-     * Used by Monitor / Health UIs.
-     *
-     * @return array{status:string,namespaces:list<array>,folders:list<array>,legacy:list<array>,layout_version:string}
-     */
+    
+
     public static function inventoryWatched(): array
     {
         $data = self::dataRoot();
@@ -531,7 +520,7 @@ class SystemDataOptimizer
             ];
         }
 
-        $legacyDefs = []; // obsolete root paths retired — do not scan or migrate
+        $legacyDefs = [];  
 
         $legacy = [];
         foreach ($legacyDefs as $ld) {
@@ -586,20 +575,15 @@ class SystemDataOptimizer
         ];
     }
 
-    /**
-     * Copy durable files from legacy locations into unified data/ tree.
-     * When $removeEmptyLegacy is true, removes legacy directories that are empty after migration.
-     *
-     * @return array{copied:int,skipped:int,removed_dirs:list<string>,errors:list<string>}
-     */
+    
+
     public static function migrateDataLayout(bool $removeEmptyLegacy = false): array
     {
         return ['copied' => 0, 'removed' => [], 'skipped' => true, 'message' => 'Legacy migration retired'];
     }
 
-    /**
-     * @return array{copied:int,skipped:int,removed_dirs:list<string>,errors:list<string>}
-     */
+    
+
     private static function phaseMigrateDataLayout(bool $removeEmptyLegacy = false, bool $asPublic = false): array
     {
         self::log('Legacy layout migration skipped (obsolete paths retired).');
@@ -624,20 +608,20 @@ class SystemDataOptimizer
         $removed = [];
 
         $pairs = [
-            // [sourceDir, destDir, fileFilter callable|null]
+             
             [BASE_PATH . '/images', $img, null],
             [BASE_PATH . '/dispatch/data', $dispatch, null],
             [BASE_PATH . '/storage/janam', $janam, null],
         ];
 
-        // Root docs/: only migrate common binary upload extensions (leave markdown docs alone)
+         
         $docFilter = static function (string $name): bool {
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             return in_array($ext, ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'zip', 'txt'], true);
         };
         $pairs[] = [BASE_PATH . '/docs', $doc, $docFilter];
 
-        // Config PHP files sitting in data/ root → data/config/
+         
         if (is_dir($data)) {
             foreach (scandir($data) ?: [] as $f) {
                 if (!preg_match('/^(auth_config|smtp_config|registry_config|whatsapp_config|google_wallet_config|apple_wallet_config)\.php$/', $f)) {
@@ -682,8 +666,8 @@ class SystemDataOptimizer
                 }
                 $dst = $dstDir . '/' . $f;
                 if (is_file($dst)) {
-                    // Destination already exists → skip unconditionally (never overwrite).
-                    // Safer for production data; re-copy requires deleting the dest file first.
+                     
+                     
                     $skipped++;
                     continue;
                 }
@@ -739,7 +723,6 @@ class SystemDataOptimizer
         return $abs;
     }
 
-
     private static function phaseNormalizeCompany(): void
     {
         $c = AppDB::read('company');
@@ -763,16 +746,15 @@ class SystemDataOptimizer
         self::log('Company singleton normalised.');
     }
 
-    /**
-     * @param array<string,mixed> $schema
-     */
+    
+
     private static function phaseNormalizeList(string $ns, array $schema): void
     {
         $rows = AppDB::read($ns);
         if (!is_array($rows)) {
             $rows = [];
         }
-        // company is object; lists must be list
+         
         if ($ns !== 'company' && self::isAssoc($rows)) {
             $rows = array_values($rows);
         }
@@ -782,7 +764,7 @@ class SystemDataOptimizer
                 continue;
             }
             $merged = array_merge($schema, $row);
-            // Preserve slug_locked on team
+             
             if ($ns === 'team') {
                 if (!empty($row['slug_locked'])) {
                     $merged['slug_locked'] = true;
@@ -864,7 +846,7 @@ class SystemDataOptimizer
                 $skipped++;
                 continue;
             }
-            // Only auto-generate when empty
+             
             if ($slug !== '') {
                 continue;
             }
@@ -888,15 +870,13 @@ class SystemDataOptimizer
         self::log("Slug migration: {$migrated} generated, {$skipped} skipped (locked/protected).");
     }
 
-
     private static function phaseRebuildTeamIndex(): void
     {
         self::phaseRebuildIndexes();
     }
 
-    /**
-     * Fast-load indexes + catalog so runtime can trust order and find rows by key.
-     */
+    
+
     private static function phaseRebuildIndexes(): void
     {
         $root = self::dataRoot();
@@ -931,7 +911,7 @@ class SystemDataOptimizer
             if (!is_array($rows)) {
                 $rows = [];
             }
-            // Re-save applies canonicalize + sort + compact JSON
+             
             if ($ns !== 'company') {
                 AppDB::save($ns, $rows);
                 $rows = AppDB::read($ns);
@@ -965,7 +945,7 @@ class SystemDataOptimizer
             self::log("Index {$ns}: {$count} row(s), order={$order}");
         }
 
-        // Legacy team_index.json (slug/id → offset) for older readers
+         
         $team = AppDB::read('team');
         $legacy = [];
         if (is_array($team)) {
@@ -993,33 +973,46 @@ class SystemDataOptimizer
         self::log('_catalog.json written (' . count($catalog['namespaces']) . ' namespaces).');
     }
 
-
-    private static function phaseTrimSessions(): void
+        private static function phaseTrimSessions(): void
     {
-        // BUG FIX: same issue as phaseEnsureDirs above -- SESSION_PATH is
-        $dir = self::dataRoot() . '/sessions';
-        if (!is_dir($dir)) {
-            return;
+        // Idle session files > 14 days (matches cleanup scanner). Also drop
+        // empty/corrupt stubs. Runs per tenant data root via runForDataPath.
+        $dirs = [self::dataRoot() . '/sessions'];
+        if (defined('SESSION_PATH')) {
+            $sp = rtrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, (string) SESSION_PATH), DIRECTORY_SEPARATOR);
+            if ($sp !== '' && is_dir($sp) && !in_array($sp, $dirs, true)) {
+                $dirs[] = $sp;
+            }
         }
-        $maxAge = 31536000; // 1 year cookie lifetime ceiling
+        $maxAge = 14 * 86400;
         $now = time();
         $n = 0;
-        foreach (@scandir($dir) ?: [] as $f) {
-            if ($f === '.' || $f === '..') {
+        $freed = 0;
+        foreach ($dirs as $dir) {
+            if (!is_dir($dir)) {
                 continue;
             }
-            $p = $dir . DIRECTORY_SEPARATOR . $f;
-            if (!is_file($p)) {
-                continue;
-            }
-            $mtime = @filemtime($p) ?: 0;
-            if ($mtime > 0 && ($now - $mtime) > $maxAge) {
-                if (@unlink($p)) {
-                    $n++;
+            foreach (@scandir($dir) ?: [] as $f) {
+                if ($f === '.' || $f === '..') {
+                    continue;
+                }
+                $path = $dir . DIRECTORY_SEPARATOR . $f;
+                if (!is_file($path)) {
+                    continue;
+                }
+                $mtime = (int) (@filemtime($path) ?: 0);
+                $size = (int) (@filesize($path) ?: 0);
+                $stale = ($mtime > 0 && ($now - $mtime) > $maxAge);
+                $empty = ($size === 0);
+                if ($stale || $empty) {
+                    if (@unlink($path)) {
+                        $n++;
+                        $freed += $size;
+                    }
                 }
             }
         }
-        self::log("Expired sessions removed: {$n}.");
+        self::log('Expired/empty sessions removed: ' . $n . ($freed > 0 ? (' (~' . round($freed / 1024) . ' KB)') : '') . '.');
     }
 
     private static function phaseTrimLogs(): void
@@ -1029,7 +1022,7 @@ class SystemDataOptimizer
             return;
         }
         $size = (int) @filesize($log);
-        // Cap ~2 MB
+         
         if ($size > 2_000_000) {
             $data = @file($log);
             if (is_array($data) && count($data) > 5000) {
@@ -1042,12 +1035,8 @@ class SystemDataOptimizer
         self::log('app.log size OK (' . $size . ' bytes).');
     }
 
+    
 
-    /**
-     * Optimise all still images under media/images (JPEG/PNG/GIF/WebP) — downscale + WebP, never skip large files.
-     * Updates team/company references when the filename changes.
-     * Requires GD imagewebp. Safe no-op when GD/WebP missing.
-     */
     private static function phaseConvertImagesWebp(): void
     {
         if (!function_exists('imagewebp') || !function_exists('imagecreatefromjpeg')) {
@@ -1055,7 +1044,7 @@ class SystemDataOptimizer
             return;
         }
 
-        // Shared hosting often caps at 128MB — raise for this phase only, then restore.
+         
         $prevMem = ini_get('memory_limit');
         @ini_set('memory_limit', '256M');
 
@@ -1072,7 +1061,7 @@ class SystemDataOptimizer
         $skipped = 0;
         $failed = 0;
         $map = [];
-        // Cap work per pass; never skip permanently — next run continues
+         
         $maxPerRun = 20;
         $targetBytes = 450000;
         $maxEdge = 1600;
@@ -1105,7 +1094,7 @@ class SystemDataOptimizer
             $edge = 0;
             if (is_array($info) && !empty($info[0]) && !empty($info[1])) {
                 $edge = max((int) $info[0], (int) $info[1]);
-                // Extreme rasters: still process but with a tighter edge to avoid OOM
+                 
                 if (((int)$info[0] * (int)$info[1]) > 40000000) {
                     $edgeCap = 1200;
                 } else {
@@ -1123,7 +1112,7 @@ class SystemDataOptimizer
                 continue;
             }
 
-            // Abort image phase early if free memory is critically low
+             
             $memLimit = self::parseIniBytes((string)ini_get('memory_limit'));
             $memUsed = memory_get_usage(true);
             if ($memLimit > 0 && ($memLimit - $memUsed) < 16 * 1048576) {
@@ -1167,7 +1156,7 @@ class SystemDataOptimizer
             }
         }
 
-        // Rewrite photo references in team + company
+         
         $rewritten = 0;
         if ($map && class_exists('AppDB')) {
             $team = AppDB::read('team');
@@ -1234,7 +1223,6 @@ class SystemDataOptimizer
         self::log("SQLite/file data cache rebuilt ({$n} namespaces). sqlite=" . (AppDataCache::sqliteAvailable() ? 'yes' : 'no'));
     }
 
-
     private static function phasePublicTeamAndHealth(): void
     {
         if (!class_exists('PublicTeam') && is_file(BASE_PATH . '/app/PublicTeam.php')) {
@@ -1271,28 +1259,24 @@ class SystemDataOptimizer
 
     private static function phaseOrphanMedia(): void
     {
-        // Conservative: only log orphans; destructive delete stays in applyCleanup.
+         
         $scan = self::scanCleanup();
         $n = (int) ($scan['count'] ?? 0);
         $bytes = (int) ($scan['bytes'] ?? 0);
         self::log("Orphan media scan: {$n} file(s), ~{$bytes} bytes (delete via Cleanup UI).");
     }
 
-    // ── Schemas ───────────────────────────────────────────────────────────
+     
 
-    /** @return array<string,mixed> */
+     
 
-    /**
-     * Discover JSON entity files under data/ and pair with known schemas.
-     * Unknown list-shaped files get a minimal id/name schema so they are still normalised.
-     * @return array<string, array<string,mixed>>
-     */
+    
 
     private static function parseIniBytes(string $val): int
     {
         $val = trim($val);
         if ($val === '' || $val === '-1') {
-            return 0; // unlimited
+            return 0;  
         }
         if (!preg_match('/^(\d+)\s*([KMG])?$/i', $val, $m)) {
             return (int) $val;
@@ -1328,7 +1312,7 @@ class SystemDataOptimizer
                 : ['id' => '', 'name' => '', 'url' => '', 'location' => ''],
             'leads' => ['id' => '', 'name' => '', 'phone' => '', 'email' => '', 'company' => '', 'status' => ''],
         ];
-        // Skip internal / non-entity stores
+         
         $skip = [
             'map', 'analytics', 'team_index', 'team_public', 'optimizer_last_run',
             'card_analytics', 'audit_log', 'attendance', 'assets', 'visits',
@@ -1354,7 +1338,7 @@ class SystemDataOptimizer
                 if (!is_array($data)) {
                     continue;
                 }
-                // List of records → minimal schema from first row keys
+                 
                 $sample = null;
                 if (array_is_list($data) && isset($data[0]) && is_array($data[0])) {
                     $sample = $data[0];
@@ -1377,14 +1361,8 @@ class SystemDataOptimizer
         return $found;
     }
 
-    /**
-     * Optimise a single image on disk (upload / save path).
-     * Always processes JPEG/PNG/GIF/WebP — never skips by file size.
-     * Downscales long edge, re-encodes WebP (or JPEG fallback), replaces source when smaller/equal.
-     *
-     * @param array{max_edge?:int,quality?:int,prefer_webp?:bool,max_bytes?:int} $opts
-     * @return array{ok:bool,path:string,name:string,bytes_before:int,bytes_after:int,message?:string}
-     */
+    
+
     public static function optimizeImageFile(string $path, array $opts = []): array
     {
         $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
@@ -1402,7 +1380,7 @@ class SystemDataOptimizer
         $maxEdge = (int) ($opts['max_edge'] ?? 1600);
         $quality = (int) ($opts['quality'] ?? 80);
         $preferWebp = (bool) ($opts['prefer_webp'] ?? true);
-        $maxBytes = (int) ($opts['max_bytes'] ?? 450000); // target ~450 KB when possible
+        $maxBytes = (int) ($opts['max_bytes'] ?? 450000);  
         if ($maxEdge < 320) {
             $maxEdge = 320;
         }
@@ -1459,7 +1437,7 @@ class SystemDataOptimizer
             return $empty + ['message' => 'zero_dim'];
         }
 
-        // Downscale if over max edge OR file already over target bytes
+         
         $needScale = max($w, $h) > $maxEdge || $before > $maxBytes;
         if ($needScale && max($w, $h) > $maxEdge) {
             $scale = $maxEdge / max($w, $h);
@@ -1479,7 +1457,7 @@ class SystemDataOptimizer
                 $h = $nh;
             }
         } elseif ($needScale && $before > $maxBytes && max($w, $h) > 800) {
-            // Still large on disk but under maxEdge — mild shrink to cut bytes
+             
             $scale = 0.85;
             $nw = max(1, (int) round($w * $scale));
             $nh = max(1, (int) round($h * $scale));
@@ -1515,7 +1493,7 @@ class SystemDataOptimizer
         }
 
         $after = (int) @filesize($tmpOut);
-        // If still above target, re-encode once at lower quality
+         
         if ($after > $maxBytes && $outExt === 'webp' && $quality > 55) {
             $src2 = @imagecreatefromwebp($tmpOut);
             if ($src2) {
@@ -1529,7 +1507,7 @@ class SystemDataOptimizer
         $finalName = $base . '.' . $outExt;
         $finalPath = $dir . DIRECTORY_SEPARATOR . $finalName;
 
-        // Replace: write optimised; remove original if different name
+         
         if (!@rename($tmpOut, $finalPath)) {
             @copy($tmpOut, $finalPath);
             @unlink($tmpOut);
@@ -1560,25 +1538,25 @@ class SystemDataOptimizer
         ];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function bankSchema(): array
     {
-        // 'qr_image' added to match the live schema in app/bootstrap.php,
-        // which already includes it -- this copy had drifted out of sync.
-        // Not a functional bug on its own: phaseNormalizeList's
-        // array_merge($schema, $row) keeps any key already present in the
-        // real record regardless of whether it's listed here, so qr_image
-        // was never actually stripped by normalisation. Fixed anyway so
-        // this schema accurately documents every field bank records hold,
-        // rather than silently relying on merge behaviour a future reader
-        // wouldn't know to check.
+         
+         
+         
+         
+         
+         
+         
+         
+         
         return [
             'id' => '', 'slug' => '', 'bank_name' => '', 'holder_name' => '',
             'acc_no' => '', 'ifsc' => '', 'branch' => '', 'upi_id' => '', 'qr_image' => '',
         ];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function docsSchema(): array
     {
         return [
@@ -1588,7 +1566,7 @@ class SystemDataOptimizer
         ];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function eventsSchema(): array
     {
         return [
@@ -1597,7 +1575,7 @@ class SystemDataOptimizer
         ];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function locationsSchema(): array
     {
         return [
@@ -1607,19 +1585,19 @@ class SystemDataOptimizer
         ];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function departmentsSchema(): array
     {
         return ['id' => '', 'code' => '', 'name' => '', 'slug' => ''];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function designationsSchema(): array
     {
         return ['id' => '', 'code' => '', 'name' => '', 'rank' => 0, 'slug' => '', 'mandatory_live_tracking' => false];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function statutorySchema(): array
     {
         return [
@@ -1634,7 +1612,7 @@ class SystemDataOptimizer
         ];
     }
 
-    /** @return array<string,mixed> */
+     
     private static function cartagsSchema(): array
     {
         return [
@@ -1644,9 +1622,9 @@ class SystemDataOptimizer
         ];
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────
+     
 
-    /** @return array<string,true> basename => true */
+     
     private static function collectReferencedFiles(): array
     {
         $ref = [];
@@ -1654,16 +1632,16 @@ class SystemDataOptimizer
             if (!$v || !is_string($v)) {
                 return;
             }
-            // media_serve.php?f=name.jpg (how the app itself addresses
-            // stored media) -- the filename is the f= parameter, not the
-            // path segment, so basename() of the raw string would register
-            // "media_serve.php?f=name.jpg" and miss the real file.
+             
+             
+             
+             
             if (preg_match('~[?&]f=([^&#]+)~', $v, $mm)) {
                 $v = rawurldecode($mm[1]);
             } elseif (str_starts_with($v, 'http://') || str_starts_with($v, 'https://')) {
-                return; // genuinely external: nothing on disk to protect
+                return;  
             }
-            // Drop any cache-buster / fragment before taking the filename.
+             
             $v = (string) strtok($v, '?#');
             $base = strtolower(basename(str_replace('\\', '/', $v)));
             if ($base !== '') {
@@ -1677,7 +1655,7 @@ class SystemDataOptimizer
                 $add($company[$k] ?? '');
             }
         }
-        // BUG FIX: 'bank' and 'locations' both store a filename directly
+         
         $nsList = ['team', 'docs', 'cartags', 'bank', 'locations', 'events',
                    'leads', 'statutory', 'departments', 'designations', 'cctv'];
         $keys = ['photo', 'image', 'doc_file', 'logo', 'cover', 'favicon',
@@ -1696,10 +1674,10 @@ class SystemDataOptimizer
                 }
             }
         }
-        // Optional Delivery Status module keeps its own projects.json
-        // outside AppDB, and its cards read 'image'/'photo' from
-        // /images/ (see app/bootstrap.php, project JSON-LD). If it's
-        // installed, its references must count too.
+         
+         
+         
+         
         foreach ([BASE_PATH . '/status/data/projects.json', BASE_PATH . '/status/projects.json'] as $pf) {
             if (!is_file($pf)) {
                 continue;
@@ -1753,10 +1731,8 @@ class SystemDataOptimizer
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
+    
 
-    /**
-     * @return array<string,string> tenantId => absolute data path
-     */
     public static function allTenantDataRoots(): array
     {
         $roots = [];
@@ -1794,11 +1770,8 @@ class SystemDataOptimizer
         return $roots;
     }
 
-    /**
-     * Flag editor backups / OS junk under a data root (for cleanup UI).
-     *
-     * @param callable $add function(string $gkey, string $rel, string $name, int $bytes, string $note, string $fullPath)
-     */
+    
+
     private static function scanRubbishUnder(string $root, string $tid, callable $add): void
     {
         if (!is_dir($root)) {
@@ -1821,7 +1794,7 @@ class SystemDataOptimizer
             if (!self::isRubbishFileName($name)) {
                 continue;
             }
-            // Never flag live JSON entities or auth
+             
             if (preg_match('/\.(json|php)$/i', $name) && !preg_match('/(\.bak|~|\.orig)$/i', $name)) {
                 continue;
             }
@@ -1850,9 +1823,8 @@ class SystemDataOptimizer
         return false;
     }
 
-    /**
-     * Auto-delete safe rubbish under current dataRoot (and optional status legacy uploads junk).
-     */
+    
+
     private static function phaseRubbishSweep(): void
     {
         $root = self::dataRoot();
@@ -1900,15 +1872,55 @@ class SystemDataOptimizer
         }
     }
 
-    /**
-     * Super Admin: optimize every tenants/{id}/data root (+ legacy data/).
-     *
-     * @return array{status:string,logs:list<string>,tenants:list<array>,message?:string}
-     */
+    
+
+
+    private static function phaseDocsCleanup(): void
+    {
+        $base = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
+        $keep = ['DEPLOY.md'=>1,'DATA_AND_TENANTS.md'=>1,'THEME_COMPLIANCE.md'=>1,'WHATSNEW.md'=>1,'README.md'=>1];
+        $n = 0;
+        $docs = $base . '/docs';
+        if (is_dir($docs)) {
+            $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($docs, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($it as $f) {
+                $path = $f->getPathname();
+                if ($f->isDir()) { @rmdir($path); continue; }
+                $name = $f->getFilename();
+                if (isset($keep[$name])) continue;
+                if (preg_match('/\.(md|txt)$/i', $name)) {
+                    if (@unlink($path)) $n++;
+                }
+            }
+        }
+        foreach ([$base.'/assets/TAILWIND.md',$base.'/status/INTEGRATION.md',$base.'/status/RELEASE-v14.1.md'] as $extra) {
+            if (is_file($extra) && @unlink($extra)) $n++;
+        }
+        $docRoot = $base.'/documentation';
+        if (is_dir($docRoot)) {
+            $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($docRoot, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($it as $f) { $f->isDir() ? @rmdir($f->getPathname()) : @unlink($f->getPathname()); }
+            @rmdir($docRoot);
+            $n++;
+        }
+        foreach ([
+            $base.'/README-FA.txt', $base.'/msg.txt', $base.'/docs/_REMOVE_THESE_IF_PRESENT.txt',
+            $base.'/deploy/SIMCOAUTO_LINUX.txt', $base.'/status/ROOT-robots-additions.txt',
+            $base.'/status/legacy-redirects/README.txt', $base.'/assets/TAILWIND.md',
+            $base.'/status/INTEGRATION.md', $base.'/status/RELEASE-v14.1.md',
+        ] as $extra) {
+            if (is_file($extra) && @unlink($extra)) { $n++; }
+        }
+        self::log($n > 0 ? ('Docs cleanup: removed '.$n.' obsolete file(s)') : 'Docs cleanup: nothing to remove');
+    }
+
     public static function runAllTenants(bool $force = true): array
     {
         $allLogs = [];
         $results = [];
+        self::phaseDocsCleanup();
+        foreach (self::$logs as $_dl) { $allLogs[] = $_dl; }
+        self::$logs = [];
         $allLogs[] = 'Global multi-tenant optimizer started (IST ' . date('d-m-Y H:i:s') . ').';
 
         $roots = [];
@@ -1966,8 +1978,8 @@ class SystemDataOptimizer
             if (function_exists('rc_storage_self_heal')) {
                 rc_storage_self_heal($path);
             }
-            // Full image optimise only for the active tenant data path; other
-            // tenants stay lightweight to avoid multi-tenant memory exhaustion.
+             
+             
             $activeData = defined('DATA_PATH') ? rtrim(str_replace(["\\", "/"], DIRECTORY_SEPARATOR, (string)DATA_PATH), DIRECTORY_SEPARATOR) : '';
             $thisData = rtrim(str_replace(["\\", "/"], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
             $doImages = ($activeData !== '' && strcasecmp($activeData, $thisData) === 0);
@@ -2005,9 +2017,8 @@ class SystemDataOptimizer
         ];
     }
 
-    /**
-     * @return array{status:string,logs:list<string>,message?:string}
-     */
+    
+
     private static function runForDataPath(string $dataPath, bool $force = true, bool $lightweight = false): array
     {
         self::$logs = [];
@@ -2019,13 +2030,13 @@ class SystemDataOptimizer
             }
             self::log('Optimizer started for ' . $dataPath);
             self::phaseEnsureDirs();
-            // phaseMigrateDataLayout retired
+             
 
             self::phaseNormalizeCompany();
-            // Dynamic: every *.json entity under data/ (plus known schemas), not a hardcoded list
+             
             foreach (self::discoverNormalizeTargets() as $ns => $schema) {
                 if ($ns === 'company') {
-                    continue; // handled above
+                    continue;  
                 }
                 self::phaseNormalizeList($ns, $schema);
             }

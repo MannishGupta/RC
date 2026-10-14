@@ -1,15 +1,9 @@
 <?php
 declare(strict_types=1);
-/**
- * TenantPaths — safe multi-tenant directory enumeration (Windows open_basedir safe).
- * Version: 20261003.01
- *
- * Never treat files (.htaccess, README.md, map.json) as tenant folders.
- * Only real directories whose names look like tenant ids are returned.
- */
+
 final class TenantPaths
 {
-    /** @return list<string> tenant folder names under BASE_PATH/tenants */
+     
     public static function listIds(): array
     {
         if (!defined('BASE_PATH')) {
@@ -29,7 +23,7 @@ final class TenantPaths
                 continue;
             }
             $folder = $tenantsDir . DIRECTORY_SEPARATOR . $d;
-            // Guard: only real directories (never files like .htaccess / README.md)
+             
             if (!@is_dir($folder)) {
                 continue;
             }
@@ -51,7 +45,7 @@ final class TenantPaths
         if ($name === '' || $name === '.' || $name === '..') {
             return false;
         }
-        // Skip known non-tenant files and dotfiles
+         
         if ($name[0] === '.') {
             return false;
         }
@@ -59,11 +53,11 @@ final class TenantPaths
         if (in_array($lower, ['map.json', 'readme.md', 'readme.txt', 'readme', 'license', 'license.md'], true)) {
             return false;
         }
-        // Skip anything that looks like a file (has an extension)
+         
         if (preg_match('/\.(json|md|txt|html|php|htaccess|ini|log|bak|zip)$/i', $name)) {
             return false;
         }
-        // Tenant ids: alphanumeric + hyphen/underscore only
+         
         if (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9\-_]{0,63}$/', $name)) {
             return false;
         }

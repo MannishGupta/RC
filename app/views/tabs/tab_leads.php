@@ -1,21 +1,21 @@
 <?php
-// app/views/tabs/tab_leads.php — Version: 260916.14
-//
-// Views submissions from the card's optional "Share your contact" form
-// (cards/business.php, gated per-person by team.capture_leads).
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 
 $leads = class_exists('AppDB') ? (AppDB::read('leads') ?: []) : [];
 
-// ── Card view analytics ─────────────────────────────────────────────────
-// Read directly rather than through AppDB — this is a simple counter file
-// (index.php increments it on every card render), not a record collection,
-// so it does not fit AppDB's array-of-records model and does not need it.
+ 
+ 
+ 
+ 
 $viewsFile = DATA_PATH . '/card_views.json';
 $viewsData = is_file($viewsFile) ? (json_decode((string)@file_get_contents($viewsFile), true) ?: []) : [];
 
-// Aggregate per slug across card types (business/visiting/qr/id), and
-// resolve to a name — a raw slug means nothing on a leaderboard.
+ 
+ 
 $viewsBySlug = [];
 foreach ($viewsData as $_key => $_v) {
     [$_slug] = explode(':', $_key, 2);
@@ -33,8 +33,8 @@ foreach (array_slice($viewsBySlug, 0, 8, true) as $_slug => $_n) {
     $topViewed[] = ['name' => $_nameBySlug[strtolower($_slug)] ?? $_slug, 'slug' => $_slug, 'views' => $_n];
 }
 
-// Resolve each lead's card owner name, so "who was this person trying to
-// reach" is visible without cross-referencing the directory by hand.
+ 
+ 
 $teamById = [];
 foreach (AppDB::read('team') ?: [] as $_m) {
     if (!empty($_m['id'])) $teamById[(string)$_m['id']] = (string)($_m['name'] ?? '');
@@ -44,7 +44,7 @@ foreach ($leads as &$_l) {
 }
 unset($_l);
 
-// Newest first.
+ 
 usort($leads, fn($a, $b) => strtotime((string)($b['created_at'] ?? '')) <=> strtotime((string)($a['created_at'] ?? '')));
 
 $totalLeads = count($leads);

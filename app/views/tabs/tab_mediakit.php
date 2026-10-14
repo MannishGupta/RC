@@ -1,8 +1,5 @@
 <?php
-/**
- * Media Kit — brand asset library for dealers & partners.
- * Layout: Header → Share library → Add assets (admin) → Browse → Guidelines
- */
+
 if (!defined('BASE_PATH')) {
     exit;
 }
@@ -15,7 +12,6 @@ if (!class_exists('MediaKitSources') && defined('BASE_PATH') && is_file(BASE_PAT
 if (class_exists('MediaKitSources')) {
     $mkConnStatus = MediaKitSources::connectionStatus();
 }
-
 
 $kit = [];
 if (class_exists('AppDB')) {
@@ -140,9 +136,6 @@ $guidelines = [
     ],
 ];
 
-
-
-
 if (!function_exists('rc_mk_asset_href')) {
     function rc_mk_asset_href(array $item): string
     {
@@ -209,7 +202,7 @@ if (!function_exists('rc_mk_asset_href')) {
     }
 }
 
-// Enrich each asset with on-disk metadata (fast: one index scan per root)
+ 
 $imgRoot = defined('IMG_PATH') ? rtrim((string)IMG_PATH, '/\\') : '';
 $docRoot = defined('DOC_PATH') ? rtrim((string)DOC_PATH, '/\\') : '';
 $dataMedia = (defined('DATA_PATH') ? rtrim((string)DATA_PATH, '/\\') : '') . '/media/images';
@@ -218,7 +211,7 @@ $searchRoots = array_values(array_unique(array_filter([
     $imgRoot !== '' ? $imgRoot . '/mediakit' : '',
     $dataMedia . '/mediakit',
 ])));
-// Build lowercase filename → absolute path map once (avoids N×scandir)
+ 
 $__mkIndex = [];
 foreach ($searchRoots as $root) {
     if ($root === '' || !is_dir($root)) {
@@ -237,7 +230,7 @@ foreach ($searchRoots as $root) {
             continue;
         }
         $__mkIndex[strtolower($sf)] = $full;
-        // stem map for sibling ext (optimizer .png → .webp)
+         
         $stem = strtolower(pathinfo($sf, PATHINFO_FILENAME));
         if ($stem !== '' && !isset($__mkIndex['#stem:' . $stem])) {
             $__mkIndex['#stem:' . $stem] = $full;
@@ -293,7 +286,7 @@ foreach ($kit as &$__mkRow) {
     if ($ext !== '') {
         $__mkRow['file_type'] = $ext;
     }
-    // Only probe dimensions when missing (avoids getimagesize on every request)
+     
     if ((empty($__mkRow['width']) || empty($__mkRow['height']))
         && in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp'], true)
         && function_exists('getimagesize')) {
@@ -329,7 +322,7 @@ $categories = [
     'other'    => ['label' => 'Other assets', 'icon' => 'fa-solid fa-folder-open', 'hint' => 'Misc'],
 ];
 
-/* Full library hub (SharePoint / OneDrive / external pack) */
+ 
 $hubPath = (defined('DATA_PATH') ? DATA_PATH : '') . '/config/mediakit_hub.json';
 $hub = ['library_url' => '', 'library_label' => 'Full media kit library'];
 if (is_file($hubPath)) {
@@ -373,7 +366,7 @@ if (!empty($coSocial) && is_array($coSocial)) {
         if ($val === '') {
             continue;
         }
-        // skip duplicate x/twitter
+         
         if ($key === 'x' && !empty($coSocial['twitter'])) {
             continue;
         }
@@ -519,7 +512,6 @@ if (!empty($coSocial) && is_array($coSocial)) {
 .mk-drop-controls select.mk-input{height:2.35rem;width:100%;border:1px solid var(--rc-border);border-radius:.65rem;padding:0 .75rem;font-size:13px;background:var(--rc-card);color:var(--rc-ink);box-sizing:border-box}
 .mk-soc-bar{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.75rem;padding-top:.65rem;border-top:1px solid var(--rc-border)}
 </style>
-
 
 <div class="rc-card rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 mb-4">
   <strong class="text-slate-800">Media sources (ToS-safe)</strong>
@@ -887,7 +879,7 @@ if (!empty($coSocial) && is_array($coSocial)) {
     }
     $mtimeLbl = $mtime > 0 ? date('d M Y, H:i', $mtime) : '';
     $srcLbl = trim((string)($item['source'] ?? $item['provider'] ?? ''));
-    // Prefer resolved on-disk name (webp sibling) for the public URL
+     
     if (!empty($item['preview_file'])) {
         $fn = (string)$item['preview_file'];
         $href = '/media_serve.php?f=' . rawurlencode($fn);

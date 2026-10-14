@@ -1,15 +1,15 @@
 <?php 
-// Version: 260919.03
-// dbd/tab_monitor.php
-// Embedded-safe gate (same pattern as tab_settings.php): never exit/die —
-// an unconditional exit would abort the entire parent dashboard if this file
-// is ever required outside the top-level tab switch.
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH') || empty($isSuperAdmin)) {
     echo '<div class="p-8 text-center text-red-600 font-bold bg-red-50 rounded-xl m-4 border border-red-200"><i class="fa-solid fa-ban mr-2"></i>Access Denied — Super Admin only (Monitor / Optimisation).</div>';
     return;
 }
 
-// 1. Handle Manual Deletion of Orphaned Files
+ 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['delete_orphan_file'])) {
     if (!isset($_POST['csrf_token']) || !hash_equals(AppAuth::csrf_token(), (string)$_POST['csrf_token'])) {
         http_response_code(403);
@@ -28,8 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['delete_orphan_file']
     }
 }
 
-
-/** Extract version from self-hosted library file contents (not URL). */
+ 
 function rc_parse_vendor_version(string $path, string $kind = ''): string {
     if (!is_file($path) || !is_readable($path)) {
         return '';
@@ -62,7 +61,7 @@ function rc_parse_vendor_version(string $path, string $kind = ''): string {
 
 $diagnostics = ['env' => [], 'perms' => [], 'data' => [], 'logs' => []];
 
-// 2. Environment & Stats — fully dynamic (no hardcoded host/version strings)
+ 
 $h = static function ($v): string {
     return htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 };
@@ -131,7 +130,7 @@ if ($sslHost !== '' && function_exists('stream_socket_client') && function_exist
     ]);
     $client = @stream_socket_client('ssl://' . $sslHost . ':443', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $ctx);
     if (is_resource($client) || (is_object($client) && get_resource_type((string)$client))) {
-        // PHP 8+ may return Socket object — treat truthy as ok
+         
     }
     if ($client) {
         $params = stream_context_get_params($client);
@@ -163,7 +162,7 @@ if ($sslHost !== '' && function_exists('stream_socket_client') && function_exist
     $diagnostics['env']['SSL Status'] = $h('not probed');
 }
 
-// 2b. Front-end libraries & webfonts under assets/vendor (self-hosted)
+ 
 $diagnostics['libraries'] = [];
 $diagnostics['fonts'] = [];
 $vendorDir = BASE_PATH . '/assets/vendor';
@@ -236,7 +235,7 @@ $libSpecs = [
     ],
 ];
 
-// Published stable release dates (npm / upstream) — not file mtime
+ 
 $libReleaseDates = [
     'Alpine.js' => ['3.17.4' => '2025-12-15', '3.14.9' => '2025-05-01', '3.14.0' => '2024-08-01'],
     'Chart.js' => ['4.5.1' => '2025-08-20', '4.5.0' => '2025-06-01', '4.4.6' => '2024-11-01', '4.4.0' => '2024-04-01'],
@@ -252,7 +251,7 @@ $lookupRelease = static function (string $label, string $ver) use ($libReleaseDa
     if (isset($map[$ver])) {
         return $map[$ver];
     }
-    // prefix match e.g. 6.5 from 6.5.1
+     
     foreach ($map as $v => $d) {
         if (str_starts_with($ver, $v) || str_starts_with($v, $ver)) {
             return $d;
@@ -288,7 +287,7 @@ foreach ($libSpecs as $label => $spec) {
             . ' · expect ' . $h((string)($spec['expected'] ?? '')) . '</span>';
     }
 }
-// Webfonts (Font Awesome packs + any other)
+ 
 $fontDirs = [
     BASE_PATH . '/assets/vendor/webfonts',
     BASE_PATH . '/assets/fonts',
@@ -332,7 +331,7 @@ foreach ($fontDirs as $fd) {
         } elseif (stripos($ff, 'inter') !== false) {
             $family = 'Inter';
         }
-        // Try name table is complex; report file weight + format as the practical "version"
+         
         $weight = '';
         if (preg_match('/-(\d{3})\./', $ff, $wm)) {
             $weight = ' weight ' . $wm[1];
@@ -349,10 +348,9 @@ if ($diagnostics['fonts'] === []) {
 $diagnostics['env']['Front-end libs scanned'] = $h((string) count($diagnostics['libraries']));
 $diagnostics['env']['Webfont files'] = $h((string) count($seenFonts));
 
-
-// 3. Directory Permissions — all paths the app must write at runtime
-// Live Tracking writes policy / state / violations / daily history under data/runners/
-// Tenant-isolated paths only (no legacy root /data, /images, /docs)
+ 
+ 
+ 
 $_dataRoot = defined('DATA_PATH') ? DATA_PATH : (BASE_PATH . '/data');
 $_permChecks = [
     'data' => $_dataRoot,
@@ -415,13 +413,13 @@ foreach ($runnerFiles as $rel) {
     }
 }
 
-// 4. JSON Integrity & Refined Orphan Scanner
+ 
 $jsonFiles = glob(DATA_PATH . '/*.json') ?: [];
 $totalSize = 0;
 
-// Load code to check for usage
+ 
 $codebase = '';
-// Scan all PHP subfolders including cards/Engine, cards/Controller, cards/Tmpl
+ 
 $files = array_merge(
     (array)glob(BASE_PATH . '/*.php'),
     (array)glob(BASE_PATH . '/tools/*.php'),
@@ -446,12 +444,12 @@ foreach ($jsonFiles as $file) {
     $totalSize += $size;
     $namespace = str_replace('.json', '', $name);
     
-    // FIX: Check for both the full filename and the namespace usage (e.g., AppDB::read('team'))
+     
     $isOrphan = (strpos($codebase, $name) === false && strpos($codebase, "'$namespace'") === false && strpos($codebase, '"' . $namespace . '"') === false);
     
     $statusHtml = '';
     if ($isOrphan) {
-        // BUG FIX: the previous version built this as one single-quoted
+         
                 $confirmMsg = "Delete orphaned data: {$safeName}?";
         $statusHtml = '<button type="button" class="ml-2 text-[10px] bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded font-bold hover:bg-rose-600 hover:text-white transition"'
                     . ' data-orphan-file="' . htmlspecialchars($safeName, ENT_QUOTES) . '"'
@@ -472,29 +470,29 @@ foreach ($jsonFiles as $file) {
     }
 }
 
-// 5. App Logs
-// Newest-first was already correct here (array_reverse + the header already
-// says "Newest First"). Sort is now made explicit by parsing each line's own
-// JSON "time" field rather than trusting file-append order alone — a log
-// written to by concurrent requests can interleave lines slightly
-// out-of-order on disk; sorting by the timestamp each entry actually claims
-// is the real guarantee "newest first" is asking for, append order is just
-// usually a good enough proxy for it.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 $logFile = DATA_PATH . '/logs/app.log';
 $logOutput = [];
 if (file_exists($logFile)) {
     $lines = file($logFile) ?: [];
-    $lines = array_slice($lines, -200);   // cap how much we ever parse/sort
+    $lines = array_slice($lines, -200);    
     $parsed = [];
     foreach ($lines as $ln) {
         $d = json_decode($ln, true);
-        // Hide pure bot CSRF noise: no_token from cloud/scanner IPs (not real admin sessions)
+         
         if (is_array($d) && ($d['msg'] ?? '') === 'CSRF validation failed') {
             $ctx = is_array($d['ctx'] ?? null) ? $d['ctx'] : [];
             $kind = (string)($ctx['kind'] ?? '');
             $ip = (string)($ctx['ip'] ?? '');
             if ($kind === 'no_token' && $ip !== '') {
-                // Common cloud/scanner prefixes (Google, AWS, Azure, DigitalOcean, etc.)
+                 
                 if (preg_match('/^(34\.|35\.|52\.|54\.|13\.|18\.|3\.|40\.|104\.|140\.|146\.|162\.|167\.|172\.(?:6[4-9]|[7-9]\d|1[0-2]\d)\.|185\.|188\.|193\.|194\.|195\.|198\.|199\.|204\.|207\.|209\.|212\.|216\.)/', $ip)) {
                     continue;
                 }
@@ -503,11 +501,10 @@ if (file_exists($logFile)) {
         $ts = (is_array($d) && !empty($d['time'])) ? (strtotime((string)$d['time']) ?: 0) : 0;
         $parsed[] = ['ts' => $ts, 'raw' => $ln];
     }
-    usort($parsed, fn($a, $b) => $b['ts'] <=> $a['ts']);   // newest first, explicitly
+    usort($parsed, fn($a, $b) => $b['ts'] <=> $a['ts']);    
     $logOutput = array_slice(array_column($parsed, 'raw'), 0, 50);
 }
 ?>
-
 
 <!-- System Optimizer — full panel inline (no second click / ?tab=opt hop) -->
 <section class="mb-6 max-w-4xl" id="platform-optimization">
@@ -627,7 +624,6 @@ if (file_exists($logFile)) {
             <div class="text-[10px] text-slate-400 font-medium mt-0.5"><?= htmlspecialchars(defined('APP_VERSION_DATE') ? APP_VERSION_DATE : '') ?></div>
         </div>
     </div>
-
 
     <!-- Data layout inventory & migrator -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6" x-data="layoutInventory()" x-init="load()">
@@ -808,8 +804,8 @@ if (file_exists($logFile)) {
          hangs waiting on a third party.
     ───────────────────────────────────────────────────────────────────────── -->
     <?php
-    // Parse the real CDN references out of the source rather than hardcoding.
-    // Scan only live shells (not every historical comment in old tabs).
+     
+     
     $_libScanFiles = array_filter([
         BASE_PATH . '/app/views/dashboard.php',
         BASE_PATH . '/app/views/login.php',
@@ -821,8 +817,8 @@ if (file_exists($logFile)) {
     $_libSrc = '';
     foreach ($_libScanFiles as $_f) {
         $_chunk = (string)@file_get_contents($_f);
-        // Strip // and /* */ comments so stale version strings in changelogs
-        // do not pollute installed-version detection.
+         
+         
         $_chunk = preg_replace('~//.*$~m', '', $_chunk) ?? $_chunk;
         $_chunk = preg_replace('~ /\*.*?\*/~s', '', $_chunk) ?? $_chunk;
         $_libSrc .= $_chunk;
@@ -839,7 +835,7 @@ if (file_exists($logFile)) {
          'rx'=>'~xlsx-([0-9]+\.[0-9]+\.[0-9]+)~', 'src'=>'none', 'pkg'=>'xlsx'],
         ['name'=>'EasyQRCodeJS', 'key'=>'easyqrcodejs',
          'rx'=>'~easyqrcodejs@([0-9]+\.[0-9]+\.[0-9]+)~', 'src'=>'npm', 'pkg'=>'easyqrcodejs'],
-        // Self-hosted design system (assets/app.css) — no Play CDN.
+         
         ['name'=>'Design system (app.css)', 'key'=>'appcss',
          'rx'=>'~assets/app\.css~', 'src'=>'none', 'pkg'=>'app-css'],
         ['name'=>'Tailwind CSS (Play CDN)', 'key'=>'tailwind',
@@ -854,7 +850,7 @@ if (file_exists($logFile)) {
                 $_found = !empty($_m[1]) ? array_values(array_unique(array_filter($_m[1]))) : ['(unversioned)'];
             }
         }
-        // Self-hosted fallback: parse version from vendor file when URL regex misses
+         
         $_libName = (string)($_d['name'] ?? '');
         $_libKey = (string)($_d['key'] ?? '');
         if (($_libKey === 'font-awesome' || stripos($_libName, 'Font Awesome') !== false)
@@ -1036,13 +1032,13 @@ if (file_exists($logFile)) {
             </div>
             
             <?php
-            /* Windows 11 Settings → System → About style groupings */
+             
             $__win11Groups = [
                 'Device specifications' => [
                     'icon' => 'fa-microchip',
                     'keys' => ['Hostname','OS','Architecture','Server Software','Server Name','HTTP Host','Server Addr','Server Port','Document Root'],
                 ],
-                'Windows specifications' => [ /* server runtime analog */
+                'Windows specifications' => [  
                     'icon' => 'fa-server',
                     'keys' => ['PHP Version','PHP Floor','PHP SAPI','Zend Version','OPcache','intl extension','intl (INR)'],
                 ],
@@ -1244,17 +1240,17 @@ if (file_exists($logFile)) {
                 <textarea id="logPlainText" style="position:absolute;left:-9999px" readonly><?= htmlspecialchars(implode('', $logOutput)) ?></textarea>
                 <?php foreach ($logOutput as $_i => $log): ?>
                     <?php
-                        // Was: raw JSON text with substring colour-highlighting on
-                        // the level word only — for a CRITICAL entry with a full
-                        // stack trace, that meant one unreadable line with every
-                        // newline in the trace rendered as a literal "\n" escape
-                        // sequence rather than an actual line break. Richer
-                        // logging (260916.10) is only useful if it can be READ,
-                        // so entries are now properly parsed: a one-line summary
-                        // always visible, full context (file/line/trace/uri) in
-                        // an expandable block for CRITICAL/ERROR entries that
-                        // carry one — never for INFO/SUCCESS, which have nothing
-                        // worth expanding and would just add visual noise.
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+                         
+                         
                         $d = json_decode((string)$log, true);
                         $lvl = is_array($d) ? strtoupper((string)($d['level'] ?? '')) : '';
                         $dataLevel = match ($lvl) {
@@ -1414,7 +1410,6 @@ async function deleteOrphanFile(btn) {
     }
 }
 </script>
-
 
 <script>
 window.__logFilter = 'all';

@@ -1,8 +1,5 @@
 <?php
-/**
- * Project Construction Status — compact embed for Team (and similar) screens.
- * Read-only mirror of /status/data JSON. Version: 20261002.02
- */
+
 declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;

@@ -1,26 +1,26 @@
 <?php
-// dbd/tab_cctv.php — Version: 260916.14
-//
-// Replaces the standalone /cctv/index.html portal.
-//
-// WHY THIS MOVED INTO THE DASHBOARD:
-// The supplied cctv/index.html described itself as a "secure live camera
-// portal" but had NO authentication of any kind — it was a static page
-// printing live DVR usernames and passwords in plain text, with copy
-// buttons, OG share tags, and JSON-LD (i.e. built to be shared and indexed).
-// Its only "security" was a console.warn(). Anyone who learned or guessed
-// the URL got working CCTV credentials. The companion cctv/pwd.txt was the
-// same credentials again as a plain .txt in a web-served folder.
-//
-// Rendering them here instead means they inherit the dashboard's existing
-// session auth, and the values live in data/cctv.json — a path already
-// protected by web.config (hiddenSegments "data" + .json denied).
-//
-// ACTION REQUIRED AFTER DEPLOY:
-//   1. DELETE /cctv/pwd.txt and /cctv/index.html* from the server.
-//   2. ROTATE both DVR passwords — they have been sitting in a publicly
-//      reachable file and in a .zip, so treat them as compromised.
-//   3. Re-enter the new passwords via this tab.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 
 $cctvFeeds = class_exists('AppDB') ? (AppDB::read('cctv') ?: []) : [];

@@ -18,7 +18,7 @@ final class TenantStorage
         $company = rtrim($dataPath, '/\\') . '/company.json';
         if (!is_file($company)) @file_put_contents($company, "{}\n", LOCK_EX);
         if (class_exists('MasterDirectory') && method_exists('MasterDirectory', 'ensureFiles')) {
-            try { MasterDirectory::ensureFiles(); } catch (\Throwable $e) { /* non-fatal */ }
+            try { MasterDirectory::ensureFiles(); } catch (\Throwable $e) {   }
         }
     }
     public static function purgeTrial(string $dataPath): array

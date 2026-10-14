@@ -1,8 +1,5 @@
 <?php
-/**
- * Platform health + one-click tools launch pad.
- * Every operational path is a button — no need to remember URLs.
- */
+
 if (!defined('BASE_PATH')) {
     exit;
 }
@@ -122,7 +119,6 @@ $__isAd = !empty($isAdmin) || $__isSa;
         <span class="rc-tool-tile__d">Deploy path inventory</span>
       </a>
       <?php endif; ?>
-
 
       <?php if ($__isSa): ?>
       <a href="?tab=monitor" class="rc-tool-tile">

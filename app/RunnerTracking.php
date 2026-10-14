@@ -1,24 +1,6 @@
 <?php
-// Version: 1.0
+ 
 declare(strict_types=1);
-
-/**
- * RunnerTracking — Live Location & Travel History for Office Runners
- *
- * PSR-4 style single-file service (namespace optional for drop-in hosts).
- * Requires PDO MySQL/MariaDB connection. Uses prepared statements exclusively.
- *
- * Actions (via handleRequest):
- *   GET  runners_list          — Office Runner roster + live status
- *   GET  master_email          — system setting master_tracking_email
- *   POST master_email          — update master_tracking_email
- *   POST ping                  — record GPS ping (mobile / device agent)
- *   GET  daily_logs            — breadcrumb trail for runner + date
- *   GET  daily_summaries       — aggregated audit rows
- *   POST rebuild_summary       — recompute one runner-day from logs
- *   GET  export_csv            — Runner Travel Audit Report CSV
- *   GET  export_print          — HTML print-friendly audit report
- */
 
 namespace App;
 
@@ -31,9 +13,9 @@ use Throwable;
 final class RunnerTracking
 {
     public const DESIGNATION = 'Office Runner';
-    public const OFFLINE_AFTER_SECONDS = 300;   // 5 minutes
-    public const MOVING_SPEED_KMH = 1.5;        // below = idle/stationary
-    public const IDLE_GAP_SECONDS = 180;        // gap between pings counts idle
+    public const OFFLINE_AFTER_SECONDS = 300;    
+    public const MOVING_SPEED_KMH = 1.5;         
+    public const IDLE_GAP_SECONDS = 180;         
 
     private PDO $pdo;
     private string $tz;
@@ -47,10 +29,8 @@ final class RunnerTracking
         $this->tz = $timezone !== '' ? $timezone : 'Asia/Kolkata';
     }
 
-    /**
-     * Front-controller style router for ?action=…
-     * Call after auth middleware has confirmed admin session.
-     */
+    
+
     public function handleRequest(string $method, array $query, array $body, ?int $actorUserId = null): void
     {
         $action = strtolower(trim((string)($query['action'] ?? $body['action'] ?? '')));
@@ -137,9 +117,9 @@ final class RunnerTracking
         }
     }
 
-    // ─── Office runners roster ─────────────────────────────────────────────
+     
 
-    /** @return list<array<string,mixed>> */
+     
     public function listOfficeRunners(): array
     {
         $sql = <<<SQL
@@ -174,7 +154,7 @@ SQL;
         return $out;
     }
 
-    /** @param array<string,mixed> $r */
+     
     private function enrichRunnerRow(array $r, int $now): array
     {
         $lastTs = !empty($r['last_location_update'])
@@ -207,7 +187,7 @@ SQL;
         ];
     }
 
-    /** @return array{total:int,moving:int,idle:int,offline:int} */
+     
     public function statusCounts(): array
     {
         $runners = $this->listOfficeRunners();
@@ -225,7 +205,7 @@ SQL;
         return $c;
     }
 
-    // ─── System setting ────────────────────────────────────────────────────
+     
 
     public function getMasterTrackingEmail(): string
     {
@@ -255,11 +235,10 @@ SQL;
         return $email;
     }
 
-    // ─── Ping / breadcrumbs ────────────────────────────────────────────────
+     
 
-    /**
-     * @return array<string,mixed>
-     */
+    
+
     public function recordPing(
         int $runnerId,
         float $lat,
@@ -345,11 +324,11 @@ SQL;
             throw $e;
         }
 
-        // Best-effort daily rollup (non-fatal if it fails)
+         
         try {
             $this->rebuildDailySummary($runnerId, $summaryDate);
         } catch (Throwable $e) {
-            // swallow — ping already stored
+             
         }
 
         return [
@@ -374,9 +353,9 @@ SQL;
         }
     }
 
-    // ─── Daily logs & stats ────────────────────────────────────────────────
+     
 
-    /** @return list<array<string,mixed>> */
+     
     public function getDailyLogs(int $runnerId, string $date): array
     {
         if ($runnerId <= 0) {
@@ -408,10 +387,8 @@ SQL;
         return $out;
     }
 
-    /**
-     * Haversine + active/idle classification from ordered points.
-     * @return array{total_distance_km:float,total_active_seconds:int,total_idle_seconds:int,start_time:?string,end_time:?string,point_count:int,route_polyline:string}
-     */
+    
+
     public function computeDayStatsFromLogs(int $runnerId, string $date): array
     {
         $points = $this->getDailyLogs($runnerId, $date);
@@ -467,7 +444,7 @@ SQL;
         ];
     }
 
-    /** @return array<string,mixed> */
+     
     public function rebuildDailySummary(int $runnerId, string $date): array
     {
         if ($runnerId <= 0) {
@@ -503,7 +480,7 @@ SQL;
         return array_merge(['runner_id' => $runnerId, 'summary_date' => $date], $stats);
     }
 
-    /** @return list<array<string,mixed>> */
+     
     public function getDailySummaries(?int $runnerId, string $from, string $to): array
     {
         $sql = 'SELECT s.*, u.name AS runner_name, u.slug AS runner_slug
@@ -542,7 +519,7 @@ SQL;
         return $out;
     }
 
-    // ─── Export ────────────────────────────────────────────────────────────
+     
 
     public function exportCsv(?int $runnerId, string $from, string $to): void
     {
@@ -620,7 +597,7 @@ SQL;
         exit;
     }
 
-    // ─── Helpers ───────────────────────────────────────────────────────────
+     
 
     private function normalizeDate(string $raw): string
     {
@@ -662,10 +639,8 @@ SQL;
         return 2 * $R * asin(min(1.0, sqrt($a)));
     }
 
-    /**
-     * Google-encoded polyline (precision 5).
-     * @param list<array{0:float,1:float}> $coords [lat, lng]
-     */
+    
+
     private function encodePolyline(array $coords): string
     {
         $lastLat = 0;
@@ -694,7 +669,7 @@ SQL;
         return $out;
     }
 
-    /** @param array<string,mixed> $extra */
+     
     private function jsonOk(array $extra = []): void
     {
         if (!headers_sent()) {
@@ -705,7 +680,7 @@ SQL;
         exit;
     }
 
-    /** @param array<string,mixed> $extra */
+     
     private function jsonError(int $code, string $message, array $extra = []): void
     {
         if (!headers_sent()) {
@@ -717,9 +692,8 @@ SQL;
         exit;
     }
 
-    /**
-     * Factory from DSN env or explicit credentials.
-     */
+    
+
     public static function fromEnv(): self
     {
         $dsn = getenv('RUNNER_DB_DSN') ?: 'mysql:host=127.0.0.1;dbname=arthsathi;charset=utf8mb4';
@@ -734,12 +708,12 @@ SQL;
     }
 }
 
-// ---------------------------------------------------------------------------
-// Optional CLI / direct endpoint bootstrap when this file is the front controller
-// e.g. /api/runner_tracking.php including this file after session auth.
-// ---------------------------------------------------------------------------
+ 
+ 
+ 
+ 
 if (php_sapi_name() !== 'cli' && realpath((string)($_SERVER['SCRIPT_FILENAME'] ?? '')) === realpath(__FILE__)) {
-    // Direct hit on this file — expect session already started by host router if any
+     
     if (session_status() !== PHP_SESSION_ACTIVE) {
         session_start();
     }

@@ -1,9 +1,5 @@
 <?php
-/**
- * Shared image upload control — hint + accept + live preview.
- * Alpine logic lives in window.rcImageUpload() so x-data never embeds JS strings.
- * Brand fields (logo/favicon/cover) also stash the File for reliable FormData submit.
- */
+
 if (!defined('BASE_PATH')) {
     return;
 }

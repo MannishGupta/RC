@@ -1,16 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Shared vCard 3.0 builder — field order preferred by iOS Contacts, Google
- * Contacts, Outlook, Samsung, and most “scan to save” / AI contact parsers.
- *
- * Order (generic labels):
- *   VERSION → N → FN → ORG (Company; Unit) → TITLE → TEL → EMAIL → URL
- *   → ADR → BDAY → PHOTO → NOTE → CATEGORIES → social → UID → REV
- *
- * vCard 3.0 is used (not 4.0) for widest import + PHOTO support.
- */
 final class VcardBuilder
 {
     public static function esc(string $v): string
@@ -19,7 +9,7 @@ final class VcardBuilder
         return $v;
     }
 
-    /** RFC 6350 §3.2 line folding (octets). */
+     
     public static function fold(string $line): string
     {
         $line = rtrim($line, "\r\n");
@@ -35,11 +25,8 @@ final class VcardBuilder
         return $out;
     }
 
-    /**
-     * @param array<string,mixed> $person  team member (name, phone, email, designation…, photo path/url)
-     * @param array<string,mixed> $company organisation record
-     * @param array{include_photo?:bool,photo_max_bytes?:int,uid?:string,note?:string} $opts
-     */
+    
+
     public static function build(array $person, array $company = [], array $opts = []): string
     {
         $includePhoto = $opts['include_photo'] ?? true;
@@ -50,7 +37,7 @@ final class VcardBuilder
             $fullName = 'Contact';
         }
 
-        // Structured name: Family;Given;Additional;Prefix;Suffix
+         
         $parts = preg_split('/\s+/u', $fullName, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         if (count($parts) === 1) {
             $family = '';
@@ -89,10 +76,10 @@ final class VcardBuilder
         $lines[] = 'BEGIN:VCARD';
         $lines[] = 'VERSION:3.0';
         $lines[] = 'PRODID:-//Resource Centre//EN';
-        // Identity first (parsers and AI expect N/FN early)
+         
         $lines[] = 'N:' . self::esc($family) . ';' . self::esc($given) . ';' . self::esc($middle) . ';;';
         $lines[] = 'FN:' . self::esc($fullName);
-        // Company then department — standard “Company / Department” slots
+         
         if ($org !== '' || $dept !== '') {
             $lines[] = 'ORG:' . self::esc($org) . ($dept !== '' ? ';' . self::esc($dept) : '');
         }
@@ -102,10 +89,10 @@ final class VcardBuilder
         foreach ($phones as $i => $ph) {
             $uri = preg_replace('/[^\d+]/', '', $ph) ?: $ph;
             $type = $i === 0 ? 'CELL,VOICE,PREF' : 'CELL,VOICE';
-            // Dual form: TYPE list works on iOS/Google; VALUE=uri helps strict parsers
+             
             $lines[] = 'TEL;TYPE=' . $type . ':' . self::esc($ph);
             if ($uri !== '' && $uri !== $ph) {
-                // skip duplicate uri line to avoid double entries on some importers
+                 
             }
         }
         foreach ($emails as $i => $em) {
@@ -116,7 +103,7 @@ final class VcardBuilder
             $lines[] = 'URL:' . self::esc($website);
         }
 
-        // Work address from company / location
+         
         $street = trim((string) ($person['address'] ?? $company['address'] ?? $company['street'] ?? ''));
         $city = trim((string) ($person['city'] ?? $company['city'] ?? ''));
         $state = trim((string) ($person['state'] ?? $company['state'] ?? ''));
@@ -127,7 +114,7 @@ final class VcardBuilder
             $street = $locName;
         }
         if ($street !== '' || $city !== '' || $state !== '' || $pin !== '') {
-            // ADR: PO;Extended;Street;City;Region;Postcode;Country
+             
             $lines[] = 'ADR;TYPE=WORK:;;'
                 . self::esc($street) . ';'
                 . self::esc($city) . ';'
@@ -136,7 +123,7 @@ final class VcardBuilder
                 . self::esc($country !== '' ? $country : 'India');
         }
 
-        // BDAY only when explicitly requested (not on public digital cards — privacy)
+         
         if (!empty($opts['include_bday'])) {
             $bday = trim((string) ($person['dob'] ?? $person['birth_date'] ?? $person['birthday'] ?? ''));
             if (preg_match('/^\d{4}-\d{2}-\d{2}/', $bday)) {
@@ -159,7 +146,7 @@ final class VcardBuilder
             $lines[] = 'CATEGORIES:' . self::esc($dept);
         }
 
-        // Social — X-SOCIALPROFILE is read by iOS; others ignore harmlessly
+         
         $socialMap = [
             'linkedin' => $person['linkedin'] ?? $company['linkedin'] ?? '',
             'twitter' => $person['twitter'] ?? $person['x'] ?? $company['twitter'] ?? '',
@@ -190,7 +177,7 @@ final class VcardBuilder
         $out = '';
         foreach ($lines as $ln) {
             if (str_starts_with($ln, 'PHOTO;')) {
-                // fold photo payload carefully
+                 
                 $out .= self::foldPhotoLine($ln);
             } else {
                 $out .= self::fold($ln);
@@ -199,15 +186,14 @@ final class VcardBuilder
         return $out;
     }
 
-    /** Raw vCard string suitable for QR (no photo — keeps QR scannable). */
+     
     public static function buildForQr(array $person, array $company = []): string
     {
         return self::build($person, $company, ['include_photo' => false]);
     }
 
-    /**
-     * @return list<string>
-     */
+    
+
     private static function collectPhones(array $person): array
     {
         $out = [];
@@ -225,9 +211,8 @@ final class VcardBuilder
         return $out;
     }
 
-    /**
-     * @return list<string>
-     */
+    
+
     private static function collectEmails(array $person): array
     {
         $out = [];
@@ -259,7 +244,7 @@ final class VcardBuilder
                 continue;
             }
             if (preg_match('~^https?://~i', $c)) {
-                // Prefer file path; remote fetch is unreliable on shared hosts
+                 
                 continue;
             }
             $try = $c;
@@ -287,7 +272,7 @@ final class VcardBuilder
         if ($bin === false || $bin === '') {
             return null;
         }
-        // Downscale via GD if large
+         
         if (strlen($bin) > $maxBytes && function_exists('imagecreatefromstring')) {
             $im = @imagecreatefromstring($bin);
             if ($im !== false) {
@@ -311,7 +296,7 @@ final class VcardBuilder
             }
         }
         if (strlen($bin) > $maxBytes * 2) {
-            return null; // still too big — skip photo
+            return null;  
         }
         $b64 = base64_encode($bin);
         $mime = 'JPEG';
@@ -320,7 +305,7 @@ final class VcardBuilder
             if (str_contains($fi['mime'], 'png')) {
                 $mime = 'PNG';
             } elseif (str_contains($fi['mime'], 'webp')) {
-                $mime = 'JPEG'; // many clients reject WEBP in vCard
+                $mime = 'JPEG';  
             }
         }
         return 'PHOTO;ENCODING=b;TYPE=' . $mime . ':' . $b64;
@@ -328,7 +313,7 @@ final class VcardBuilder
 
     private static function foldPhotoLine(string $line): string
     {
-        // PHOTO;ENCODING=b;TYPE=JPEG:<base64>
+         
         $pos = strpos($line, ':');
         if ($pos === false) {
             return self::fold($line);

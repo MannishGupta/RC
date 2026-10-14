@@ -1,10 +1,5 @@
 <?php
-/**
- * AppDataCache — optional SQLite mirror of JSON namespaces for faster reads
- * and stable ETags. Falls back to file cache when SQLite is unavailable.
- *
- * Version: 260926.29
- */
+
 declare(strict_types=1);
 
 if (!defined('BASE_PATH')) {
@@ -89,9 +84,8 @@ class AppDataCache
         return hash('sha256', $json);
     }
 
-    /**
-     * @param mixed $data
-     */
+    
+
     public static function put(string $ns, $data): void
     {
         $ns = strtolower(trim($ns));
@@ -127,7 +121,7 @@ class AppDataCache
                 ]);
                 return;
             } catch (\Throwable $e) {
-                // fall through to file cache
+                 
             }
         }
 
@@ -139,9 +133,8 @@ class AppDataCache
         );
     }
 
-    /**
-     * @return array{data:mixed,etag:string}|null
-     */
+    
+
     public static function get(string $ns): ?array
     {
         $ns = strtolower(trim($ns));
@@ -159,7 +152,7 @@ class AppDataCache
                     return ['data' => $data, 'etag' => (string) $row['etag']];
                 }
             } catch (\Throwable $e) {
-                // fall through
+                 
             }
         }
 
@@ -202,12 +195,11 @@ class AppDataCache
         foreach (glob($dir . '/ns_*.json') ?: [] as $f) {
             @unlink($f);
         }
-        // recreate empty sqlite on next put
+         
     }
 
-    /**
-     * Rebuild cache for common namespaces from AppDB (optimizer / boot).
-     */
+    
+
     public static function rebuildFromAppDb(): array
     {
         $done = [];

@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Persistent deleted-tenant registry so code uploads cannot resurrect tenants.
- * File: tenants/deleted.json  (outside replaceable app code; survives FTP of PHP only)
- * Version: 20261003.01
- */
+
 final class TenantTombstone
 {
     public static function path(): string
@@ -12,7 +8,7 @@ final class TenantTombstone
         return (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__)) . '/tenants/deleted.json';
     }
 
-    /** @return array<string, array{deleted_at:string, by?:string}> */
+     
     public static function all(): array
     {
         $file = self::path();
@@ -23,7 +19,7 @@ final class TenantTombstone
         if (!is_array($raw)) {
             return [];
         }
-        // Support list form ["id1","id2"] or map form { "id": { ... } }
+         
         $out = [];
         $isList = array_keys($raw) === range(0, count($raw) - 1);
         if ($isList) {
@@ -68,7 +64,7 @@ final class TenantTombstone
         return self::write($all);
     }
 
-    /** Re-provisioning a deleted id clears the tombstone intentionally. */
+     
     public static function clear(string $tenantId): bool
     {
         $tenantId = strtolower(preg_replace('/[^a-z0-9\-_]/', '', $tenantId));
@@ -80,7 +76,7 @@ final class TenantTombstone
         return self::write($all);
     }
 
-    /** @param array<string, array{deleted_at:string, by?:string}> $all */
+     
     private static function write(array $all): bool
     {
         $dir = dirname(self::path());
@@ -94,10 +90,8 @@ final class TenantTombstone
         return @file_put_contents(self::path(), $json, LOCK_EX) !== false;
     }
 
-    /**
-     * If a deleted tenant folder was re-uploaded with code, remove it again
-     * (map entries already stripped on original delete).
-     */
+    
+
     public static function enforceMissing(): array
     {
         $removed = [];
@@ -138,7 +132,7 @@ final class TenantTombstone
             }
             @rmdir($dir);
         } catch (Throwable $e) {
-            // best-effort
+             
         }
     }
 }

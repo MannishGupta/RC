@@ -1,12 +1,9 @@
 <?php
 declare(strict_types=1);
-/**
- * Batch-generate per-tenant Windows installers (web shortcut + ARP metadata).
- * Super-admin only — invoked from index.php action installer_build.
- */
+
 final class InstallerBuild
 {
-    /** @return list<array{id:string,host:string}> */
+     
     public static function tenantHosts(): array
     {
         $out = [];
@@ -26,14 +23,14 @@ final class InstallerBuild
             if ($host === '' || $tid === '' || isset($seen[$tid])) {
                 continue;
             }
-            // Prefer non-www primary host
+             
             if (str_starts_with($host, 'www.')) {
                 continue;
             }
             $seen[$tid] = true;
             $out[] = ['id' => $tid, 'host' => $host];
         }
-        // Fallback: any remaining tenants from map values
+         
         foreach ($exact as $host => $tid) {
             $tid = preg_replace('/[^a-z0-9.\-]/i', '', (string)$tid) ?? '';
             if ($tid === '' || isset($seen[$tid])) {
@@ -54,7 +51,7 @@ final class InstallerBuild
             }
             $j = json_decode((string)@file_get_contents($f), true);
             if (is_array($j)) {
-                // singleton or list
+                 
                 if (isset($j['name'])) {
                     return $j;
                 }
@@ -72,7 +69,7 @@ final class InstallerBuild
         return str_replace("'", "''", $v);
     }
 
-    /** Build ZIP path; returns [path, filename] or throws. */
+     
     public static function buildZip(): array
     {
         $engine = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__)) . '/tools/installer/rc-install-engine.ps1';
@@ -112,7 +109,7 @@ final class InstallerBuild
             if (!str_starts_with($host, 'rc.') && !str_contains($host, '.')) {
                 $url = 'https://rc.' . $host;
             }
-            // Prefer map host as-is (already full hostname)
+             
             $url = 'https://' . preg_replace('~^https?://~i', '', $host);
             $slug = strtolower(preg_replace('/[^a-z0-9.\-]/i', '', $tid) ?? $tid);
             $appId = 'ResourceCentre.' . $slug;
@@ -121,21 +118,21 @@ final class InstallerBuild
             $comments = $isTrial
                 ? ('Free trial — ' . trim((string)($co['trial_note'] ?? 'evaluation licence')))
                 : 'Licensed installation';
-            // ARP (Add/Remove Programs / Installed apps) identity:
-            //   DisplayName = RC licensed to "{tenant company name}"
-            //   Publisher   = Arthsathi Limited (developer)
-            //   Version     = current APP_VERSION
-            //   DisplayIcon = Arthsathi product icon (not tenant logo)
+             
+             
+             
+             
+             
             $displayName = 'RC licensed to "' . $name . '"';
             if ($isTrial) {
                 $displayName .= ' (Free Trial)';
             }
-            // Product icon: prefer live Arthsathi host, then local favicon
+             
             $arthsathiIcon = 'https://rc.arthsathi.com/assets/brand/arthsathi-icon-192.png';
-            // Prefer local product mark when building on a host that has brand assets
+             
             $localIcon = (defined('BASE_PATH') ? BASE_PATH : '') . '/assets/brand/arthsathi-icon-192.png';
             if ($localIcon !== '/assets/brand/arthsathi-icon-192.png' && is_file($localIcon)) {
-                // Installer downloads via HTTPS URL — keep public product URL stable
+                 
                 $arthsathiIcon = 'https://rc.arthsathi.com/assets/brand/arthsathi-icon-192.png';
             }
             $winVer = $ver;

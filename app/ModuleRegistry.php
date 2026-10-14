@@ -1,14 +1,9 @@
 <?php
 declare(strict_types=1);
-/**
- * ModuleRegistry — per-tenant module + sub-feature toggles.
- * Storage: tenants/{id}/data/config/modules.json
- * Super Admin configures; all roles respect gates.
- * Version: 20261001.02
- */
+
 final class ModuleRegistry
 {
-    /** Canonical module catalogue (id => meta). */
+     
     public static function catalogue(): array
     {
         return [
@@ -116,6 +111,11 @@ final class ModuleRegistry
                 'group' => 'Administration',
                 'features' => [],
             ],
+            'data_rights' => [
+                'label' => 'Data principal rights',
+                'group' => 'Administration',
+                'features' => [],
+            ],
             'company' => [
                 'label' => 'Organisation Setup',
                 'group' => 'Administration',
@@ -178,7 +178,7 @@ final class ModuleRegistry
                 'group' => 'System',
                 'features' => [],
             ],
-            // Super-admin only modules stay always available on control plane
+             
             'tenants' => [
                 'label' => 'Tenant Setup',
                 'group' => 'Control Plane',
@@ -216,7 +216,7 @@ final class ModuleRegistry
         return $dir . '/modules.json';
     }
 
-    /** Default: all catalogue modules enabled, all features enabled. */
+     
     public static function defaults(): array
     {
         $mods = [];
@@ -248,7 +248,7 @@ final class ModuleRegistry
         if (!is_array($j) || !isset($j['modules']) || !is_array($j['modules'])) {
             return $defaults;
         }
-        // Merge so new catalogue entries appear enabled by default
+         
         foreach ($defaults['modules'] as $id => $def) {
             if (!isset($j['modules'][$id]) || !is_array($j['modules'][$id])) {
                 $j['modules'][$id] = $def;
@@ -313,11 +313,11 @@ final class ModuleRegistry
 
     public static function isEnabled(string $moduleId): bool
     {
-        // Control-plane modules always on for super admin routes; still respect file for tenant ops tabs
+         
         $cfg = self::load();
         $m = $cfg['modules'][$moduleId] ?? null;
         if ($m === null) {
-            return true; // unknown = allow (forward compatible)
+            return true;  
         }
         return !empty($m['enabled']);
     }
@@ -335,7 +335,7 @@ final class ModuleRegistry
         return !empty($feats[$featureId]);
     }
 
-    /** Filter tab list to enabled modules only. Never strips control-plane for super admin caller. */
+     
     public static function filterTabs(array $tabs, bool $isSuperAdmin = false): array
     {
         $always = $isSuperAdmin ? ['tenants', 'monitor', 'opt', 'access'] : ['terms', 'access'];
@@ -349,7 +349,7 @@ final class ModuleRegistry
         return array_values(array_unique($out));
     }
 
-    /** Public payload for Alpine / session UI prefs. */
+     
     public static function clientPayload(): array
     {
         $cfg = self::load();
@@ -366,16 +366,14 @@ final class ModuleRegistry
         ];
     }
 
-    /**
-     * If current tab is disabled, pick a safe fallback and optional flash message.
-     * @return array{tab:string, redirected:bool, message:?string}
-     */
+    
+
     public static function resolveTab(string $requested, array $validTabs): array
     {
         if (in_array($requested, $validTabs, true) && self::isEnabled($requested)) {
             return ['tab' => $requested, 'redirected' => false, 'message' => null];
         }
-        // Prefer team, else first valid
+         
         $fallback = in_array('team', $validTabs, true) ? 'team' : ($validTabs[0] ?? 'team');
         if (!self::isEnabled($fallback) && !empty($validTabs)) {
             foreach ($validTabs as $t) {

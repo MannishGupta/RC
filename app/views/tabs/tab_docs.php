@@ -1,8 +1,8 @@
 <?php
-// Version: 260918.12 — document file version, file size, file preview (from record data)
+ 
 if (!defined('BASE_PATH')) exit;
 
-/** Human size from bytes */
+ 
 $docFmt = static function ($bytes): string {
     $n = (int)$bytes;
     if ($n <= 0) return '';

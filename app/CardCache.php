@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Fragment cache for public card HTML.
- * Version: 260926.33
- */
+
 if (!defined('BASE_PATH')) { exit; }
 
 class CardCache
@@ -31,7 +28,7 @@ class CardCache
         if (!is_file($f)) {
             return null;
         }
-        // 1 hour soft TTL
+         
         if (filemtime($f) < time() - 3600) {
             return null;
         }
@@ -63,7 +60,7 @@ class CardCache
                 @unlink($f);
                 continue;
             }
-            // bust all versions for this deploy will happen via APP_VERSION in key
+             
             @unlink($f);
         }
     }

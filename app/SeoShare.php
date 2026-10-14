@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Commercial launch — shared rich meta for public share pages.
- * Version: 260925.01
- */
+
 if (!class_exists('SeoShare')) {
 class SeoShare
 {
@@ -24,9 +21,8 @@ class SeoShare
         return ($https ? 'https://' : 'http://') . $host;
     }
 
-    /**
-     * @param array{title:string,description?:string,url?:string,image?:string,type?:string,robots?:string,site_name?:string} $m
-     */
+    
+
     public static function tags(array $m): string
     {
         $title = self::h((string)($m['title'] ?? 'Resource Centre'));
@@ -95,7 +91,7 @@ class SeoShare
             'qr' => 'QR Contact Card',
             'numero' => 'Vedic Numerology Report',
         ];
-        // Dynamic SVG OG card when no photo/logo — strong WhatsApp/LinkedIn preview
+         
         if ($img === '') {
             $q = http_build_query([
                 'name' => $name,

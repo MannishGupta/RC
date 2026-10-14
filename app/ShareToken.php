@@ -1,12 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Signed, expiring share tokens for public cards.
- * Version: 260926.33
- *
- * URL shape (optional): ?card=business&slug=mg&sig=...&exp=...
- * Legacy unsigned slug links still work unless tenant config sets share.require_sig=true
- */
+
 if (!defined('BASE_PATH')) { exit; }
 
 class ShareToken

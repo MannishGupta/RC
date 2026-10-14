@@ -1,7 +1,5 @@
 <?php
-/**
- * Co. Admin first-run checklist — dismissed via localStorage on client.
- */
+
 declare(strict_types=1);
 if (!defined('BASE_PATH')) {
     return;
@@ -68,7 +66,7 @@ $steps[] = [
 ];
 $steps[] = [
     'id' => 'share',
-    'done' => false, // client may mark via localStorage
+    'done' => false,  
     'title' => 'Share a digital card',
     'hint' => 'Open any contact → Business / ID card → Share on WhatsApp.',
     'href' => '?tab=team',
@@ -79,7 +77,7 @@ $steps[] = [
 $doneN = count(array_filter($steps, static fn($s) => !empty($s['done'])));
 $total = count($steps);
 if ($doneN >= $total - 1) {
-    // Almost complete — still show until client dismisses
+     
 }
 $tenantKey = defined('TENANT_ID') ? (string)TENANT_ID : 'default';
 ?>

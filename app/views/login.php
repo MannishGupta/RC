@@ -1,10 +1,5 @@
 <?php
-/**
- * login.php — Version: 260919.04
- * PageSpeed-oriented public surface (what PSI measures when unauthenticated).
- * Zero render-blocking third-party CSS/JS. System fonts. Inline SVG icons.
- * LCP: company logo with explicit dimensions + fetchpriority=high.
- */
+
 if (!defined('BASE_PATH')) exit;
 
 $companyData = class_exists('AppDB') ? AppDB::read('company') : [];
@@ -402,6 +397,6 @@ body.rc-login-portal .btn{background:#2563eb!important;color:#fff!important}
 })();
 </script>
 
-<?php endif; /* needsSetup */ ?>
+<?php endif;   ?>
 </body>
 </html>

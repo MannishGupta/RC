@@ -1,3 +1,7 @@
-<?php /* rc_theme_head.php — shared <head> theme link for login/offline shells */
-  $__rcv = rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '20261009.8'); ?>
-<link rel="stylesheet" href="/assets/contrast-lock.css?v=20261009.9&amp;app=<?= $__rcv ?>">
+<?php
+// Version: 3.1.0
+/* Shared theme + a11y head links */
+$__rcv = rawurlencode(defined('APP_VERSION') ? (string) APP_VERSION : '1');
+?>
+<link rel="stylesheet" href="/assets/contrast-lock.css?v=<?= $__rcv ?>">
+<link rel="stylesheet" href="/assets/a11y.css?v=<?= $__rcv ?>">

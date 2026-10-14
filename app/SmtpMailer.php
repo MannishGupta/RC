@@ -1,40 +1,11 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-
-/**
- * app/SmtpMailer.php — Minimal SMTP client, dependency-free.
- *
- * WHY NOT PHPMailer
- * PHPMailer is the better-maintained, more battle-tested choice — it handles
- * more server quirks and edge cases than this file does. It was left out
- * because this project has no Composer dependency anywhere: every other
- * class here is a single hand-written file, deployed by uploading it, same
- * as everything else in this codebase. Adding Composer would mean a
- * `vendor/` folder, a lockfile, and a different deploy process for this one
- * feature — a larger change than the feature justifies.
- *
- * If Composer/terminal access is available on the host later (Plesk does
- * support this), replacing this class with PHPMailer is a clean, contained
- * swap — every call site uses the same three methods (`to`, `subject`,
- * `send`), so nothing else in the app needs to change.
- *
- * WHY NOT PHP's mail()
- * mail() relies on a local MTA (sendmail/postfix) being correctly configured
- * on the host, which is inconsistent across shared hosting and frequently
- * results in mail landing in spam with no authentication at all. This talks
- * directly to your configured SMTP provider (Gmail, Outlook, SendGrid, etc.)
- * over TLS/STARTTLS with AUTH LOGIN, which is what actually gets delivered.
- *
- * SCOPE: outbound only, plain + HTML body, no attachments. That covers every
- * use in this app (lead notifications, compliance alerts) — attachments were
- * not built because nothing here needs to send one.
- */
 
 if (!defined('BASE_PATH')) exit('No direct script access');
 
 final class SmtpMailer {
 
-    private string $host; private int $port; private string $enc; // 'tls' | 'ssl' | ''
+    private string $host; private int $port; private string $enc;  
     private string $user; private string $pass;
     private string $fromEmail; private string $fromName;
 
@@ -72,8 +43,8 @@ final class SmtpMailer {
     public function text(string $t): self { $this->bodyText = $t; return $this; }
     public function lastError(): string { return implode(' ', $this->errors); }
 
-    /** Send. Returns true/false; never throws — a notification failure must
-     *  never take down the request that triggered it. */
+    
+
     public function send(): bool {
         if ($this->host === '' || empty($this->to) || $this->subject === '') {
             $this->errors[] = 'Mailer not fully configured or message incomplete.';
@@ -136,8 +107,8 @@ final class SmtpMailer {
                 $body = chunk_split(base64_encode($this->bodyText));
             }
 
-            // Dot-stuff any line starting with '.', per RFC 5321 — otherwise a
-            // stray leading dot in the body is misread as end-of-DATA.
+             
+             
             $payload = implode("\r\n", $headers) . "\r\n\r\n" . $body;
             $payload = preg_replace('/^\./m', '..', $payload);
 
@@ -163,7 +134,7 @@ final class SmtpMailer {
         $resp = '';
         while (($line = fgets($sock, 512)) !== false) {
             $resp .= $line;
-            if (isset($line[3]) && $line[3] === ' ') break;   // final line of a multi-line reply
+            if (isset($line[3]) && $line[3] === ' ') break;    
         }
         $code = substr(trim($resp), 0, 3);
         if ($mustSucceed && !in_array($code, $codes, true)) {
@@ -172,7 +143,7 @@ final class SmtpMailer {
     }
 
     private function encodeHeader(string $s): string {
-        // Encoded-word (RFC 2047) so non-ASCII names/subjects survive.
+         
         return preg_match('/[^\x20-\x7E]/', $s) ? '=?UTF-8?B?' . base64_encode($s) . '?=' : $s;
     }
 }

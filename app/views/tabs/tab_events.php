@@ -1,12 +1,12 @@
 <?php 
-// tab_events.php — Version: 260916.14
-// CHANGELOG v8.0: emoji removed from the WhatsApp share text entirely.
-// Root cause confirmed elsewhere in the app: WhatsApp's own wa.me →
-// api.whatsapp.com redirect corrupts emoji-range characters server-side —
-// this is not something fixable from our code. Plain rule/separator
-// characters (─, ·) are unaffected and now carry the visual hierarchy
-// instead. window.WA_EMOJIS is no longer used anywhere in the app and can
-// be removed from dashboard.php if desired.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 

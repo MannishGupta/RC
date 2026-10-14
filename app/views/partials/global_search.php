@@ -1,5 +1,5 @@
 <?php
-/** Instant search over team_public.json */
+ 
 ?>
 <div class="mb-4 no-print" x-data="rcGlobalSearch()" x-cloak>
   <label class="sr-only" for="rc-gsearch">Search directory</label>

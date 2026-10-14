@@ -1,34 +1,34 @@
 <?php
-// app/views/partials/optimizer_panel.php — Version: 260916.14
-//
-// SINGLE SOURCE for the System Optimizer UI. Included by app/views/tabs/tab_opt.php.
-//
-// WHY THIS EXISTS
-// Both tabs already called the SAME dashboardApp.runOptimise() and shared the
-// same optLogs / optLoading state — the JavaScript was never duplicated. What
-// WAS duplicated was the UI: two buttons with different labels and two
-// separately-styled output consoles that could drift apart.
-//
-// MORE IMPORTANTLY, the two labels disagreed about what the button does:
-//   - Optimise tab  : "Run Diagnostics"
-//   - Monitor tab   : "Team Slug Optimizer" — "Normalises slugs, phone
-//                     numbers, and names for all team members."
-// Both fire the identical full SystemDataOptimizer::run(true), which is FIVE
-// phases, not a slug pass:
-//   1. Schema enforcement + field normalisation across every namespace
-//   2. Slug / phone / photo migration for team
-//   3. Rebuild of the active-media index
-//   4. ORPHAN FILE CLEANUP — permanently unlink()s images and documents
-//      not referenced by any record
-//   5. Log + session housekeeping
-// Phase 4 deletes files. Labelling that "Team Slug Optimizer" understates it
-// badly. This panel names the operation honestly and states up front that
-// unreferenced media will be removed, so the confirm dialog is an informed one.
-//
-// USAGE — set an optional variant before including:
-//     $optPanelCompact = true;                       // Monitor tab (denser)
-//     require __DIR__ . '/../partials/optimizer_panel.php';
-// Requires dashboardApp Alpine scope (runOptimise / optLoading / optLogs / data).
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 
 $optPanelCompact = $optPanelCompact ?? false;

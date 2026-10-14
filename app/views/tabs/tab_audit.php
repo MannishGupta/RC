@@ -1,5 +1,5 @@
 <?php
-/** Audit trail viewer. Version: 260921.40 */
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 <div class="space-y-4" x-data="valueAudit()" x-init="load()">

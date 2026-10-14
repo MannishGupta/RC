@@ -1,8 +1,5 @@
 <?php
-/**
- * Super Admin — Enterprise Control Plane & Tenant Overview
- * Version stamp: 260926.09
- */
+
 declare(strict_types=1);
 
 $isSa = !empty($isSuperAdmin) || !empty($viewData['isSuperAdmin'])
@@ -35,7 +32,7 @@ if (class_exists('TenantPaths')) {
 }
 sort($tenantIds);
 
-/** Count records across common JSON stores */
+ 
 $countRecords = static function (string $dataPath): int {
     $total = 0;
     $files = [
@@ -48,11 +45,11 @@ $countRecords = static function (string $dataPath): int {
         if (!is_file($p)) continue;
         $j = json_decode((string)@file_get_contents($p), true);
         if (is_array($j)) {
-            // object vs list
+             
             if (array_is_list($j)) {
                 $total += count($j);
             } else {
-                // company-like object counts as 1 if non-empty
+                 
                 $total += (count($j) > 0) ? max(1, count($j)) : 0;
             }
         }
@@ -87,7 +84,7 @@ foreach ($tenantIds as $tid) {
             $label = (string)$cfg['label'];
         }
     }
-    // company name preferred
+     
     $co = $dataPath . '/company.json';
     if (is_file($co)) {
         $cj = json_decode((string)@file_get_contents($co), true);
@@ -120,7 +117,7 @@ foreach ($tenantIds as $tid) {
     ];
 }
 $tenantCount = count($rows);
-// 7-day visit trend (sum across tenants, IST dates)
+ 
 $trendLabels = [];
 $trendValues = [];
 for ($i = 6; $i >= 0; $i--) {
@@ -194,7 +191,6 @@ foreach ($rows as $_hr) {
       </div>
     </div>
   </div>
-
 
   <!-- Super Admin graphical analytics -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" id="rc-sa-charts">
