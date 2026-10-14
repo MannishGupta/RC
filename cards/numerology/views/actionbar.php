@@ -1,8 +1,5 @@
 <?php
-/**
- * Version: 2.0 — Sacred command bar
- * Hierarchical: system mode · primary chapters · advanced modules · share tools
- */
+
 if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
 
 $basicTabIds = ['executive', 'timeline', 'forecast', 'structural', 'personality'];

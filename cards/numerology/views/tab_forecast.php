@@ -1,4 +1,4 @@
-<?php // tab_forecast.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
     <div class="tab-section" x-show="activeTab === 'forecast'">
         <div class="p-6 space-y-6">
@@ -78,5 +78,4 @@
 
         </div>
     </div>
-
 

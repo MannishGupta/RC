@@ -1,9 +1,9 @@
 <?php
-// extended.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// engine/extended.php — Extended Systems: MuhuratEngine, VastuNameEngine, CompositeEngine
+ 
 
 class MuhuratEngine {
     public static function bestDates(int $driver, array $friendlyRoots, string $activity, string $fromDate='', string $toDate='', int $limit=5): array {
@@ -13,8 +13,8 @@ class MuhuratEngine {
         $from = $fromDate ? strtotime($fromDate) : time(); $to = $toDate ? strtotime($toDate) : strtotime('+6 months', $from);
         $results = []; $dt = $from;
         while ($dt <= $to && count($results) < $limit) {
-            // Correct date root: sum ALL individual digits of day+month+year, then reduce once
-            $dateDigits = date('j', $dt) . date('n', $dt) . date('Y', $dt); // e.g. "5 1 2025" → "512025"
+             
+            $dateDigits = date('j', $dt) . date('n', $dt) . date('Y', $dt);  
             $dateDigitSum = 0;
             for ($di = 0; $di < strlen($dateDigits); $di++) $dateDigitSum += (int)$dateDigits[$di];
             $dateRoot = AppNumeroEngine::reduceChaldean($dateDigitSum, false);
@@ -37,9 +37,9 @@ class VastuNameEngine {
         $clean = strtoupper(preg_replace('/[^A-Za-z]/', '', $name)); if (empty($clean)) return ['error' => 'No alphabetic characters'];
         $total = 0; $letters = [];
         for ($i = 0; $i < strlen($clean); $i++) { $ch = $clean[$i]; $val = (int)($cmap[$ch] ?? 0); $letters[] = ['letter' => $ch, 'value' => $val]; $total += $val; }
-        $root = AppNumeroEngine::reduceChaldean($total, false); // reduceChaldean guarantees ≤9; second loop removed
+        $root = AppNumeroEngine::reduceChaldean($total, false);  
         
-        $compound = $total; // compound = raw digit sum; root = reduceChaldean($total)
+        $compound = $total;  
         $ideal = $vd['business_ideal_roots'] ?? [1, 3, 5, 6, 8, 9]; $avoidR = $vd['avoid_roots'] ?? []; $friends = $data['planets'][(string)$ownerDriver]['friends'] ?? [];
         $score = min(100, max(0, 50 + (in_array($root, $ideal, true) ? 25 : 0) + ($root === $ownerDriver ? 15 : 0) + (in_array($root, $friends, true) ? 10 : 0) - (in_array($root, $avoidR, true) ? 20 : 0)));
         $grade = 'Caution'; foreach ($gr as $g => $t) { if ($score >= $t) { $grade = $g; break; } }

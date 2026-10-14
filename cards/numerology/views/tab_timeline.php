@@ -1,5 +1,5 @@
-<?php // tab_timeline.php — Version: 260921.03
-// Timeline & Life Phases — card rows, Act/Avoid callouts. All data preserved.
+<?php  
+ 
 if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
 $isHi = ($lang === 'hi');
 $pinBorderColors = ['nr-phase-orange', 'nr-phase-violet', 'nr-phase-sky', 'nr-phase-emerald'];

@@ -1,11 +1,11 @@
 <?php
-// transit.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH') || !class_exists('AppNumeroEngine')) exit;
 
-// controller/transit.php — Transit alerts & compatibility report
+ 
 
-// ── Transit alerts ─────────────────────────────────────────────────
+ 
 $transitAlerts = [];
 $py = (int)$report['personal_year']['number'];
 
@@ -38,7 +38,7 @@ foreach ($report['pinnacles']['pinnacles'] as $alertPin) {
     $alertAges = explode('-', str_replace(['–', '—'], '-', $alertPin['age_range'] ?? ''));
     if (count($alertAges) === 2) {
         $alertDobTs  = strtotime(str_replace('/', '-', (string)($pData['dob'] ?? '')));
-        // Correct age: subtract 1 if birthday hasn't occurred yet this calendar year
+         
         $alertCurAge = 0;
         if ($alertDobTs) {
             $alertCurAge = (int)date('Y') - (int)date('Y', $alertDobTs);
@@ -58,7 +58,7 @@ foreach ($report['pinnacles']['pinnacles'] as $alertPin) {
     }
 }
 
-// ── Compatibility ──────────────────────────────────────────────────
+ 
 $compareReport      = null;
 $compatibilityData  = null;
 $compatAxisRemedies = [];
@@ -99,5 +99,5 @@ if (!empty($_GET['compare_name']) && !empty($_GET['compare_dob'])) {
             $compatPairInsight = ['verdict' => 'Error', 'description' => htmlspecialchars($e->getMessage()), 'joint_remedy' => ''];
             $compatTiming      = ['joint_py' => 0, 'py_a' => 0, 'py_b' => 0, 'advice' => ''];
         }
-    }  // end if (strtotime($cDobNorm))
-}  // end if (!empty($_GET['compare_name']) && !empty($_GET['compare_dob']))
+    }   
+}   

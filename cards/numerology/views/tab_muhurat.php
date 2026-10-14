@@ -1,4 +1,4 @@
-<?php // tab_muhurat.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
     <div x-show="activeTab==='muhurat'" class="tab-section space-y-6 print-page-break">
         <?php

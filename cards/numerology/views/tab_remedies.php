@@ -1,4 +1,4 @@
-<?php // tab_remedies.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
     <div x-show="activeTab==='remedies'" class="tab-section space-y-6 print-page-break">
         <h2 class="hidden print:block text-lg font-black text-slate-900 uppercase tracking-widest border-b pb-2"><?= $lang==='hi'?'उपाय और रत्न नुस्खा':'Remedies & Gem Prescription' ?></h2>

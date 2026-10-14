@@ -1,4 +1,4 @@
-<?php // tab_compatibility.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
     <div x-show="activeTab==='compatibility'" class="tab-section space-y-6 print-page-break">
         <h2 class="hidden print:block text-lg font-black text-slate-900 uppercase tracking-widest border-b pb-2"><?= $lang==='hi'?'अनुकूलता विश्लेषण':'Compatibility Analysis' ?></h2>
@@ -12,7 +12,7 @@
                 <?php endforeach; ?>
                 <input type="hidden" name="tab" value="compatibility">
                 <?php
-                // Load team directory for quick-select
+                 
                 $teamList = [];
                 if (class_exists('AppDB')) {
                     $allTeam = method_exists('AppDB','read') ? (AppDB::read('team') ?? []) : [];
@@ -268,8 +268,8 @@
         <?php endif; ?>
 
         <?php
-        // ✅ V16.2: Render CompositeEngine output — previously calculated in controller but never shown.
-        // Shows the "soul" of the relationship: its own Driver, Conductor, Expression, and combined grid.
+         
+         
         if (!empty($compositeReport)):
             $cR   = $compositeReport;
             $cDrv = (int)($cR['composite_driver'] ?? 0);
@@ -362,7 +362,7 @@
 
             </div>
         </div>
-        <?php endif; // end compositeReport ?>
+        <?php endif;  ?>
 
-        <?php endif; // end if (empty($compareReport)) else ?>
+        <?php endif;  ?>
     </div>

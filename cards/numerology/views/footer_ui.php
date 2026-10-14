@@ -1,4 +1,4 @@
-<?php // footer_ui.php — Version: 260916.14
+<?php  
 if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
 <div class="border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
         <div class="px-6 py-5 flex flex-wrap items-center justify-between gap-5">
@@ -375,7 +375,6 @@ window.addEventListener('beforeprint', function(){
   .nr-dock-btn{ padding:0 10px; justify-content:center; flex:1; }
 }
 </style>
-
 
 </body>
 </html>

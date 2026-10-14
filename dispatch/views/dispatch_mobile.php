@@ -1,7 +1,5 @@
 <?php
-/**
- * Mobile view for runners/drivers — simple Roman Hindi job cards
- */
+
 if (!defined('DISPATCH_ROOT')) {
     exit;
 }

@@ -1,22 +1,22 @@
 <?php
-// scoring.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// engine/scoring.php — Alignment Scoring & Final Decision Harmoniser
+ 
 
 class ScoringEngine {
     public static function derive(array $data, array $nameConflict = []): array {
         $weights = [1=>8, 2=>6, 3=>5, 4=>9, 5=>10, 6=>6, 7=>4, 8=>9, 9=>7];
         $penalty = array_sum(array_map(fn($m) => $weights[$m] ?? 5, $data['grid']['missing'] ?? []));
         $gridStrength = max(0, 100 - $penalty);
-        // evaluateHarmony() emits: Aligned | Supportive | Challenging. 'Neutral' is never emitted.
-        // Default branch now maps to Challenging (40) instead of silently scoring 60.
+         
+         
         $nameAlignment = match($data['name_matrix']['harmony']['status'] ?? 'Challenging') {
             'Aligned'    => 100,
             'Supportive' => 80,
             'Challenging'=> 40,
-            default      => 40  // safeguard for any future status value
+            default      => 40   
         };
         $mobileAlignment = match($data['mobile']['compatibility'] ?? 'Not Provided') { 'Highly Supportive' => 100, 'Friendly' => 80, 'Not Provided' => 50, 'Neutral' => 50, 'Challenging' => 20, default => 50 };
         $yogaStrength = min(100, count($data['yogas'] ?? []) * 25);
@@ -36,12 +36,10 @@ class FinalDecisionEngine {
         }
         if (!empty($report['mobile']['patterns'])) {
             $filtered = array_values(array_filter($report['mobile']['patterns'], fn($p) => !in_array($p['target_root'], $enemies, true)));
-            // Keep filtered result only if at least one pattern survived; otherwise keep originals
+             
             $report['mobile']['patterns'] = !empty($filtered) ? $filtered : $report['mobile']['patterns'];
         }
         return $report;
     }
 }
-
-
 

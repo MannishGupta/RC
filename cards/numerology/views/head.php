@@ -1,14 +1,9 @@
-<?php // Version: 260921.32
-/**
- * num_template.php — Arthsathi Vedic Numero Template V17.0
- *
- * Pure HTML rendering. Zero logic. Zero data loading.
- * All variables provided by num_controller.php
- */
+<?php  
+
 if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
 ?>
 <!DOCTYPE html>
-<?php /* initTab set by num_controller.php */ ?>
+<?php   ?>
 <html lang="<?= htmlspecialchars(($lang === 'hi' ? 'hi' : 'en'), ENT_QUOTES, 'UTF-8') ?>" dir="ltr" x-data="{
     activeTab: '<?= $initTab ?>',
     shareOpen: false,
@@ -35,21 +30,15 @@ if (is_file($__boot)) require $__boot;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <?php
-    /*
-     * OG / Social meta — V17.6 fixes:
-     *  [1] Use controller's $ogTitle / $ogImg / $ogUrl (set in meta.php) — never recompute
-     *  [2] ogDesc: plain Unicode · not HTML &middot; (OG content is NOT HTML)
-     *  [3] og:site_name, og:locale, og:image:width/height added
-     *  [4] twitter:card → summary_large_image (full-width preview)
-     *  [5] twitter:description + twitter:url added
-     */
-    // Use controller vars — with safe fallbacks if meta.php hasn't run
+    
+
+     
     $_ogTitle  = isset($ogTitle)
         ? $ogTitle
         : htmlspecialchars((string)$p['name'], ENT_QUOTES) . ($lang==='hi' ? ' — वैदिक अंकशास्त्र रिपोर्ट' : ' — Vedic Numerology Report');
     $_ogDesc   = 'Driver ' . (int)$core['driver']
                . ' · ' . htmlspecialchars((string)($report['lucky_driver']['name'] ?? ''), ENT_QUOTES)
-               . ' · Score ' . (int)$report['summary']['score'] . '/100';   // plain ·, NOT &middot;
+               . ' · Score ' . (int)$report['summary']['score'] . '/100';    
     $_ogImgOut = htmlspecialchars((string)($ogImg ?? $absPhoto ?? ''), ENT_QUOTES);
     $_ogUrlOut = htmlspecialchars((string)($ogUrl ?? $shareUrl ?? ''), ENT_QUOTES);
     $_ogLocale = ($lang === 'hi') ? 'hi_IN' : 'en_IN';

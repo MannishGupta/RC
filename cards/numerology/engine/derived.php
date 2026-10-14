@@ -1,17 +1,13 @@
 <?php
-// derived.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// engine/derived.php — Derived Systems: PersonalYear, Pinnacle, Cycle, Maturity, Timeline
+ 
 
 class PersonalYearEngine {
-    /**
-     * Calculates Personal Year number.
-     * PY changes on the person's own birthday (not January 1).
-     * If today is before this year's birthday, calculate for (currentYear - 1).
-     * If forYear is explicitly passed, use that year without adjustment.
-     */
+    
+
     public static function calculate(int $day, int $month, int $forYear = 0): array {
         if ($forYear > 0) {
             $year = $forYear;
@@ -20,7 +16,7 @@ class PersonalYearEngine {
             $todayMd = (int)date('md');
             $birthMd  = (int)(str_pad((string)$month, 2, '0', STR_PAD_LEFT) . str_pad((string)$day, 2, '0', STR_PAD_LEFT));
             if ($todayMd < $birthMd) {
-                $year--; // Birthday hasn't occurred yet this year — still in last year's PY
+                $year--;  
             }
         }
         $yearSum = 0; foreach (str_split((string)$year) as $d) $yearSum += (int)$d;
@@ -63,13 +59,8 @@ class PersonalCycleEngine {
 }
 
 class MaturityEngine {
-    /**
-     * Maturity Number = Expression (full name root) + Life Path (conductor), reduced.
-     * Standard numerology: NOT driver + conductor. Driver = birth day number.
-     * Expression = full Chaldean name root. These are different numbers.
-     * Caller: generateReport() passes ($fullNameData['root'], $conductor).
-     * Param $expressionRoot renamed from $driver — signature kept compatible.
-     */
+    
+
     public static function calculate(int $expressionRoot, int $conductor): array {
         $cDigit = $conductor;
         while ($cDigit > 9) $cDigit = array_sum(str_split((string)$cDigit));

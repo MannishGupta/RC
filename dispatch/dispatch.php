@@ -1,22 +1,11 @@
 <?php
-/**
- * Version: 1.0
- * Delivery Routing & Dispatch — JSON flat-file module for Resource Center
- *
- * Drop at site root (or /dispatch/) and open:
- *   dispatch.php              — Admin map + assign + dispatch console
- *   dispatch.php?view=mobile  — Field staff mobile page (Roman Hindi)
- *   dispatch.php?action=...   — JSON API
- *
- * Data dir: __DIR__ . '/data/' (routes, assignments, dispatches, settings)
- * Optional: reads ../data/team.json and ../data/cartags.json if present.
- */
+
 declare(strict_types=1);
 
 header('X-Content-Type-Options: nosniff');
 
 define('DISPATCH_ROOT', __DIR__);
-// Unified writable root: {site}/data/dispatch (legacy: dispatch/data)
+ 
 $_dd = dirname(DISPATCH_ROOT) . '/data/dispatch';
 $_ddLegacy = DISPATCH_ROOT . '/data';
 if (!is_dir($_dd) && is_dir($_ddLegacy)) {
@@ -30,14 +19,14 @@ if (!is_dir($_dd) && is_dir($_ddLegacy)) {
 }
 define('DISPATCH_DATA', is_dir($_dd) || @mkdir($_dd, 0775, true) ? $_dd : $_ddLegacy);
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+ 
 
 function d_json_path(string $name): string
 {
     return DISPATCH_DATA . '/' . $name . '.json';
 }
 
-/** @return array<mixed> */
+ 
 function d_read(string $name): array
 {
     $path = d_json_path($name);
@@ -48,7 +37,7 @@ function d_read(string $name): array
     return is_array($raw) ? $raw : [];
 }
 
-/** @param array<mixed> $data */
+ 
 function d_write(string $name, array $data): bool
 {
     if (!is_dir(DISPATCH_DATA)) {
@@ -91,7 +80,7 @@ function d_id(string $prefix = 'ID'): string
     return $prefix . '-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 }
 
-/** @return array<string, mixed> */
+ 
 function d_input(): array
 {
     $ct = (string) ($_SERVER['CONTENT_TYPE'] ?? '');
@@ -118,7 +107,7 @@ function d_truthy($v): bool
     return $v === true || $v === 1 || $v === '1' || $v === 'true' || $v === 'yes' || $v === 'on';
 }
 
-/** Designation keys flagged for mandatory live tracking */
+ 
 function d_tracking_desig_keys(): array
 {
     $candidates = [
@@ -159,9 +148,6 @@ function d_tracking_desig_keys(): array
     return $keys;
 }
 
-/**
- * Field staff only: designation has Mandatory live tracking, or member flag is on.
- */
 function d_team(): array
 {
     $trackKeys = d_tracking_desig_keys();
@@ -199,7 +185,7 @@ function d_team(): array
                     break;
                 }
             }
-            // If no designation flags exist in data, fall back to common field roles by name
+             
             if ($trackKeys === []) {
                 $dn = strtolower((string) ($row['designation_name'] ?? $row['designation'] ?? ''));
                 if (preg_match('/\b(runner|driver|field\s*boy|delivery|rider|logistics)\b/i', $dn)) {
@@ -229,7 +215,7 @@ function d_team(): array
     ];
 }
 
-/** Standard locations from Premises Registry (locations.json) */
+ 
 function d_locations(): array
 {
     $candidates = [
@@ -349,7 +335,7 @@ function d_settings(): array
             'dispatch_language' => 'hinglish',
         ];
     }
-    // Prefer parent company key if present
+     
     $companyPaths = [
         dirname(DISPATCH_ROOT) . '/data/company.json',
         DISPATCH_ROOT . '/../data/company.json',
@@ -373,9 +359,6 @@ function d_settings(): array
     return $s;
 }
 
-/**
- * Build simple conversational Roman Hindi (Hinglish) dispatch message.
- */
 function d_hinglish_message(array $job): string
 {
     $name = trim((string) ($job['runner_name'] ?? 'Bhai'));
@@ -427,7 +410,7 @@ function d_maps_link(float $lat, float $lng, string $label = ''): string
     return 'https://www.google.com/maps?q=' . rawurlencode((string) $lat . ',' . (string) $lng);
 }
 
-// ── API actions ──────────────────────────────────────────────────────────────
+ 
 
 $action = (string) ($_GET['action'] ?? ($_POST['action'] ?? ''));
 $input = d_input();
@@ -492,7 +475,7 @@ if ($action !== '') {
                 d_send(['ok' => false, 'error' => 'Runner or vehicle not found'], 404);
             }
             $rows = d_read('assignments');
-            // One active vehicle per runner; one runner per vehicle
+             
             $rows = array_values(array_filter($rows, static function ($r) use ($runnerId, $vehicleId) {
                 if (!is_array($r)) {
                     return false;
@@ -603,7 +586,7 @@ if ($action !== '') {
                 'notes' => $notes,
                 'contact_name' => $contactName,
                 'contact_phone' => $contactPhone,
-                'status' => 'active', // active | completed | cancelled
+                'status' => 'active',  
                 'created_at' => date('c'),
                 'updated_at' => date('c'),
             ];
@@ -660,19 +643,19 @@ if ($action !== '') {
                 'message' => $fullMsg,
                 'message_plain' => $msg,
                 'map_url' => $mapUrl,
-                'channel' => trim((string) ($input['channel'] ?? 'copy')), // copy | whatsapp | sms
+                'channel' => trim((string) ($input['channel'] ?? 'copy')),  
                 'created_at' => date('c'),
                 'status' => 'sent',
             ];
             $list = d_read('dispatches');
             $list[] = $dispatch;
-            // keep last 200
+             
             if (count($list) > 200) {
                 $list = array_slice($list, -200);
             }
             d_write('dispatches', $list);
 
-            // WhatsApp deep link if phone known
+             
             $waUrl = '';
             $phone = '';
             foreach (d_team() as $t) {
@@ -718,7 +701,7 @@ if ($action !== '') {
     }
 }
 
-// ── Views ────────────────────────────────────────────────────────────────────
+ 
 
 $view = (string) ($_GET['view'] ?? 'admin');
 if ($view === 'mobile') {

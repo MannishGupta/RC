@@ -1,13 +1,5 @@
-<?php // Version: 20261003.20
+<?php  
 declare(strict_types=1);
-/**
- * Email signature generator — dual layouts:
- *  1) New mail (full) — photo, company logo orientation, full contacts + socials
- *  2) Reply/forward (compact) — name, title, phone, email only
- * Logo: landscape/square → 2-column; portrait → 3-column (logo right).
- * Images: absolute media_serve URLs + ui-avatars / logo_proxy fallbacks.
- * Social: real brand SVG marks as data-URI (email-safe) with hosted PNG fallback path.
- */
 
 $rootPath = file_exists(__DIR__ . '/../app/bootstrap.php') ? dirname(__DIR__) : __DIR__;
 define('BASE_PATH', $rootPath);
@@ -49,7 +41,7 @@ $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
 $baseUrl  = rtrim($scheme . '://' . $safeHost, '/');
 $cardUrl  = $baseUrl . '/?card=business&slug=' . rawurlencode($slug);
 
-/** Resolve team/company image to absolute public URL with fallbacks */
+ 
 $resolveImg = static function (string $file, string $fallback = '') use ($baseUrl): string {
     $file = trim($file);
     if ($file === '') {
@@ -62,13 +54,13 @@ $resolveImg = static function (string $file, string $fallback = '') use ($baseUr
     if ($bn === '' || $bn === '.' || $bn === '..') {
         return $fallback;
     }
-    // Prefer media gateway (tenant-safe)
+     
     return $baseUrl . '/media_serve.php?f=' . rawurlencode($bn);
 };
 
 $photoFile = (string)($person['photo'] ?? '');
 $logoFile  = (string)($company['logo'] ?? $company['logo_file'] ?? '');
-// Email clients need high-res PNG — always proxy via sig_img (SVG → PNG at 2× quality)
+ 
 $photoUrl = $baseUrl . '/cards/sig_img.php?kind=photo&slug=' . rawurlencode($slug)
     . '&w=256&h=256&v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1');
 if ($photoFile === '') {
@@ -81,7 +73,7 @@ if ($logoFile !== '') {
         . '&w=560&h=224&v=' . rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1');
 }
 
-// Local path for getimagesize orientation
+ 
 $logoLocal = '';
 foreach ([IMG_PATH, DATA_PATH . '/media/images', DATA_PATH . '/images', BASE_PATH . '/images'] as $dir) {
     if ($logoFile === '' || !is_dir($dir)) {
@@ -93,7 +85,7 @@ foreach ([IMG_PATH, DATA_PATH . '/media/images', DATA_PATH . '/images', BASE_PAT
         break;
     }
 }
-$logoOrient = 'landscape'; // default 2-col
+$logoOrient = 'landscape';  
 $logoW = 0;
 $logoH = 0;
 if ($logoLocal !== '' && function_exists('getimagesize')) {
@@ -110,7 +102,7 @@ if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
     $hex = '1e3a5f';
 }
 
-// Social links
+ 
 $_personSocial  = is_array($person['social'] ?? null) ? $person['social'] : [];
 $_companySocial = is_array($company['social'] ?? null) ? $company['social'] : [];
 $_validUrl = static function ($v): string {
@@ -124,11 +116,6 @@ $_validUrl = static function ($v): string {
     return preg_match('~^https?://~i', $v) ? $v : '';
 };
 
-/**
- * Social icons for email: iOS/Gmail reject data:image/svg+xml (become file attachments).
- * Use same-origin PNG via social_icon.php (GD) with absolute HTTPS URL.
- * Fallback: coloured HTML badge (no image) if icon URL empty.
- */
 $socialIconUrl = static function (string $network) use ($baseUrl): string {
     $network = strtolower(preg_replace('/[^a-z]/', '', $network) ?? '');
     if ($network === 'x') {
@@ -137,7 +124,7 @@ $socialIconUrl = static function (string $network) use ($baseUrl): string {
     if ($network === '') {
         return '';
     }
-    // Prefer static brand PNG (real logo artwork)
+     
     $staticRel = '/assets/icons/social/' . $network . '.png';
     $_bp = defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__);
     if (is_file($_bp . $staticRel)) {
@@ -145,7 +132,6 @@ $socialIconUrl = static function (string $network) use ($baseUrl): string {
     }
     return $baseUrl . '/social_icon.php?n=' . rawurlencode($network) . '&s=64&v=20261003.20';
 };
-
 
 $socialMeta = [
     'linkedin'  => ['LinkedIn', '0a66c2'],
@@ -183,7 +169,7 @@ foreach ($order as $_k) {
 
 $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-/** Social icon row — real brand PNG logos (hosted on same origin; iOS-safe when remote images load) */
+ 
 $socialRowHtml = static function (array $socials) use ($e): string {
     if ($socials === []) {
         return '';
@@ -219,21 +205,13 @@ $socialRowHtml = static function (array $socials) use ($e): string {
     return '<tr><td style="padding:8px 0 2px;text-align:left;">' . $inner . '</td></tr>';
 };
 
-
-
-
-/**
- * Full signature — new messages
- * landscape logo → 2 columns (person | company with logo on top)
- * portrait logo → 3 columns (person | divider | logo column)
- */
 $sigFull = static function (array $d) use ($e, $socialRowHtml): string {
     $photo  = (string)($d['photo'] ?? '');
     $logo   = (string)($d['logo'] ?? '');
     $orient = (string)($d['logo_orient'] ?? 'landscape');
     $hex    = (string)($d['hex'] ?? '1e3a5f');
 
-    // Left: person block (tight, ≤10–12px — Outlook-friendly)
+     
     $left = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">';
     if ($photo !== '') {
         $left .= '<tr><td style="padding:0 0 8px 0;">'
@@ -262,10 +240,10 @@ $sigFull = static function (array $d) use ($e, $socialRowHtml): string {
     }
     $left .= '</table>';
 
-    // Right: company block — landscape logo on top; portrait logo beside/above stack
+     
     $right = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">';
     if ($logo !== '' && $orient !== 'portrait') {
-        // Landscape / square: logo above company name (max ~140×48)
+         
         $right .= '<tr><td style="padding:0 0 6px 0;">'
             . '<img src="' . $e($logo) . '" alt="' . $e($d['org']) . '" width="140" '
             . 'style="display:block;max-width:140px;max-height:48px;width:auto;height:auto;border:0;" />'
@@ -298,7 +276,7 @@ $sigFull = static function (array $d) use ($e, $socialRowHtml): string {
         $right .= '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#334155;line-height:1.4;padding:4px 0 0 0;">'
             . implode('&nbsp;|&nbsp;', $tw) . '</td></tr>';
     }
-    // Social links — left-aligned under company details band
+     
     $soc = $socialRowHtml($d['socials'] ?? []);
     if ($soc !== '') {
         $right .= $soc;
@@ -307,7 +285,7 @@ $sigFull = static function (array $d) use ($e, $socialRowHtml): string {
         . '<a href="' . $e($d['cardUrl']) . '" style="color:#94a3b8;text-decoration:none;">View digital card →</a></td></tr>';
     $right .= '</table>';
 
-    // Exactly 3 cells: left | 1px rule | right — no trailing empty columns
+     
     return '<table cellpadding="0" cellspacing="0" border="0" '
         . 'style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#333333;border-collapse:collapse;mso-table-lspace:0;mso-table-rspace:0;">'
         . '<tr>'

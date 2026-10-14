@@ -1,16 +1,15 @@
 <?php
-// audit.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// controller/audit.php — writeAuditLog() helper (no engine dependency)
+ 
 
-
-// ── Audit Logger ─────────────────────────────────────────────────
+ 
 function writeAuditLog(string $event, array $ctx=[]): void {
     $dir = defined('DATA_PATH') ? DATA_PATH.'/logs' : sys_get_temp_dir();
     if (!is_dir($dir) && !@mkdir($dir,0755,true)) return;
-    // Use rightmost IP from X-Forwarded-For to resist spoofing; fallback to REMOTE_ADDR
+     
     $xFwd = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
     $ip   = !empty($xFwd)
         ? trim(end(array_map('trim', explode(',', $xFwd))))

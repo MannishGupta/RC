@@ -1,4 +1,4 @@
-<?php // tab_vastu.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
     <div x-show="activeTab==='vastu'" class="tab-section space-y-6 print-page-break">
         <div class="flex items-center gap-4 p-5 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg">

@@ -1,5 +1,5 @@
-<?php // profile_header.php — Version: 260921.03
-// Executive-level profile + Key Metrics grid. All core data preserved.
+<?php  
+ 
 if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
 
 $isHi = ($lang === 'hi');

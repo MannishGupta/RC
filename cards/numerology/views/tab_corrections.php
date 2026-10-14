@@ -1,4 +1,4 @@
-<?php // tab_corrections.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
 <?php if(($report['tier']??'')!=='free'): ?>
     <div x-show="activeTab==='corrections'" class="tab-section space-y-6 print-page-break">
@@ -79,7 +79,7 @@
                         <span class="text-[10px] text-slate-500 ml-2"><?= $lang==='hi'?'जोड़ें:':'Add:' ?> <strong class="text-emerald-600"><?= htmlspecialchars((string)$c['added_letters']) ?></strong></span>
                         <?php endif; ?>
                         <?php
-                        // ✅ V15: "Try It" — open report with prescribed spelling
+                         
                         $tryParams = $_GET;
                         $tryParams['name'] = $c['name'] ?? '';
                         unset($tryParams['compare_name'], $tryParams['compare_dob'], $tryParams['compare_gender']);

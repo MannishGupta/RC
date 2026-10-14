@@ -1,4 +1,4 @@
-<?php // tab_structural.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
     <div x-show="activeTab==='structural'" class="tab-section space-y-6 print-page-break">
         <h2 class="hidden print:block text-lg font-black text-slate-900 uppercase tracking-widest border-b pb-2"><?= $lang==='hi'?'संरचनात्मक मैट्रिक्स':'Structural Matrix' ?></h2>
@@ -56,7 +56,7 @@
                 <?php
                 $allArrows = AppNumeroEngine::getData()['arrows'] ?? [];
                 $gc = $report['grid']['counts'] ?? [];
-                // All 8 planes in correct sequence
+                 
                 $planeKeys   = ['4-9-2','3-5-7','8-1-6','4-3-8','9-5-1','2-7-6','4-5-6','2-5-8'];
                 $planeColors = ['blue','rose','amber','purple','emerald','pink','yellow','teal'];
                 $completedPlanes = []; $partialPlanes = []; $missingPlanes = [];

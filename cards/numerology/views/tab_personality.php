@@ -1,4 +1,4 @@
-<?php // tab_personality.php — Version: 260916.14
+<?php  
  if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
     <div x-show="activeTab==='personality'" class="tab-section space-y-6 print-page-break">
         <h2 class="hidden print:block text-lg font-black text-slate-900 uppercase tracking-widest border-b pb-2"><?= $lang==='hi'?'व्यक्तित्व और ब्लूप्रिंट':'Personality & Blueprint' ?></h2>
@@ -39,8 +39,8 @@
         <?php endif; ?>
 
         <?php
-        // ✅ V16.2: Render Hidden Passion, Balance Number, and Subconscious Self —
-        //           data calculated by engine since V13 but previously not displayed.
+         
+         
         $_hp  = $report['name_matrix']['hidden_passion']  ?? [];
         $_bal = $report['name_matrix']['balance']          ?? [];
         $_ss  = $report['name_matrix']['subconscious_self']?? 0;
@@ -166,13 +166,13 @@
 
             </div>
         </div>
-        <?php endif; // end $_hasSecondary ?>
+        <?php endif;  ?>
 
         <?php
-        // ✅ V16.2: Bridge Number display — Expression ↔ Life Path gap.
-        // Calculated since V14 in calcBridge() and stored in $report['bridge']
-        // (top-level key added V16.2) and $report['name_matrix']['bridge'],
-        // but never rendered until now.
+         
+         
+         
+         
         $_brg = (int)($report['bridge'] ?? $report['name_matrix']['bridge'] ?? 0);
         if ($_brg > 0):
         ?>

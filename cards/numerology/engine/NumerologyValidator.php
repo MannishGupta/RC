@@ -1,23 +1,5 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-
-/**
- * NumerologyValidator.php — Arthsathi Numerology Validation Engine V2.2
- *
- * Bug fixes vs V2.1:
- *  - FIX 1 (CRITICAL): checkCoreIntegrity now allows master-number conductors (11, 22).
- *                      Previously, any Life Path that reduced to 11 or 22 triggered a
- *                      false "violates strict 1–9 boundaries" error, causing
- *                      validation_failed for every master-number report.
- *  - FIX 2 (HIGH):     checkContradictions consolidated to a single harmony vocabulary
- *                      (Aligned / Supportive / Challenging) matching AppNumeroEngine::
- *                      evaluateHarmony(). The old dual-vocabulary system (one using
- *                      "Neutral" as a status that evaluateHarmony() never emits) caused
- *                      false-positive mismatch errors on valid reports.
- *  - FIX 3 (MINOR):    Soul Urge = 0 warning suppressed when the engine has already
- *                      applied its first-letter fallback — the warning only fires now
- *                      when the full compound itself is also 0 (genuinely empty name).
- */
 
 if (!defined('BASE_PATH')) {
     throw new RuntimeException("BASE_PATH not defined. Validator cannot execute safely.");
@@ -25,7 +7,7 @@ if (!defined('BASE_PATH')) {
 
 class NumerologyValidator {
 
-    /** Master numbers the engine preserves when keepMasters = true. */
+     
     private const MASTER_NUMBERS = [11, 22];
 
     public static function validate(array $report): array {
@@ -76,12 +58,12 @@ class NumerologyValidator {
         ];
     }
 
-    // -------------------------------------------------------------------------
-    // FIX 1: Accept 11 and 22 as valid conductor values.
-    // The engine calculates conductor with keepMasters = true, so report['core']
-    // ['conductor'] can legitimately be 11 or 22.
-    // Driver is always reduced to 1–9 (baseDriverDigit) so its check stays as-is.
-    // -------------------------------------------------------------------------
+     
+     
+     
+     
+     
+     
     private static function checkCoreIntegrity(array $report, array &$state): void {
         $driver    = $report['core']['driver']    ?? -1;
         $conductor = $report['core']['conductor'] ?? -1;
@@ -100,12 +82,12 @@ class NumerologyValidator {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // FIX 3: Only warn about soul_urge = 0 when the name itself produced no
-    // compound at all (fullC = 0), which signals a parsing/empty-name failure.
-    // The engine applies a first-letter fallback that prevents soul_urge from
-    // being 0 for any real name, so the warning was always noise.
-    // -------------------------------------------------------------------------
+     
+     
+     
+     
+     
+     
     private static function checkNameLogic(array $report, array &$state): void {
         $nm = $report['name_matrix'] ?? [];
         if (empty($nm)) {
@@ -119,7 +101,7 @@ class NumerologyValidator {
         $suC   = $nm['soul_urge']['compound']  ?? 0;
         $pC    = $nm['personality']['compound'] ?? 0;
 
-        // FIX 3: Only warn when fullC is also 0 (truly empty/unparseable name).
+         
         if ($suC === 0 && $fullC === 0) {
             $state['warnings'][] = "Soul Urge and Full compound are both zero — name appears empty or unparseable.";
             $state['conf']['name'] -= 10;
@@ -217,25 +199,25 @@ class NumerologyValidator {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // FIX 2: Single harmony vocabulary — Aligned / Supportive / Challenging.
-    //
-    // Old code had two parallel computations ($expectedHarmony and $engineExpected)
-    // using different status sets. $engineExpected emitted "Neutral" which
-    // AppNumeroEngine::evaluateHarmony() never emits — causing false mismatches
-    // whenever a name root was in the friends list but the compound verdict was
-    // not Fortunate/Excellent (a very common situation).
-    //
-    // New logic: mirror exactly what evaluateHarmony() produces, then do one
-    // clean comparison and one directional sanity check.
-    // -------------------------------------------------------------------------
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
     private static function checkContradictions(array $report, array &$state): void {
         $harmonyStatus = $report['name_matrix']['harmony']['status'] ?? '';
         $nameRoot      = $report['name_matrix']['full']['root']      ?? 0;
         $driver        = $report['core']['driver']                   ?? 0;
         $friends       = $report['lucky_driver']['friends']          ?? [];
 
-        // Mirror AppNumeroEngine::evaluateHarmony() exactly.
+         
         $expectedHarmony = ($nameRoot === $driver)
             ? 'Aligned'
             : (in_array($nameRoot, $friends, true) ? 'Supportive' : 'Challenging');
@@ -246,7 +228,7 @@ class NumerologyValidator {
             $state['conf']['name'] -= 30;
         }
 
-        // Directional sanity: if harmony is positive, root must actually be friendly.
+         
         if (in_array($harmonyStatus, ['Aligned', 'Supportive'], true)) {
             $isFriendlyOrDriver = ($nameRoot === $driver || in_array($nameRoot, $friends, true));
             if (!$isFriendlyOrDriver) {

@@ -1,27 +1,9 @@
 <?php 
-// cards/id.php — Version: 260916.14
+ 
 if (!defined('BASE_PATH')) exit;
 if (!class_exists('SeoShare') && is_file(BASE_PATH . '/app/SeoShare.php')) {
     require_once BASE_PATH . '/app/SeoShare.php';
 }
-/**
- * CHANGELOG v260907.17
- *  - Complete visual redesign: private-members-card aesthetic (obsidian +
- *    gold hairlines, refined serif name), matching cards/business.php's
- *    existing gold-accent language rather than the previous generic corporate
- *    HR-badge look. Requested explicitly: "ultra modern, ultra HNI, ultra
- *    elite".
- *  - QR moved from an EXTERNAL third-party call (api.qrserver.com — every ID
- *    card view sent this person's card URL to a server outside this app) to
- *    client-side EasyQRCodeJS, matching card_qr.php / card_visiting.php /
- *    the vehicle-tag stickers. No network call, no data leak, one fewer
- *    external dependency.
- *  - Personal + Company social links added, split per the same
- *    $personalSocials / $companySocials logic used in card_business.php
- *    since 260907.15 — a company Instagram no longer has anywhere to render
- *    as "personal", and vice versa. Kept deliberately small (icon-only, no
- *    label rows) — this is a compact badge format, not the full card.
- */
 
 $person = $person ?? [];
 $company = $company ?? [];
@@ -72,7 +54,7 @@ $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
 $baseUrl  = $scheme . '://' . $safeHost;
 $cardUrl  = $baseUrl . '/?card=business&slug=' . urlencode($slug);
 
-// ── Personal / Company social split (matches card_business.php) ──────────
+ 
 $_personSocial  = is_array($person['social']  ?? null) ? $person['social']  : [];
 $_companySocial = is_array($company['social'] ?? null) ? $company['social'] : [];
 $_validUrl = function ($v): string {

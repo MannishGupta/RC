@@ -1,11 +1,11 @@
 <?php
-// wacard.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH') || !class_exists('AppNumeroEngine')) exit;
 
-// controller/wacard.php — WhatsApp PNG image card generator (exits early)
+ 
 
-// ── WhatsApp PNG Image Card (exits early) ──────────────────────────
+ 
 if (!empty($_GET['wacard']) && !empty($_GET['slug'])) {
     $wcSlug = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$_GET['slug']);
     $wcData = null;
@@ -24,7 +24,7 @@ if (!empty($_GET['wacard']) && !empty($_GET['slug'])) {
     }
     
     if ($wcData && function_exists('imagecreatetruecolor')) {
-        // Map DB row to expected generateReport() keys — team row fields vary
+         
         $wcPData = [
             'name'   => trim((string)($wcData['name']   ?? ($wcData['full_name'] ?? ''))),
             'dob'    => trim((string)($wcData['dob']    ?? ($wcData['birth_date'] ?? ''))),
@@ -83,9 +83,9 @@ if (!empty($_GET['wacard']) && !empty($_GET['slug'])) {
         $footUrl = $proto . $safeH . strtok($_SERVER['REQUEST_URI'] ?? '/', '?') . '?card=numero&slug=' . urlencode($wcSlug);
         
         imagestring($im, 2, 40, 345, $footUrl, $muted);
-        // GD's built-in bitmap fonts cannot render Devanagari, so the Hindi variant
-        // was already drawing as garbage here. Use a single ASCII string plus the
-        // real build number instead of a hardcoded, wrong version.
+         
+         
+         
         imagestring($im, 2, 40, 370, 'Arthsathi Vedic Numero Engine ' . (defined('APP_VERSION') ? APP_VERSION : ''), $muted);
         
         header('Content-Type: image/png');

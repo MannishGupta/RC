@@ -1,30 +1,30 @@
-<?php // Version: 260916.14
-// cards/business.php — digital business card (host-agnostic).
-//
-// NON-OBVIOUS BEHAVIOUR — please read before editing:
-//
-//  * NO EMOJI in any WhatsApp-bound string. WhatsApp's own wa.me ->
-//    api.whatsapp.com redirect corrupts emoji server-side (they arrive as
-//    U+FFFD). Verified in production. Use plain text + rule dividers only.
-//
-//  * TWO DISTINCT WhatsApp paths, do not merge them:
-//      $waChatUrl -> footer button. Click-to-Chat WITH the owner.
-//                    wa.me needs DIGITS ONLY (no '+', spaces, dashes).
-//      $waText    -> Share button / navigator.share(). Full card payload,
-//                    for forwarding this person's card onward.
-//
-//  * MAPS: prefers the location record's stored map_url (precise pin) over
-//    an address text search. Stored values are gated to http(s) only so a
-//    "javascript:" value can never reach the href.
-//
-//  * LOGO uses a white pill background, NOT filter:brightness(0) invert(1) —
-//    that filter blanks out any logo lacking a transparent background.
-//
-//  * Font Awesome 7.x normalised icon scaling vs v6; icons here sit in
-//    fixed-size containers (38/52/36px) which absorb the difference.
-//
-//  * Viewport intentionally allows pinch-zoom (WCAG 1.4.4). Do not re-add
-//    user-scalable=no.
+<?php  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 if (!defined('BASE_PATH')) exit;
 if (!class_exists('SeoShare') && is_file(BASE_PATH . '/app/SeoShare.php')) {
@@ -43,105 +43,105 @@ $slug = $person['slug'] ?? $person['id'] ?? '';
 $website = $person['website'] ?? $company['website'] ?? '';
 $address = $person['address'] ?? '';
 
-// Stored Google Maps deep link. CardContext::get() in app/bootstrap.php already copies
-// the location record's `map_url` onto the person as `map_link`, so prefer
-// that; a person-level override is also honoured if one is ever added.
-// This is the SAME value the Locations tab's "Open Map" button uses.
+ 
+ 
+ 
+ 
 $mapUrlStored = trim((string)($person['map_url'] ?? $person['map_link'] ?? ''));
 
-// 🟢 DYNAMIC DOMAIN RESOLUTION (Host Anywhere!)
+ 
 $rawHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$safeHost = preg_replace('/[^a-zA-Z0-9.:-]/', '', $rawHost); // Prevents Host Header Injection
+$safeHost = preg_replace('/[^a-zA-Z0-9.:-]/', '', $rawHost);  
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $baseUrl = $scheme . '://' . $safeHost;
 
 $canonical = rtrim($baseUrl, '/') . "/?card=business&slug=" . urlencode($slug);
 $cardUrl = $canonical; 
 
-// Display/vCard-facing number: keeps the leading '+' for E.164 correctness.
+ 
 $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
 $waPhone = (strlen($cleanPhone) === 10) ? '+91' . $cleanPhone : $cleanPhone;
 
-// ── WhatsApp Click-to-Chat destination number ────────────────────────────
-// wa.me accepts DIGITS ONLY — no '+', spaces, dashes, dots or brackets.
-// Everything non-numeric is stripped, then the international calling code
-// is normalised/preserved. See the changelog block at the top of this file.
+ 
+ 
+ 
+ 
 $waDigits = preg_replace('/\D/', '', (string)$phone);
 
 if (strlen($waDigits) === 10) {
-    // Bare 10-digit subscriber number — assume India (+91), the platform default.
+     
     $waDigits = '91' . $waDigits;
 } elseif (strlen($waDigits) === 11 && strncmp($waDigits, '0', 1) === 0) {
-    // National format with trunk prefix, e.g. 09876543210 -> 919876543210
+     
     $waDigits = '91' . substr($waDigits, 1);
 } elseif (strncmp($waDigits, '00', 2) === 0) {
-    // International access prefix, e.g. 0091... / 0044... -> strip the 00
+     
     $waDigits = substr($waDigits, 2);
 }
-// Any other shape (e.g. already 12-digit 91XXXXXXXXXX, or a non-Indian
-// country code) is passed straight through — it already carries its own CC.
+ 
+ 
 
-// E.164 sanity gate: a real MSISDN is 8–15 digits. Anything outside that
-// range means the stored record is malformed, so we suppress the button
-// rather than emit a wa.me link that would dead-end for the visitor.
+ 
+ 
+ 
 $waChatValid = (strlen($waDigits) >= 8 && strlen($waDigits) <= 15);
 
-// ── WhatsApp username, if this person has set one ─────────────────────────
-// wa.me/<username> is shorter and more memorable than a phone-derived link,
-// and rolled out through 2026 — but there is no way to check server- or
-// client-side whether a given viewer's WhatsApp build/region resolves it, so
-// this is a preference, not a verified-working switch. Validated to
-// WhatsApp's actual username rules (5-40 chars) so a stray value someone
-// typed never produces a broken link; falls straight back to the
-// phone-derived link above when unset or invalid.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 $waUsername = trim((string)($person['whatsapp_username'] ?? ''));
 $waUsername = ltrim($waUsername, '@');
-// Accept a pasted full link/handle and extract just the username part.
+ 
 $waUsername = preg_replace('~^https?://(www\.)?wa\.me/~i', '', $waUsername);
-// WhatsApp's actual rule (verified, not assumed): 3-35 chars, lowercase
-// letters/digits/periods/underscores, at least one letter. Case is
-// normalised rather than rejected — a username typed as "31MG" should not
-// fail just because someone capitalised it.
+ 
+ 
+ 
+ 
 $waUsername = mb_strtolower($waUsername);
 $waUsernameValid = (bool)preg_match('/^(?=.*[a-z])[a-z0-9._]{3,35}$/', $waUsername);
 
 $waChatUrlPrimary = $waUsernameValid
     ? 'https://wa.me/' . $waUsername
-    : null;   // null means: use the phone-derived $waChatUrl built further below
+    : null;    
 
 $photo = !empty($person['photo']) ? '/images/' . basename($person['photo'] ?? '') : 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=f1f5f9&color=94a3b8&size=512';
 $absolutePhoto = (strpos($photo, 'http') === 0) ? $photo : rtrim($baseUrl, '/') . '/images/' . rawurlencode(basename($person['photo'] ?? ''));
 
 $logo = !empty($company['logo']) ? '/images/' . basename($company['logo'] ?? '') : '';
 $companyName = $company['name'] ?? 'Organization';
-// ── Social links: personal first, company as fallback, per platform ───────
-// Previously an all-or-nothing choice: if the person had ANY social link, the
-// company's were all dropped. So someone with only a LinkedIn lost the
-// company's Instagram and YouTube entirely.
-//
-// Now merged per platform — a personal link wins for that platform, the
-// company's fills the gap — and each value is validated, so a blank field or
-// a stray "n/a" never renders as a dead icon.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 $_personSocial  = is_array($person['social'] ?? null)  ? $person['social']  : [];
 $_companySocial = is_array($company['social'] ?? null) ? $company['social'] : [];
 
 $_validUrl = function ($v): string {
     $v = trim((string)$v);
     if ($v === '' || $v === '-') return '';
-    // Accept values saved without a scheme ("linkedin.com/in/x").
+     
     if (!preg_match('~^[a-z][a-z0-9+.\-]*:~i', $v)) $v = 'https://' . ltrim($v, '/');
-    // Only http(s) may reach an href.
+     
     if (!preg_match('~^https?://~i', $v)) return '';
-    // A bare domain with no path is the company site, not a profile.
+     
     return $v;
 };
 
-// v2 (260907.15): the card now visually separates Personal and Company
-// zones (photo/mobile/email/personal-social vs. logo/address/company-social),
-// so the socials themselves are kept in two SEPARATE validated arrays rather
-// than merged into one. A merged single rail was right when the card had no
-// zones to put things in; now that it does, showing a company Instagram
-// under "Personal" (or vice versa) would contradict the section it sits in.
+ 
+ 
+ 
+ 
+ 
+ 
 $personalSocials = [];
 $companySocials  = [];
 foreach (['linkedin','twitter','x','instagram','facebook','youtube','telegram','whatsapp'] as $_k) {
@@ -150,18 +150,18 @@ foreach (['linkedin','twitter','x','instagram','facebook','youtube','telegram','
     $_cv = $_validUrl($_companySocial[$_k] ?? '');
     if ($_cv !== '') $companySocials[$_k] = $_cv;
 }
-// 'x' and 'twitter' are the same platform; keep whichever is set, not both —
-// applied independently within each zone.
+ 
+ 
 if (isset($personalSocials['x']) && isset($personalSocials['twitter'])) unset($personalSocials['x']);
 if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($companySocials['x']);
 
-// $socials kept as the union, for code that still wants "does this person
-// have a LinkedIn at all" without caring which zone it came from (the
-// WhatsApp/vCard export paths do this) — nothing downstream of here breaks.
+ 
+ 
+ 
 $socials = $personalSocials + $companySocials;
 
-// Shared icon/label lookup for BOTH zones — one definition, not duplicated
-// per section, so adding a platform means editing one array, not two.
+ 
+ 
 $socialMeta = [
     'linkedin'  => ['s-li', 'fa-brands fa-linkedin-in', 'LinkedIn'],
     'twitter'   => ['s-tw', 'fa-brands fa-x-twitter',   'X'],
@@ -196,17 +196,17 @@ if (class_exists('AppDB')) {
         }
     }
 
-    // NOTE: this lookup previously ran only when $address was empty, which
-    // meant any person carrying their own address string never inherited
-    // their location's stored map_url. It now runs whenever EITHER piece of
-    // data is still missing, and fills in only what's actually absent.
+     
+     
+     
+     
     if ((empty($address) || $mapUrlStored === '') && !empty($person['location_id'])) {
         $locs = AppDB::read('locations') ?: [];
         foreach ($locs as $l) {
             if (($l['id'] ?? null) == $person['location_id'] || ($l['slug'] ?? null) == $person['location_id']) {
                 if (empty($address)) {
-                    // Same composition as CardContext: full postal address, no
-                // site-name prefix, no dangling separators when a field is blank.
+                     
+                 
                 $address = implode(', ', array_filter([
                     trim((string)($l['address'] ?? '')),
                     trim((string)($l['city']    ?? '')),
@@ -230,7 +230,7 @@ if (isset($_GET['download']) && $_GET['download'] === 'vcf') {
         http_response_code(500);
         exit('vCard builder unavailable');
     }
-    // Map public card context → generic contact fields (order handled by builder)
+     
     $vcfPerson = is_array($person ?? null) ? $person : [];
     $vcfPerson['name'] = $vcfPerson['name'] ?? ($name ?? '');
     if (!empty($waPhone)) {
@@ -254,7 +254,7 @@ if (isset($_GET['download']) && $_GET['download'] === 'vcf') {
     }
     $vcf = VcardBuilder::build($vcfPerson, $vcfCompany, [
         'include_photo' => true,
-        'include_bday' => false, // public card — do not expose DOB
+        'include_bday' => false,  
     ]);
     $filename = preg_replace('/[^a-zA-Z0-9]+/', '_', strtolower((string)($name ?? 'contact'))) . '.vcf';
     header('Content-Type: text/vcard; charset=utf-8');
@@ -264,13 +264,12 @@ if (isset($_GET['download']) && $_GET['download'] === 'vcf') {
     exit;
 }
 
-
 $ogTitle = trim($name . ' | ' . $companyName);
 
-// ── SHARE payload (used by the Share button / navigator.share only) ──────
-// This intentionally still carries the FULL card details — that is the
-// correct behaviour when a visitor forwards this person's card onward.
-// Emoji deliberately excluded: WhatsApp's own redirect corrupts them.
+ 
+ 
+ 
+ 
 $vcfShareUrl = trim((string)($cardUrl ?? $meta['url'] ?? ''));
 if ($vcfShareUrl !== '' && !str_contains($vcfShareUrl, 'download=vcf')) {
     $vcfShareUrl .= (str_contains($vcfShareUrl, '?') ? '&' : '?') . 'download=vcf';
@@ -294,37 +293,37 @@ $waTextLines = array_filter([
 $waText = implode("\n", $waTextLines);
 if (mb_strlen($waText) > 3800) { $waText = mb_substr($waText, 0, 3800) . "...\n\n" . $cardUrl; }
 
-// ── CHAT opener (used by the footer WhatsApp button only) ────────────────
-// Addressed TO the profile owner, so the conversation reads naturally from
-// the visitor's side. Deliberately short — a long prefilled block
-// discourages people from actually sending the message.
+ 
+ 
+ 
+ 
 $waChatText    = 'Hi ' . $name . ', I came across your digital business card'
                . ($companyName && $companyName !== 'Organization' ? ' from ' . $companyName : '')
                . ' and would like to connect with you.';
 $waChatEncoded = rawurlencode($waChatText);
 $waChatUrl     = 'https://wa.me/' . $waDigits . '?text=' . $waChatEncoded;
 
-// The username link, same pre-filled text, same rules as the phone-derived
-// one above — takes over as the actual button target when a valid username
-// was set (see $waChatUrlPrimary earlier).
+ 
+ 
+ 
 if ($waChatUrlPrimary) {
     $waChatUrl = $waChatUrlPrimary . '?text=' . $waChatEncoded;
 }
 
-// ── Maps deep link ───────────────────────────────────────────────────────
-// PREFERRED: the exact URL stored on the location record (`map_url`) — the
-// same link the Locations tab's "Open Map" button opens. That is a precise
-// pin/place link (e.g. a maps.app.goo.gl short link or a /maps/place/ URL),
-// so it lands on the actual premises rather than wherever Google's geocoder
-// guesses the address string points to.
-// FALLBACK: only when no URL is stored do we build an address text search.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if ($mapUrlStored !== '') {
-    // Accept values saved without a scheme (e.g. "maps.app.goo.gl/abc123").
+     
     if (!preg_match('~^[a-z][a-z0-9+.\-]*:~i', $mapUrlStored)) {
         $mapUrlStored = 'https://' . ltrim($mapUrlStored, '/');
     }
-    // Hard guard: only http/https may ever reach an href. This rejects a
-    // stored "javascript:" / "data:" value outright rather than rendering it.
+     
+     
     if (!preg_match('~^https?://~i', $mapUrlStored)) {
         $mapUrlStored = '';
     }
@@ -334,8 +333,8 @@ $mapsUrl = $mapUrlStored !== ''
     ? $mapUrlStored
     : ($address ? 'https://www.google.com/maps/search/?api=1&query=' . urlencode($address) : '');
 
-// Lightweight structured data — helps link-preview tools, search engines,
-// and any future "add to contacts" integrations understand this page.
+ 
+ 
 $personJsonLd = [
     '@context' => 'https://schema.org',
     '@type'    => 'Person',
@@ -650,7 +649,6 @@ if ($sameAs) $personJsonLd['sameAs'] = $sameAs;
         .s-web { background:#f1f5f9; color:#475569; }
         .s-tg { background:#eff6ff; color:#229ED9; } .s-wa2 { background:#f0fdf4; color:#16a34a; }
 
-
         /* ── Lead capture ──────────────────────────────────────────────── */
         .lead-wrap { padding: 14px 20px 6px; }   /* safe-area now handled once, by .card */
         .lead-toggle { width: 100%; padding: 11px; border-radius: 12px;
@@ -720,11 +718,11 @@ if ($sameAs) $personJsonLd['sameAs'] = $sameAs;
             </a>
 
             <?php
-            // Google Wallet: buildable without a special account — unlike
-            // Apple Wallet, whose .pkpass format cannot be produced without a
-            // $99/yr Apple Developer certificate with no workaround. See
-            // app/GoogleWallet.php for why the two are not the same problem.
-            // Renders nothing at all when unconfigured.
+             
+             
+             
+             
+             
             require_once BASE_PATH . '/app/GoogleWallet.php';
             $gwUrl = GoogleWallet::isConfigured() ? GoogleWallet::passUrl($person, $company, $slug, $baseUrl) : '';
             ?>

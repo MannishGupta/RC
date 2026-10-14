@@ -1,18 +1,9 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-/**
- * numero_helpers.php — Arthsathi Vedic Numero Helpers V16.2
- *
- * Pure PHP helper functions for template rendering.
- * No HTML output, no side effects.
- *
- * V16.2: Renamed from num_helpers.php — previous name matched Windows Defender
- *        PHP webshell heuristic pattern (num_*.php) causing auto-quarantine.
- *        All callers updated: card_numero.php and num_controller.php.
- */
+
 if (!defined('BASE_PATH')) exit;
 
-/** Active report language (hi default). */
+ 
 function nr_lang(): string {
     if (isset($GLOBALS['lang']) && is_string($GLOBALS['lang']) && $GLOBALS['lang'] !== '') {
         return $GLOBALS['lang'] === 'en' ? 'en' : 'hi';
@@ -30,14 +21,13 @@ function nr_lang(): string {
 
 function nr_is_hi(): bool { return nr_lang() === 'hi'; }
 
-/** @param array{0:string,1:string}|string $pair */
+ 
 function nr_t($pair): string {
     if (is_array($pair)) {
         return nr_is_hi() ? (string)($pair[1] ?? $pair[0] ?? '') : (string)($pair[0] ?? '');
     }
     return (string)$pair;
 }
-
 
 function nr_planet_label(string $name): string {
     $name = trim($name);
@@ -77,7 +67,7 @@ function nr_element_label(string $el): string {
     return $map[$el] ?? $el;
 }
 
-/** UTF-8 safe clip without requiring mbstring. */
+ 
 function nr_clip(string $s, int $max): string {
     if ($max < 1) {
         return '';
@@ -94,7 +84,7 @@ function nr_clip(string $s, int $max): string {
 }
 
 function getSeverityColor(string $sev): string {
-    // Dual-coded: hue + border pattern + weight (WCAG 1.4.1)
+     
     return match($sev) {
         'Critical' => 'bg-amber-600 text-white border-2 border-dashed border-amber-200 font-bold',
         'High'     => 'bg-orange-500 text-white border-2 border-solid border-orange-200 font-bold',
@@ -122,7 +112,7 @@ function getGrowthLabel(string $sev): string {
 }
 
 function getStatusColor(string $status): string {
-    // Avoid green/red-only: use teal / amber / violet + border pattern
+     
     if (strpos($status, 'Supportive') !== false || strpos($status, 'Aligned') !== false || strpos($status, 'Friendly') !== false) {
         return 'bg-teal-100 text-teal-900 border border-teal-600 font-semibold';
     }
@@ -144,7 +134,7 @@ function getVerdictColor(string $verdict): string {
 }
 
 function getHeatmapClass(int $count): string {
-    // Intensity via blue scale (safe for red-green CVD); voids use dashed + label weight
+     
     return match(true) {
         $count >= 4  => 'bg-blue-800 text-white border-2 border-blue-950 font-bold',
         $count === 3 => 'bg-blue-600 text-white border-2 border-blue-800 font-semibold',
@@ -155,17 +145,17 @@ function getHeatmapClass(int $count): string {
 }
 
 function getPYColor(int $n): string {
-    // Wong / IBM color-blind safe set (avoid pure red+green pairs)
+     
     $colors = [
-        1 => '#E69F00', // orange
-        2 => '#56B4E9', // sky
-        3 => '#F0E442', // yellow
-        4 => '#0072B2', // blue
-        5 => '#009E73', // bluish green
-        6 => '#CC79A7', // reddish purple
-        7 => '#999999', // gray
-        8 => '#D55E00', // vermillion
-        9 => '#000000', // black
+        1 => '#E69F00',  
+        2 => '#56B4E9',  
+        3 => '#F0E442',  
+        4 => '#0072B2',  
+        5 => '#009E73',  
+        6 => '#CC79A7',  
+        7 => '#999999',  
+        8 => '#D55E00',  
+        9 => '#000000',  
     ];
     return $colors[$n] ?? '#0072B2';
 }

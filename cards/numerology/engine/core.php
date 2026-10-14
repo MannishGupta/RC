@@ -1,31 +1,23 @@
 <?php
-// core.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// engine/core.php — AppNumeroEngine (core: reduce, analyze, generateReport, etc.)
+ 
 
 date_default_timezone_set('Asia/Kolkata');
 class AppNumeroEngine {
-    /**
-     * Cache-busting token for the APCu copy of meanings.json.
-     *
-     * BUG THIS FIXES: this was a hardcoded '2027.400' that nobody remembered
-     * to bump. The APCu key is derived from it, so after editing
-     * meanings.json the key stayed identical and APCu kept serving the OLD
-     * data for up to 24h (the store TTL). Deriving it from APP_VERSION means
-     * every deploy gets a fresh key automatically, matching the OPcache
-     * auto-flush in app/bootstrap.php.
-     */
+    
+
     private static function engineVersion(): string {
         return defined('APP_VERSION') ? (string)APP_VERSION : 'dev';
     }
     private const MASTER_NUMBERS = [11, 22];
     public const CHALDEAN_MAP = ['A'=>1, 'I'=>1, 'J'=>1, 'Q'=>1, 'Y'=>1, 'B'=>2, 'K'=>2, 'R'=>2, 'C'=>3, 'G'=>3, 'L'=>3, 'S'=>3, 'D'=>4, 'M'=>4, 'T'=>4, 'E'=>5, 'H'=>5, 'N'=>5, 'X'=>5, 'U'=>6, 'V'=>6, 'W'=>6, 'O'=>7, 'Z'=>7, 'F'=>8, 'P'=>8];
-    // Y is treated as a consonant when it is the FIRST letter of a name/word (e.g. 'Yash', 'Yogesh')
-    // and as a vowel when it appears mid-word with no adjacent vowel (e.g. 'Lynn', 'Gypsy').
-    // For simplicity and broad correctness, Y is excluded from VOWELS (consonant by default);
-    // this matches the most common Chaldean practice for Indian names.
+     
+     
+     
+     
     private const VOWELS = ['A', 'E', 'I', 'O', 'U'];
     private static array $data = [];
     private static bool $initialized = false;
@@ -38,23 +30,23 @@ class AppNumeroEngine {
         if (self::$initialized) return;
         $ck = 'numero_data_v' . str_replace('.', '_', self::engineVersion());
         if (function_exists('apcu_fetch') && ($c = apcu_fetch($ck, $ok)) && $ok && is_array($c)) { self::$data = $c; self::$initialized = true; return; }
-        // numero_meanings.json is always in cards/ (one level above engine/).
-        // dirname(__DIR__) = cards/. Do NOT use BASE_PATH — it is the site root, not cards/.
+         
+         
         $jf = str_replace('\\', '/', dirname(__DIR__)) . '/data/meanings.json';
 
-        // PERFORMANCE FIX: on hosts without APCu (common on shared Windows/
-        // Plesk plans), the block above never hits, and this 3,000+ line
-        // JSON file would otherwise be re-parsed with json_decode() on
-        // EVERY single numero page view. As a fallback, cache the decoded
-        // array as a plain PHP file (var_export'd) next to the JSON source.
-        // Requiring a PHP array literal is far cheaper than json_decode()
-        // on repeat requests, and it benefits from PHP's own OPcache
-        // bytecode caching the same way any other .php file does. The
-        // cache is invalidated automatically whenever numero_meanings.json
-        // is modified (mtime comparison), so editing the JSON always wins.
-        // Cache lives in the site-wide DATA_PATH (already created and
-        // writable by index.php's bootstrap) rather than assuming a
-        // cards/data subfolder exists.
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
         $cacheDir  = defined('DATA_PATH') ? DATA_PATH : (str_replace('\\', '/', dirname(__DIR__)) . '/data');
         $cacheFile = rtrim($cacheDir, '/\\') . '/.numero_meanings_cache.php';
         if (is_readable($jf)) {
@@ -73,10 +65,10 @@ class AppNumeroEngine {
                 self::$data = json_decode(file_get_contents($jf), true, 512, JSON_THROW_ON_ERROR);
                 if (function_exists('apcu_store')) apcu_store($ck, self::$data, 86400);
 
-                // Write the PHP-array cache for next time. Best-effort: if the
-                // data/ directory isn't writable, this silently falls back to
-                // re-parsing JSON every request (same as before this fix) —
-                // never a hard failure.
+                 
+                 
+                 
+                 
                 if (!is_dir($cacheDir)) @mkdir($cacheDir, 0755, true);
                 $php = "<?php\n// Auto-generated cache of numero_meanings.json — do not edit by hand.\n// Regenerated automatically whenever the source JSON file changes.\nreturn " . var_export(self::$data, true) . ";\n";
                 @file_put_contents($cacheFile, $php, LOCK_EX);
@@ -92,7 +84,7 @@ class AppNumeroEngine {
 
     public static function reduceChaldean(int $num, bool $keepMasters = false): int {
         if ($num === 0) return 0;
-        if ($num < 0) $num = abs($num); // guard: negative input normalised to positive
+        if ($num < 0) $num = abs($num);  
         while ($num > 9) {
             if ($keepMasters && in_array($num, self::MASTER_NUMBERS, true)) break;
             $num = array_sum(str_split((string)$num));
@@ -101,17 +93,14 @@ class AppNumeroEngine {
         return $num;
     }
 
-    /**
-     * Returns true when arr forms a 3-number consecutive run, linear or circular.
-     * Mirrors ChaldeaMobileEngine::checkSequence() majority-drops logic for name-root triples.
-     * Linear: [3,4,5]. Circular wrap: [8,9,1] or [9,1,2].
-     */
+    
+
     public static function isSequential(array $arr): bool {
         if (count($arr) < 3) return false;
         $chk = $arr; sort($chk);
-        // Linear
+         
         if ($chk[1] === $chk[0] + 1 && $chk[2] === $chk[1] + 1) return true;
-        // Circular wrap-around at 9→1
+         
         if ($chk === [1, 2, 9]) return true;
         if ($chk === [1, 8, 9]) return true;
         return false;
@@ -332,8 +321,8 @@ class AppNumeroEngine {
         $baseDriver = (int)(in_array($driver, self::MASTER_NUMBERS, true) ? $driver : $baseDriverDigit);
         
         $cleanName = trim((string)($p['name'] ?? 'Unknown'));
-        if (mb_strlen($cleanName) < 2) $cleanName = 'Unknown'; // guard: 1-char names give nonsensical analysis
-        $deterministicSeed = (int)(hexdec(substr(hash('sha256', $cleanName . $dobDigits), 0, 7)) & 0x7FFFFFFF); // safe on 32-bit
+        if (mb_strlen($cleanName) < 2) $cleanName = 'Unknown';  
+        $deterministicSeed = (int)(hexdec(substr(hash('sha256', $cleanName . $dobDigits), 0, 7)) & 0x7FFFFFFF);  
 
         $grid = GridEngine::build($dobDigits);
         $yogas = [];
@@ -349,7 +338,7 @@ class AppNumeroEngine {
         $py = class_exists('PersonalYearEngine') ? PersonalYearEngine::calculate($rawDay, $rawMonth) : ['year' => (int)date('Y'), 'number' => 1];
         $diagnostics = DiagnosticsEngine::analyzeMissing($grid['missing'], self::$data['missing'] ?? []);
 
-        $firstNameStr = (explode(' ', trim($cleanName))[0]) ?: $cleanName; // explode() is stateless; strtok() has shared global state
+        $firstNameStr = (explode(' ', trim($cleanName))[0]) ?: $cleanName;  
         $nameMatrixCore = self::analyzeName($cleanName);
         $firstNameCore = self::analyzeName($firstNameStr);
 
@@ -403,7 +392,7 @@ class AppNumeroEngine {
 
         $pinnacleData = class_exists('PinnacleEngine') ? PinnacleEngine::calculate($rawDay, $rawMonth, $rawYear, $conductorSum) : ['pinnacles' => [['number'=>1, 'phase'=>1, 'age_range'=>"0 – 36"],['number'=>1, 'phase'=>2, 'age_range'=>"37 – 45"],['number'=>1, 'phase'=>3, 'age_range'=>"46 – 54"],['number'=>1, 'phase'=>4, 'age_range'=>"55 – Life"]], 'challenges' => [['number'=>0, 'phase'=>1, 'age_range'=>"0 – 36"],['number'=>0, 'phase'=>2, 'age_range'=>"37 – 45"],['number'=>0, 'phase'=>3, 'age_range'=>"46 – 54"],['number'=>0, 'phase'=>4, 'age_range'=>"55 – Life"]]];
         $pCycle = class_exists('PersonalCycleEngine') ? PersonalCycleEngine::calculate((string)date('Y-m-d', $ts)) : ['personal_year' => 1, 'personal_month' => 1, 'personal_day' => 1, 'today' => date('d M Y'), 'month_name' => date('F')];
-        // Maturity = Expression (fullName root) + LifePath — NOT driver + conductor
+         
         $maturity = class_exists('MaturityEngine') ? MaturityEngine::calculate($fullNameData['root'], $conductor) : ['number' => 1, 'activates_at' => 35, 'note' => ''];
         $timeline = class_exists('TimelineEngine') ? TimelineEngine::build((string)date('Y-m-d', $ts)) : [];
 
@@ -454,7 +443,7 @@ class AppNumeroEngine {
         
         $harmonized = FinalDecisionEngine::harmonize($report);
 
-        // NumerologyValidator.php is in cards/ root, one level above engine/.
+         
         $validatorPath = str_replace('\\', '/', dirname(__DIR__)) . '/NumerologyValidator.php';
         if (file_exists($validatorPath)) {
             require_once $validatorPath;

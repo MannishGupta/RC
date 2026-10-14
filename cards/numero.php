@@ -1,30 +1,13 @@
-<?php // Version: 260916.14
+<?php  
 declare(strict_types=1);
-/**
- * numero.php — Arthsathi Vedic Numero Card V2027.400
- *
- * Thin bootstrap. Dependency order:
- *
- *   MobileRecommendationEngine.php  — Root suggestion logic
- *   MobileEvaluationEngine.php      — PHP-side mobile scoring (mirrors JS engine)
- *   NumerologyValidator.php         — Report integrity validator
- *   num_engine.php                  — Engine loader  → engine/*.php classes
- *   numero_helpers.php              — Template helper functions
- *   num_controller.php              — Controller loader → controller/*.php vars
- *   num_template.php                — Template orchestrator → tmpl/*.php partials
- *
- * V2027.400:
- *   - Added MobileEvaluationEngine to the dependency map (was missing, causing
- *     ChaldeaMobileEngine->validate() score parity issues in some edge calls).
- *   - Windows-safe paths via str_replace('\\', '/') instead of DIRECTORY_SEPARATOR.
- */
+
 if (!defined('BASE_PATH')) exit;
 
-// Diagnostic capture that briefly lived here (260916.01/02) is superseded
-// by a proper, permanent, app-wide fatal-error handler in index.php
-// (260916.10) — every page gets this coverage now, not just this one, and
-// it correctly logs full detail server-side without ever printing it to a
-// visitor. See index.php's register_shutdown_function() for the real fix.
+ 
+ 
+ 
+ 
+ 
 
 $_d = str_replace('\\', '/', rtrim(__DIR__, '/\\'));
 

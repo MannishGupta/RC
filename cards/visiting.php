@@ -1,24 +1,9 @@
 <?php
-// cards/visiting.php — Version: 260916.14
+ 
 if (!defined('BASE_PATH')) exit;
 if (!class_exists('SeoShare') && is_file(BASE_PATH . '/app/SeoShare.php')) {
     require_once BASE_PATH . '/app/SeoShare.php';
 }
-/**
- * CHANGELOG v260907.17
- *  - Complete visual redesign, same private-members-card aesthetic as
- *    cards/id.php (obsidian + gold hairlines, refined serif name) — matches
- *    cards/business.php's gold-accent language so all three cards read as
- *    one family. Previous design used a generic diagonal blue gradient
- *    shape unrelated to the rest of the app's visual identity.
- *  - Personal + Company social links added, split per the same
- *    $personalSocials / $companySocials logic used in card_business.php and
- *    card_id.php — kept small (icon-only), matching a real print business
- *    card's information density.
- *  - QR generation and the print/"View Digital Profile" toolbar are
- *    unchanged in mechanism (already client-side EasyQRCodeJS) — only the
- *    visual design changed underneath them.
- */
 
 $ctx = CardContext::get($_GET['slug'] ?? '');
 if (!$ctx) { http_response_code(404); exit('<p style="font-family:sans-serif;padding:2rem;text-align:center">Profile not found.</p>'); }
@@ -66,12 +51,12 @@ if (class_exists('VcardBuilder')) {
 }
 $cardUrl = (string)($meta['url'] ?? '');
 $vcfUrl = $cardUrl . (str_contains($cardUrl, '?') ? '&' : '?') . 'download=vcf';
-// Prefer profile URL on tiny print QR if vCard is very long (scan reliability)
+ 
 $qrPayload = ($vcardText !== '' && strlen($vcardText) < 1200) ? $vcardText : $cardUrl;
 
 $logo  = !empty($c['logo'])  ? '/images/' . basename($c['logo'])  : '';
 
-// ── Personal / Company social split (matches card_business.php / id.php) ──
+ 
 $_personSocial  = is_array($p['social'] ?? null) ? $p['social'] : [];
 $_companySocial = is_array($c['social'] ?? null) ? $c['social'] : [];
 $_validUrl = function ($v): string {
@@ -95,189 +80,333 @@ foreach (array_keys($_meta) as $_k) {
 }
 if (isset($personalSocials['x']) && isset($personalSocials['twitter'])) unset($personalSocials['x']);
 if (isset($companySocials['x'])  && isset($companySocials['twitter']))  unset($companySocials['x']);
+
+$h = static function ($s): string { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); };
+$phone = trim((string)($p['phone'] ?? $p['mobile'] ?? ''));
+$email = trim((string)($p['email'] ?? ''));
+$website = trim((string)($c['website'] ?? $p['website'] ?? ''));
+if ($website !== '' && !preg_match('~^https?://~i', $website)) $website = 'https://' . $website;
+$address = trim((string)($p['address'] ?? $c['address'] ?? ''));
+$city = trim((string)($p['city'] ?? $c['city'] ?? ''));
+$addrLine = trim(implode(', ', array_filter([$address, $city])));
+$accent = trim((string)($c['brand_color'] ?? $c['accent'] ?? '#E11D2E'));
+if ($accent === '' || $accent[0] !== '#') $accent = '#E11D2E';
+$logoBg = (string)($c['logo_bg'] ?? 'light');
+$photoUrl = $photo;
+if ($photoUrl === '' && !empty($p['photo_url'])) $photoUrl = (string)$p['photo_url'];
 ?>
+
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#0a0a0a">
-    <?php
-    if (class_exists('SeoShare')) {
-        echo SeoShare::personCard('visiting', is_array($person ?? null) ? $person : [], is_array($company ?? null) ? $company : []);
-    } else {
-        echo '<title>Visiting Card — ' . htmlspecialchars((string)($name ?? ''), ENT_QUOTES, 'UTF-8') . '</title>';
-        echo '<meta name="description" content="' . htmlspecialchars('Visiting card for ' . (string)($name ?? 'team member') . ' — official contact details.', ENT_QUOTES, 'UTF-8') . '">';
-    }
-    ?>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link href="/assets/vendor/fontawesome.min.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer" media="print" onload="this.media='all'">
-    <noscript><link href="/assets/vendor/fontawesome.min.css?v=<?= rawurlencode(defined('APP_VERSION') ? APP_VERSION : '1') ?>" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer"></noscript>
-    <style>
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        :root{
-            --obsidian:#0a0a0a; --charcoal:#141210; --gold:#c9a84c; --gold-light:#e8d5a3;
-            --gold-dim:rgba(201,168,76,.32); --ivory:#f5f2ea; --ivory-dim:#a39c8e; --hairline:rgba(201,168,76,.2);
-        }
-        body{
-            /* TYPOGRAPHY FIX: was missing 'Aptos' (this project's established primary corporate typeface, used everywhere else -- dashboard.php, business.php, the numerology report) and had NO Devanagari fallback at all. Any Hindi text in a name, department, or company field -- a genuine, reachable case in an Indian company directory, with no language-toggle logic needed to trigger it -- would have rendered in the browser's uncontrolled default Devanagari font, visually mismatched against the rest of the card. Aligned to the same stack used consistently across the rest of the app. */
-            font-family:'Inter','Aptos','Noto Sans Devanagari',system-ui,-apple-system,'Segoe UI',sans-serif;
-            background: radial-gradient(circle at 50% 20%, #1c1a17 0%, #050505 70%);
-            display:flex;flex-direction:column;align-items:center;justify-content:center;
-            min-height:100vh;padding:28px 16px;-webkit-font-smoothing:antialiased;
-        }
-
-        .vcard{
-            width:100%;max-width:500px;aspect-ratio:500/290;position:relative;
-            background:var(--charcoal);border-radius:16px;overflow:hidden;
-            display:flex;flex-direction:column;justify-content:space-between;
-            box-shadow:0 35px 80px -20px rgba(0,0,0,.75),0 0 0 1px var(--hairline);
-        }
-        .vcard::before{
-            content:'';position:absolute;inset:9px;border:1px solid var(--hairline);
-            border-radius:11px;pointer-events:none;z-index:5;
-        }
-        /* A faint engraved monogram, low-opacity, purely textural — the
-           kind of quiet detail that reads as "considered" rather than
-           "decorated". Never competes with the actual content on top. */
-        .vcard::after{
-            content: attr(data-mono);
-            position:absolute; right:-6px; bottom:-40px; font-family:'Instrument Serif',serif;
-            font-size:180px; font-style:italic; color:rgba(201,168,76,.045); line-height:1; z-index:0;
-            pointer-events:none; user-select:none;
-        }
-
-        .vc-top{position:relative;z-index:2;padding:20px 26px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
-        .logo-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.94);padding:6px 12px;border-radius:7px}
-        .logo-pill img{max-height:22px;max-width:130px;object-fit:contain;display:block}
-        .co-text{font-size:14px;font-weight:800;letter-spacing:.04em;color:var(--ivory)}
-        .vc-org{text-align:right}
-        .vc-org-name{font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
-        .vc-addr{font-size:9px;color:var(--ivory-dim);margin-top:3px;max-width:170px;line-height:1.45}
-
-        .vc-mid{position:relative;z-index:2;padding:14px 26px;display:flex;align-items:center;gap:16px}
-        .vc-avatar{width:66px;height:66px;border-radius:50%;padding:2.5px;flex-shrink:0;
-            background:conic-gradient(from 180deg,var(--gold),var(--gold-light),var(--gold))}
-        /* Upward-biased crop — see cards/id.php for the reasoning. */
-        .vc-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 25%;border:2.5px solid var(--charcoal);display:block;cursor:zoom-in}
-        .vc-name{font-family:'Instrument Serif','Noto Sans Devanagari',serif;font-size:25px;font-weight:400;color:var(--ivory);line-height:1.1}
-        .vc-role{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-top:4px}
-        .vc-dept{display:inline-block;margin-top:5px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-            color:var(--ivory-dim);border:1px solid var(--hairline);padding:2px 8px;border-radius:20px}
-
-        .vc-bottom{position:relative;z-index:2;background:rgba(0,0,0,.28);border-top:1px solid var(--hairline);
-            padding:12px 26px;display:flex;justify-content:space-between;align-items:center;gap:12px}
-        .vc-contact{display:flex;flex-direction:column;gap:4px}
-        .vc-contact div{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:500;color:var(--ivory)}
-        .vc-contact i{color:var(--gold);width:12px;font-size:10px}
-        .vc-soc{display:flex;gap:6px}
-        .vc-soc a{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;
-            background:rgba(255,255,255,.06);border:1px solid var(--hairline);color:var(--gold-light);font-size:9.5px;text-decoration:none}
-        .vc-qr{background:#fff;padding:5px;border-radius:8px;line-height:0;flex-shrink:0}
-        .vc-qr canvas,.vc-qr img{display:block;width:88px;height:88px}
-
-        .toolbar{margin-top:26px;display:flex;gap:10px}
-        .tbtn{font:700 12.5px 'Inter',sans-serif;padding:10px 20px;border-radius:999px;cursor:pointer;text-decoration:none;
-            display:inline-flex;align-items:center;gap:8px;border:1px solid transparent}
-        .tbtn.primary{background:var(--gold);color:#181510}
-        .tbtn.ghost{background:rgba(255,255,255,.06);color:var(--ivory);border-color:var(--hairline)}
-
-        @media print{
-            body{background:#fff;display:block;margin:0;padding:0}
-            .vcard{box-shadow:none;border-radius:0;margin:0 auto;max-width:500px}
-            .toolbar{display:none}
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<?php
+if (class_exists('SeoShare')) {
+    echo SeoShare::personCard('visiting', is_array($p)?$p:[], is_array($c)?$c:[]);
+} else {
+    echo '<title>' . $h($name) . ' — Business Card</title>';
+}
+?>
+<link href="/assets/vendor/fontawesome.min.css?v=<?= rawurlencode(defined('APP_VERSION') ? (string)APP_VERSION : '1') ?>" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a1a;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --accent: <?= htmlspecialchars($accent, ENT_QUOTES) ?>;
+  --card-w: 3.5in;
+  --card-h: 2in;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  background: #f3f4f6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  gap: 1.25rem;
+  -webkit-font-smoothing: antialiased;
+}
+.sheet {
+  width: min(100%, 420px);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+/* Front */
+.bc {
+  width: 100%;
+  aspect-ratio: 3.5 / 2;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.12);
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 38% 1fr;
+}
+.bc-left {
+  padding: 14px 12px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--line);
+  background: #fafafa;
+}
+.bc-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.bc-logo-plate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  max-width: 100%;
+  background: <?= $logoBg === 'dark' ? '#1B1A19' : '#fff' ?>;
+  border: 1px solid var(--line);
+}
+.bc-logo-plate img {
+  max-height: 28px;
+  max-width: 110px;
+  object-fit: contain;
+  display: block;
+}
+.bc-co {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.bc-qr {
+  background: #fff;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  width: 72px;
+  height: 72px;
+  line-height: 0;
+}
+.bc-qr canvas, .bc-qr img { width: 64px !important; height: 64px !important; display: block; }
+.bc-right {
+  padding: 14px 16px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.bc-top {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.bc-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 25%;
+  border: 2px solid var(--line);
+  flex-shrink: 0;
+  background: #e5e7eb;
+}
+.bc-photo.ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #9ca3af;
+}
+.bc-id { min-width: 0; flex: 1; }
+.bc-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.15;
+  letter-spacing: -.01em;
+}
+.bc-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 2px;
+  border-bottom: 1.5px solid var(--accent);
+  display: inline-block;
+  padding-bottom: 1px;
+}
+.bc-rows {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 10px;
+  color: #374151;
+  line-height: 1.35;
+}
+.bc-row i {
+  color: var(--accent);
+  width: 12px;
+  text-align: center;
+  margin-top: 1px;
+  font-size: 10px;
+}
+.bc-row a { color: inherit; text-decoration: none; }
+.bc-bar {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 8px;
+  background: linear-gradient(90deg, #111 0 28%, var(--accent) 28% 100%);
+}
+/* Back */
+.bc-back {
+  width: 100%;
+  aspect-ratio: 3.5 / 2;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+}
+.bc-back-side {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 28px;
+  background: var(--accent);
+}
+.bc-back-side.l { left: 0; clip-path: polygon(0 0, 100% 18%, 100% 82%, 0 100%); }
+.bc-back-side.r { right: 0; clip-path: polygon(0 18%, 100% 0, 100% 100%, 0 82%); }
+.bc-back .bc-logo-plate { padding: 8px 12px; }
+.bc-back .bc-logo-plate img { max-height: 40px; max-width: 160px; }
+.bc-back-co { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.bc-back-tag { font-size: 10px; color: var(--muted); letter-spacing: .04em; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.tbtn {
+  font: 600 12px/1 Inter, system-ui, sans-serif;
+  padding: 9px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.tbtn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+@media print {
+  body { background: #fff; padding: 0; display: block; }
+  .toolbar { display: none !important; }
+  .sheet { width: 3.5in; gap: 0.15in; }
+  .bc, .bc-back { box-shadow: none; border: 1px solid #ddd; border-radius: 0; width: 3.5in; height: 2in; aspect-ratio: auto; }
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+</style>
 </head>
 <body>
-
-    <div class="vcard" data-mono="<?= htmlspecialchars(mb_strtoupper(mb_substr($companyName, 0, 1))) ?>">
-        <div class="vc-top">
-            <?php if($logo): ?>
-                <span class="logo-pill"><img src="<?= htmlspecialchars($logo) ?>" alt="Logo" width="104" height="20" decoding="async"></span>
-            <?php else: ?>
-                <span class="co-text"><?= htmlspecialchars(mb_strtoupper(mb_substr($companyName, 0, 3))) ?></span>
-            <?php endif; ?>
-            <div class="vc-org">
-                <div class="vc-org-name"><?= htmlspecialchars($companyName) ?></div>
-                <?php if(!empty($c['address'])): ?><div class="vc-addr"><?= htmlspecialchars($c['address']) ?></div><?php endif; ?>
-            </div>
-        </div>
-
-        <div class="vc-mid">
-            <?php if($photo): ?>
-            <div class="vc-avatar">
-                <img src="<?= htmlspecialchars($photo) ?>" alt="<?= htmlspecialchars($name) ?>"
-                     width="80" height="80" fetchpriority="high" decoding="async"
-                     data-lightbox-src="<?= htmlspecialchars($photo) ?>" data-lightbox-name="<?= htmlspecialchars($name) ?>">
-            </div>
-            <?php endif; ?>
-            <div>
-                <h1 class="vc-name"><?= htmlspecialchars($name) ?></h1>
-                <?php if($role !== '-'): ?><div class="vc-role"><?= htmlspecialchars($role) ?></div><?php endif; ?>
-                <?php if($dept !== '-'): ?><span class="vc-dept"><?= htmlspecialchars($dept) ?></span><?php endif; ?>
-            </div>
-        </div>
-
-        <div class="vc-bottom">
-            <div class="vc-contact">
-                <?php if(!empty($p['phone'])): ?><div><i class="fa-solid fa-phone"></i><?= htmlspecialchars($p['phone']) ?></div><?php endif; ?>
-                <?php if(!empty($p['email'])): ?><div><i class="fa-solid fa-envelope"></i><?= htmlspecialchars($p['email']) ?></div><?php endif; ?>
-                <?php if($personalSocials || $companySocials): ?>
-                <div class="vc-soc">
-                    <?php foreach($personalSocials as $k=>$u): [$ic,$lb]=$_meta[$k]; ?>
-                    <a href="<?= htmlspecialchars($u) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= $lb ?>" title="Personal &middot; <?= $lb ?>"><i class="<?= $ic ?>"></i></a>
-                    <?php endforeach; ?>
-                    <?php foreach($companySocials as $k=>$u): [$ic,$lb]=$_meta[$k]; ?>
-                    <a href="<?= htmlspecialchars($u) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= $lb ?>" title="<?= htmlspecialchars($companyName) ?> &middot; <?= $lb ?>" style="opacity:.65"><i class="<?= $ic ?>"></i></a>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-            </div>
-            <div class="vc-qr" id="qrcode-mini"></div>
-        </div>
+<div class="sheet">
+  <!-- FRONT -->
+  <article class="bc" aria-label="Business card front">
+    <div class="bc-left">
+      <div class="bc-brand">
+        <?php if ($logo !== ''): ?>
+        <span class="bc-logo-plate"><img src="<?= $h($logo) ?>" alt="<?= $h($companyName) ?>"></span>
+        <?php else: ?>
+        <div class="bc-co"><?= $h($companyName) ?></div>
+        <?php endif; ?>
+        <?php if ($logo !== ''): ?><div class="bc-co"><?= $h($companyName) ?></div><?php endif; ?>
+      </div>
+      <div class="bc-qr" id="qrcode-mini" title="Scan to save contact"></div>
     </div>
-
-    <div class="toolbar" data-html2canvas-ignore>
-        <button onclick="window.print()" class="tbtn ghost"><i class="fa-solid fa-print"></i> Print Card</button>
-        <a href="<?= htmlspecialchars($vcfUrl) ?>" class="tbtn ghost" download><i class="fa-solid fa-address-card"></i> Save contact</a>
-        <?php
-          $__ph = preg_replace('/\D+/', '', (string)($p['phone'] ?? $p['mobile'] ?? ''));
-          $__waText = rawurlencode(trim(
-              ($name ?? '') . "\n"
-              . (($role !== '-' ? $role . ' · ' : '') . $companyName) . "\n"
-              . (!empty($p['phone']) ? ('Tel: ' . $p['phone'] . "\n") : '')
-              . (!empty($p['email']) ? ('Email: ' . $p['email'] . "\n") : '')
-              . 'Save contact: ' . $vcfUrl . "\n"
-              . 'Digital card: ' . $cardUrl
-          ));
-        ?>
-        <a class="tbtn primary" target="_blank" rel="noopener"
-           href="https://wa.me/<?= htmlspecialchars($__ph) ?>?text=<?= $__waText ?>"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
-        <a href="<?= htmlspecialchars($cardUrl) ?>" class="tbtn ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i> Digital profile</a>
+    <div class="bc-right">
+      <div class="bc-top">
+        <?php if ($photoUrl !== ''): ?>
+          <img class="bc-photo" src="<?= $h($photoUrl) ?>" alt="" width="44" height="44"
+               onerror="this.outerHTML='<div class=&quot;bc-photo ph&quot;><?= $h(mb_strtoupper(mb_substr($name,0,1))) ?></div>'">
+        <?php else: ?>
+          <div class="bc-photo ph" aria-hidden="true"><?= $h(mb_strtoupper(mb_substr($name, 0, 1))) ?></div>
+        <?php endif; ?>
+        <div class="bc-id">
+          <div class="bc-name"><?= $h($name) ?></div>
+          <?php if ($role !== '' && $role !== '-'): ?><div class="bc-role"><?= $h($role) ?></div><?php endif; ?>
+        </div>
+      </div>
+      <div class="bc-rows">
+        <?php if ($addrLine !== ''): ?>
+        <div class="bc-row"><i class="fa-solid fa-location-dot"></i><span><?= $h($addrLine) ?></span></div>
+        <?php endif; ?>
+        <?php if ($phone !== ''): ?>
+        <div class="bc-row"><i class="fa-solid fa-phone"></i><a href="tel:<?= $h(preg_replace('/\s+/', '', $phone)) ?>"><?= $h($phone) ?></a></div>
+        <?php endif; ?>
+        <?php if ($email !== ''): ?>
+        <div class="bc-row"><i class="fa-solid fa-envelope"></i><a href="mailto:<?= $h($email) ?>"><?= $h($email) ?></a></div>
+        <?php endif; ?>
+        <?php if ($website !== ''): ?>
+        <div class="bc-row"><i class="fa-solid fa-globe"></i><a href="<?= $h($website) ?>" target="_blank" rel="noopener"><?= $h(preg_replace('~^https?://~i', '', $website)) ?></a></div>
+        <?php endif; ?>
+      </div>
+      <div class="bc-bar" aria-hidden="true"></div>
     </div>
+  </article>
 
-<!-- EasyQRCodeJS 4.6.2 — replaces qrcodejs 1.0.0, abandoned since 2016
-     with issues open from 2024–2026 and an unfixed code-length overflow.
-     Same `new QRCode(el, options)` constructor, so this is a drop-in. -->
+  <!-- BACK -->
+  <article class="bc-back" aria-label="Business card back">
+    <div class="bc-back-side l" aria-hidden="true"></div>
+    <div class="bc-back-side r" aria-hidden="true"></div>
+    <?php if ($logo !== ''): ?>
+    <span class="bc-logo-plate"><img src="<?= $h($logo) ?>" alt=""></span>
+    <?php endif; ?>
+    <div class="bc-back-co"><?= $h($companyName) ?></div>
+    <?php if ($dept !== '' && $dept !== '-'): ?><div class="bc-back-tag"><?= $h($dept) ?></div><?php endif; ?>
+  </article>
+</div>
+
+<div class="toolbar" data-html2canvas-ignore>
+  <button type="button" onclick="window.print()" class="tbtn"><i class="fa-solid fa-print"></i> Print</button>
+  <a class="tbtn" href="<?= $h($vcfUrl) ?>"><i class="fa-solid fa-address-card"></i> Save contact</a>
+  <?php
+    $__ph = preg_replace('/\D+/', '', $phone);
+    $__wa = rawurlencode(trim($name . "\n" . ($role !== '-' ? $role . ' · ' : '') . $companyName . "\n"
+      . ($phone !== '' ? "Tel: $phone\n" : '') . ($email !== '' ? "Email: $email\n" : '')
+      . "Save contact: $vcfUrl\nCard: $cardUrl"));
+  ?>
+  <a class="tbtn primary" target="_blank" rel="noopener" href="https://wa.me/<?= $h($__ph) ?>?text=<?= $__wa ?>"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+  <a class="tbtn" href="<?= $h($cardUrl) ?>"><i class="fa-solid fa-arrow-up-right-from-square"></i> Digital card</a>
+</div>
 <script src="/assets/vendor/easy.qrcode.min.js"></script>
 <script>
-    // 88px, not the original 44px: this card is explicitly PRINTED
-    // (@media print + a Print Card button) — a physically small, low-
-    // module-density QR is fragile on screen and unreliable once printed
-    // on real paper at typical scan distance.
-    new QRCode(document.getElementById("qrcode-mini"), {
-        text: <?= json_encode($qrPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
-        width: 96, height: 96,
-        colorDark : "#0a0a0a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H,
-        quietZone: 4
-    });
+(function () {
+  var el = document.getElementById('qrcode-mini');
+  if (!el || typeof QRCode === 'undefined') return;
+  new QRCode(el, {
+    text: <?= json_encode($qrPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+    width: 64, height: 64,
+    colorDark: '#111111', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H,
+    quietZone: 2
+  });
+})();
 </script>
-<?php require __DIR__ . '/partials/lightbox.php'; ?>
 </body>
 </html>

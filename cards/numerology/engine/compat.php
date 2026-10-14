@@ -1,9 +1,9 @@
 <?php
-// compat.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// engine/compat.php — Compatibility Remedies & Pair Insights
+ 
 
 class CompatibilityRemediesEngine {
     public static function getDriverPairInsight(int $dA, int $dB): array {

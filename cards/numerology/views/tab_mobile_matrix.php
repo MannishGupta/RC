@@ -1,7 +1,7 @@
-<?php // tab_mobile_matrix.php — Version: 260916.14
+<?php  
 if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit; ?>
 <?php
-// ── Mode-aware title helper ───────────────────────────────────────────────────
+ 
 $_modeTitle    = ($_mcMode??'vedic')==='vedic'
     ? ($lang==='hi' ? 'वैदिक मोबाइल विश्लेषण'   : 'Vedic Mobile Analysis')
     : ($lang==='hi' ? 'चालदेय मोबाइल तुलना'      : 'Chaldean Mobile Comparison');
@@ -11,7 +11,6 @@ $_modeTitleShort = ($_mcMode??'vedic')==='vedic'
 $_modeIcon     = ($_mcMode??'vedic')==='vedic' ? 'fa-om' : 'fa-star-and-crescent';
 $_modeColor    = ($_mcMode??'vedic')==='vedic' ? 'text-emerald-500' : 'text-indigo-500';
 ?>
-
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!-- TAB: MOBILE MATRIX                                                      -->
@@ -47,7 +46,7 @@ $_modeColor    = ($_mcMode??'vedic')==='vedic' ? 'text-emerald-500' : 'text-indi
             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3"><?= $lang==='hi'?'अनुशंसित अनुकूल अंत':'Suggested Compatible Endings' ?></h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">                <?php foreach($report['mobile']['patterns'] as $patt): ?>
                 <?php
-                // Jyotish lord for the root number
+                 
                 $_lords = AppNumeroEngine::getData()['jyotish_lords'] ?? [];
                 $_rootLord = $_lords[(string)(int)($patt['target_root']??0)] ?? [];
                 ?>
@@ -89,9 +88,9 @@ $_modeColor    = ($_mcMode??'vedic')==='vedic' ? 'text-emerald-500' : 'text-indi
             <?php endif; ?>
 
 <?php
-/* ── Mobile Compare — PHP injects all vars, JS lives below ─────────────── */
-// All these vars are set by num_controller.php (V17.5+)
-// For older controllers graceful fallbacks are provided.
+ 
+ 
+ 
 $_mcDriver    = $core['driver']    ?? 1;
 $_mcConductor = $core['conductor'] ?? 1;
 $_mcPsychic   = (int)$_mcDriver;
@@ -109,8 +108,8 @@ if (!isset($_mcPatterns)) $_mcPatterns = json_encode(array_map(function($p){
 if (!isset($_mcChaldean)) $_mcChaldean = class_exists('ChaldeaMobileEngine') ? json_encode(ChaldeaMobileEngine::getJsData($_mcPsychic,$_mcDestiny),JSON_UNESCAPED_UNICODE) : 'null';
 if (!isset($_mcI18n))     $_mcI18n     = json_encode(['rootDriver'=>$lang==='hi'?'मूल अंक आपके चालक से संरेखित':'Root aligned with Driver','rootFriend'=>$lang==='hi'?'मूल अंक अनुकूल':'Root is Friendly','rootNeutral'=>$lang==='hi'?'मूल तटस्थ/विरोधी':'Root is Neutral/opposing','last2Driver'=>$lang==='hi'?'अंतिम 2 चालक से मेल':'Last 2 match Driver','last2Friend'=>$lang==='hi'?'अंतिम 2 अनुकूल':'Last 2 are Friendly','last2Neutral'=>$lang==='hi'?'अंतिम 2 सुधार योग्य':'Last 2 could improve','saturnDelay'=>$lang==='hi'?'शनि/राहु — देरी संभव':'Saturn/Rahu energy','strongVibe'=>$lang==='hi'?'मजबूत कंपन':'Strong vibration','malefic'=>$lang==='hi'?'अशुभ युगल':'Malefic pair','auspicious'=>$lang==='hi'?'शुभ युगल':'Auspicious pair','highlyRec'=>$lang==='hi'?'अत्यंत अनुशंसित':'Highly Recommended','acceptable'=>$lang==='hi'?'स्वीकार्य':'Acceptable','avoid'=>$lang==='hi'?'टालें':'Avoid','compatible' =>$lang==='hi'?'अनुकूल':'Supportive','neutral'    =>$lang==='hi'?'तटस्थ':'Neutral','challenging'=>$lang==='hi'?'चुनौतीपूर्ण':'Challenging','addedToComp'=>$lang==='hi'?'तुलना में जोड़ा':'Added to comparison','compFull'   =>$lang==='hi'?'तालिका पूर्ण':'Table full (max 5)'], JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
 
-// ── $_mm* vars — used by bulk scorer section (PDF export + header subtitle) ─
-// These mirror $_mc* but also expose name/dob/gender for the PDF title line.
+ 
+ 
 $_mmName    = htmlspecialchars((string)($p['name']   ?? ''), ENT_QUOTES);
 $_mmDob     = htmlspecialchars((string)($p['dob_raw'] ?? ($p['dob'] ?? '')), ENT_QUOTES);
 $_mmGender  = htmlspecialchars((string)($p['gender'] ?? ''), ENT_QUOTES);

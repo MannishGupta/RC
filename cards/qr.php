@@ -1,7 +1,7 @@
 <?php
-// qr.php — Version: 260921.02
-// Zero Tailwind Play CDN. Self-contained CSS. EasyQR deferred with safe init.
-// 🔒 json_encode for JS URL (prevents XSS via malformed URLs)
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 if (!class_exists('SeoShare') && is_file(BASE_PATH . '/app/SeoShare.php')) {
     require_once BASE_PATH . '/app/SeoShare.php';
@@ -23,7 +23,6 @@ if (!class_exists('VcardBuilder') && is_file(BASE_PATH . '/app/VcardBuilder.php'
 if (class_exists('VcardBuilder')) {
     $vcardText = VcardBuilder::buildForQr(is_array($p) ? $p : [], is_array($c) ? $c : []);
 }
-
 
 $h = static function (string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

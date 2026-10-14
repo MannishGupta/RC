@@ -1,16 +1,7 @@
 <?php
-/**
- * Numerology Dasha Calculator — life-cycle periods (convention-based guidance).
- * Version: 20261003.29
- *
- * Pure, unit-testable helpers. Not scientific — interpretations are labelled as guidance.
- */
+
 declare(strict_types=1);
 
-/**
- * Repeatedly sum digits until single digit; optionally preserve 11 / 22 / 33.
- * Formula: while n > 9 (and not a kept master), n = sum of decimal digits of n.
- */
 function numero_reduce(int $n, bool $keepMaster = true): int
 {
     $n = abs($n);
@@ -28,17 +19,13 @@ function numero_reduce(int $n, bool $keepMaster = true): int
     return $n === 0 ? 0 : $n;
 }
 
-/**
- * Always reduce fully to 1–9 (masters not preserved). Used ONLY for age arithmetic.
- * Formula: same digit-sum loop with keepMaster=false; 0 stays 0.
- */
 function numero_reduce_to_single(int $n): int
 {
     $n = numero_reduce(abs($n), false);
-    return $n === 0 ? 9 : $n; // conventional: avoid 0 for life-path age math
+    return $n === 0 ? 9 : $n;  
 }
 
-/** Pythagorean letter values A=1 … I=9, J=1 … R=9, S=1 … Z=8 */
+ 
 function numero_pythagorean_map(): array
 {
     $map = [];
@@ -49,7 +36,7 @@ function numero_pythagorean_map(): array
     return $map;
 }
 
-/** Chaldean letter values (matches AppNumeroEngine::CHALDEAN_MAP where available). */
+ 
 function numero_chaldean_map(): array
 {
     if (class_exists('AppNumeroEngine')) {
@@ -62,7 +49,7 @@ function numero_chaldean_map(): array
                 }
             }
         } catch (Throwable $e) {
-            // fall through
+             
         }
     }
     return [
@@ -77,10 +64,6 @@ function numero_chaldean_map(): array
     ];
 }
 
-/**
- * Validate DOB and return [day, month, year] or null.
- * Accepts DD/MM/YYYY, YYYY-MM-DD, or DateTimeInterface.
- */
 function numero_parse_dob(string|DateTimeInterface $dob): ?array
 {
     if ($dob instanceof DateTimeInterface) {
@@ -105,10 +88,6 @@ function numero_parse_dob(string|DateTimeInterface $dob): ?array
     return [$d, $m, $y];
 }
 
-/**
- * Life Path: sum ALL digits of DOB, reduce(keepMaster=true).
- * Example: 11/09/1985 → 1+1+0+9+1+9+8+5 = 34 → 7 (or masters when present).
- */
 function numero_life_path(int $day, int $month, int $year): int
 {
     $digits = sprintf('%02d%02d%04d', $day, $month, $year);
@@ -119,10 +98,6 @@ function numero_life_path(int $day, int $month, int $year): int
     return numero_reduce($sum, true);
 }
 
-/**
- * Expression (Destiny) from full name.
- * system: 'pythagorean' (default) or 'chaldean'.
- */
 function numero_expression(string $fullName, string $system = 'pythagorean'): int
 {
     $map = ($system === 'chaldean') ? numero_chaldean_map() : numero_pythagorean_map();
@@ -135,16 +110,12 @@ function numero_expression(string $fullName, string $system = 'pythagorean'): in
     return numero_reduce($sum, true);
 }
 
-/** Birth Day number: reduce(day, keepMaster=true). */
+ 
 function numero_birth_day(int $day): int
 {
     return numero_reduce($day, true);
 }
 
-/**
- * Guidance blurbs for pinnacle / challenge / personal periods (editable lookup).
- * @return array<int|string, string>
- */
 function numero_dasha_interpretations(): array
 {
     return [
@@ -181,14 +152,6 @@ function numero_theme_for(int $n, string $prefix = ''): string
     return $table[$n] ?? ('Period number ' . $n . '. Guidance only.');
 }
 
-/**
- * Macro-dasha (Pinnacles + Challenges).
- * P1=reduce(m+d), P2=reduce(d+y), P3=reduce(P1+P2), P4=reduce(m+y) — masters kept.
- * Challenges always single digit: C1=|m−d|, C2=|d−y|, C3=|C1−C2|, C4=|m−y|.
- * Ages use lpr = reduceToSingle(LP): e1=36−lpr; P1: 0..e1; P2: e1+1..e1+9; …
- *
- * @return list<array{index:int,pinnacle_number:int,challenge_number:int,start_age:int,end_age:int,thematic_focus:string}>
- */
 function numero_pinnacles(int $day, int $month, int $year, int $lifePath): array
 {
     $m = numero_reduce_to_single($month);
@@ -231,9 +194,6 @@ function numero_pinnacles(int $day, int $month, int $year, int $lifePath): array
     return $out;
 }
 
-/**
- * Personal Year: reduce(reduceToSingle(birthMonth)+reduceToSingle(birthDay)+reduceToSingle(targetYear)).
- */
 function numero_personal_year(int $birthDay, int $birthMonth, int $targetYear): int
 {
     return numero_reduce(
@@ -244,24 +204,18 @@ function numero_personal_year(int $birthDay, int $birthMonth, int $targetYear): 
     );
 }
 
-/** Personal Month: reduce(PY + calendarMonth). */
+ 
 function numero_personal_month(int $personalYear, int $calendarMonth): int
 {
     return numero_reduce($personalYear + $calendarMonth, true);
 }
 
-/** Personal Day: reduce(PM + calendarDay). */
+ 
 function numero_personal_day(int $personalMonth, int $calendarDay): int
 {
     return numero_reduce($personalMonth + $calendarDay, true);
 }
 
-/**
- * Full dasha report as structured array (JSON-serialisable).
- *
- * @param array{system?:string,target?:string|DateTimeInterface} $opts
- * @return array{ok:bool,error?:string,core_profile?:array,macro_dasha_pinnacles?:array,micro_dasha_current?:array}
- */
 function numero_dasha_report(string $fullName, string|DateTimeInterface $dob, array $opts = []): array
 {
     $parsed = numero_parse_dob($dob);

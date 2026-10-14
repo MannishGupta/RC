@@ -1,9 +1,9 @@
 <?php
-// grid.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// engine/grid.php — Lo Shu Grid, Yoga, Arrow, Cell Meta
+ 
 
 class GridEngine {
     public const LAYOUT = [4, 9, 2, 3, 5, 7, 8, 1, 6];

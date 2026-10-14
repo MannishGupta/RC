@@ -1,5 +1,5 @@
-<?php // tab_executive.php — Version: 260921.03
-// Executive Summary — premium card layout. All data preserved.
+<?php  
+ 
 if (!defined('BASE_PATH') || !isset($report, $lang, $p, $core)) exit;
 $isHi = ($lang === 'hi');
 $pyNum = (string)(int)($report['personal_year']['number'] ?? 0);
@@ -125,7 +125,7 @@ $pyNum = (string)(int)($report['personal_year']['number'] ?? 0);
         </section>
 
         <?php
-        // ── Client positive aspects (logos / symbols) ─────────────────
+         
         $nrPositives = [];
         $isHi = !empty($isHi);
         $core = $report['core'] ?? [];
@@ -206,7 +206,7 @@ $pyNum = (string)(int)($report['personal_year']['number'] ?? 0);
                 'text' => $isHi ? 'आपके अंक विन्यास में स्पष्ट शक्ति-क्षेत्र सक्रिय हैं।' : 'Clear strength zones are active in your number configuration.',
             ];
         }
-        // Always at least driver + overall positive frame
+         
         $nrPositives[] = [
             'icon' => '🌟',
             'title' => $isHi ? 'समग्र सकारात्मक दृष्टि' : 'Overall positive frame',

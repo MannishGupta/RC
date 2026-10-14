@@ -1,29 +1,29 @@
 <?php
-// cards/partials/lightbox.php - Version: 260916.14
-//
-// Shared PhotoLightbox partial. Previously this identical 74-line script was
-// pasted verbatim into cards/business.php, id.php, qr.php,
-// visiting.php and cards/numerology/views/head.php (verified byte-identical, same MD5 in
-// all five), so any fix had to be applied in five places or the copies would
-// silently drift.
-//
-// USAGE - place this one line immediately before the closing body tag:
-//     require __DIR__ . '/partials/lightbox.php';
-//   wrapped in PHP tags. From cards/numerology/views/ use
-//   dirname(__DIR__, 2) . '/partials/lightbox.php' instead.
-//
-// Activation is automatic: any element carrying a data-lightbox-src attribute
-// becomes clickable. Optional data-lightbox-name sets the suggested download
-// filename. No initialisation call is needed.
-//
-// v1.1 FIX: the v1.0 header showed the usage example as a literal
-// '<' + '?php ... ?' + '>' snippet inside a // comment. A closing PHP tag
-// terminates PHP mode even inside a single-line comment, so the rest of the
-// header was emitted to the page as raw text. Never put a closing PHP tag
-// inside a // or # comment.
-//
-// A direct HTTP request to this file returns an empty response rather than
-// leaking the script source.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 if (!defined('BASE_PATH')) exit;
 ?>
 <script>

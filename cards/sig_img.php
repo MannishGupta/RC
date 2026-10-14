@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
-/**
- * Email-safe signature images — always PNG/JPEG.
- * Outlook blanks WebP/SVG. Prefer pre-rendered company-logo.sig.png (from
- * browser or server at upload); then raster siblings; then Imagick/CLI SVG.
- */
+
 $rootPath = file_exists(__DIR__ . '/../app/bootstrap.php') ? dirname(__DIR__) : __DIR__;
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', $rootPath);
@@ -77,7 +73,7 @@ $findInDirs = static function (string $name) use ($dirs): string {
     return '';
 };
 
-/** Ordered candidate paths for logo (email-safe raster first). */
+ 
 $logoCandidates = static function () use ($company, $findInDirs): array {
     $out = [];
     $push = static function (string $p) use (&$out): void {
@@ -85,7 +81,7 @@ $logoCandidates = static function () use ($company, $findInDirs): array {
             $out[] = $p;
         }
     };
-    // Explicit sidecar fields
+     
     foreach (['logo_sig', 'logo_png', 'logo_raster'] as $k) {
         $f = trim((string)($company[$k] ?? ''));
         if ($f !== '') {
@@ -94,7 +90,7 @@ $logoCandidates = static function () use ($company, $findInDirs): array {
     }
     $logo = basename((string)($company['logo'] ?? ''));
     $stem = $logo !== '' ? pathinfo($logo, PATHINFO_FILENAME) : 'company-logo';
-    // Conventional email PNG next to SVG
+     
     foreach ([
         $stem . '.sig.png',
         'company-logo.sig.png',
@@ -176,7 +172,7 @@ $sendPlaceholder = static function (string $label, int $w, int $h, string $hex) 
 };
 
 $rasterizeSvg = static function (string $path, string $blob, int $w, int $h) : ?string {
-    // 1) Imagick — try multiple read strategies (policy may block some)
+     
     if (class_exists('Imagick')) {
         $attempts = [];
         $attempts[] = static function () use ($blob, $w, $h) {
@@ -222,7 +218,7 @@ $rasterizeSvg = static function (string $path, string $blob, int $w, int $h) : ?
         }
     }
 
-    // 2) CLI tools (often disabled on shared hosts — best-effort)
+     
     $tmpSvg = sys_get_temp_dir() . '/rc_sig_' . bin2hex(random_bytes(6)) . '.svg';
     $tmpPng = sys_get_temp_dir() . '/rc_sig_' . bin2hex(random_bytes(6)) . '.png';
     $wrote = @file_put_contents($tmpSvg, $blob);
@@ -278,9 +274,9 @@ $fitToPng = static function ($im, int $w, int $h, string $kind, string $logoBg) 
     $dst = imagecreatetruecolor($w, $h);
     imagealphablending($dst, false);
     imagesavealpha($dst, true);
-    // Email clients: transparent often becomes black; for dark-ink logos use white plate, white-ink use dark
+     
     if ($kind === 'logo' && $logoBg === 'dark') {
-        $bg = imagecolorallocate($dst, 27, 26, 25); // #1B1A19
+        $bg = imagecolorallocate($dst, 27, 26, 25);  
         imagefilledrectangle($dst, 0, 0, $w, $h, $bg);
         imagealphablending($dst, true);
     } elseif ($kind === 'logo') {
@@ -324,7 +320,7 @@ foreach ($candidates as $abs) {
         if ($png !== null) {
             $sendPng($png);
         }
-        continue; // try next candidate (e.g. missing sig.png already tried first)
+        continue;  
     }
 
     $im = $gdFromFile($abs, $blob, $ext);
@@ -332,7 +328,7 @@ foreach ($candidates as $abs) {
         $fitToPng($im, $w, $h, $kind, $logoBg);
     }
 
-    // Imagick for webp/other
+     
     if (class_exists('Imagick')) {
         try {
             $imk = new Imagick();
@@ -346,7 +342,7 @@ foreach ($candidates as $abs) {
                 $sendPng($png);
             }
         } catch (Throwable $e) {
-            // next
+             
         }
     }
 }

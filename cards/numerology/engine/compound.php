@@ -1,9 +1,9 @@
 <?php
-// compound.php — Version: 260916.14
+ 
 declare(strict_types=1);
 if (!defined('BASE_PATH')) exit;
 
-// engine/compound.php — Compound Analysis, Diagnostics, Interpretation
+ 
 
 class CompoundEngine {
     public static function analyze(int $compound, array $config): array {
@@ -34,8 +34,8 @@ class DiagnosticsEngine {
 class InterpretationEngine {
     public static function build(array $core, array $planet, array $missingDetails): array {
         $openers = AppNumeroEngine::getData()['strength_openers'] ?? [];
-        // Guard: if strength_openers is missing/empty in JSON, fall back to default
-        // phrase to prevent DivisionByZeroError from modulo on count() === 0.
+         
+         
         $openerCount = count($openers);
         $opener = $openerCount > 0
             ? ($openers[$core['driver'] % $openerCount] ?? "You carry a rare planetary blueprint. ")

@@ -1,7 +1,5 @@
 <?php
-/**
- * Admin console: live routes map + vehicle assignment + Hindi dispatch
- */
+
 if (!defined('DISPATCH_ROOT')) {
     exit;
 }
